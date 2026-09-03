@@ -1,3 +1,8 @@
+---
+title: "Estate is the operator's union of neighborhoods (the metropolis model)"
+status: historical
+---
+
 # Estate is the operator's union of neighborhoods (the metropolis model)
 
 **Date:** 2026-05-08

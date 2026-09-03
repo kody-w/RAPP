@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAPP — Ecosystem map</title>
-<meta name="description" content="The full RAPP ecosystem: every kody-w repo categorized, with cross-repo dependency edges. See which repos cluster vs which drift isolated.">
-<meta property="og:title" content="RAPP — Ecosystem map">
-<meta property="og:description" content="Force-directed map of every RAPP-related repo. Color = category. Size = degree. Edges = cross-repo references.">
+<title>Historical RAPP ecosystem observation</title>
+<meta name="description" content="A dated, generated repository-relationship observation preserved as non-authoritative history.">
+<meta name="robots" content="noindex,follow">
+<meta property="og:title" content="Historical RAPP ecosystem observation">
+<meta property="og:description" content="Generated repository metadata from 2026-07-15; not a current registry, catalog, deployment map, or product inventory.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/about/ecosystem.html">
 <link rel="canonical" href="https://kody-w.github.io/RAPP/pages/about/ecosystem.html">
@@ -132,10 +133,20 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
 </head>
 <body>
 
+<aside role="note" style="max-width:1100px;margin:18px auto;padding:16px 20px;border:1px solid #d29922;border-radius:10px">
+  <strong>Generated historical observation — not current authority.</strong>
+  The embedded data was generated on 2026-07-15 and may contain stale names,
+  descriptions, links, and inferred edges. It is not an active catalog,
+  registry, deployment inventory, cloud-tier map, or shipped-product claim.
+  Current limits are in <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+</aside>
+<!-- RAPP1-HISTORICAL-SECTION-START -->
 <header class="eco-header">
-  <h1>🗺️ RAPP ecosystem map</h1>
-  <p>Every <code>kody-w/*</code> repo, categorized. Edges show cross-repo references found in code, install scripts, and inferred lineage (private mirrors, archives, dev/canary channels). Heavily-connected repos cluster in the middle; isolated experiments drift to the edges.</p>
-  <p style="font-size:13px;color:#8b949e;margin-top:10px">↪ <a href="../kernel.html">Kernel hub</a> · the canonical reading order for the platform</p>
+  <h1>🗺️ Historical RAPP ecosystem observation</h1>
+  <p>A dated visualization of repositories and inferred cross-references. It
+    preserves what the generator observed; it does not say which repositories
+    are current, accepted, deployed, installable, or supported.</p>
+  <p style="font-size:13px;color:#8b949e;margin-top:10px">↪ <a href="../kernel.html">Current kernel reading hub</a></p>
   <div class="eco-stats" id="eco-stats"></div>
 </header>
 
@@ -4148,7 +4159,7 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
     const tbl = document.createElement('table');
     tbl.innerHTML = repos.map(r => `
       <tr>
-        <td><a href="${r.url}" target="_blank" rel="noopener">${r.id}</a>${r.private ? ' <span class="priv">PRIV</span>' : ''}</td>
+        <td>${repoReference(r, r.id)}${r.private ? ' <span class="priv">PRIV</span>' : ''}</td>
         <td>${escapeHtml(r.description) || '<span style="opacity:0.4">—</span>'}</td>
         <td style="text-align:right;opacity:0.6">${r.degree || ''}</td>
       </tr>
@@ -4286,7 +4297,7 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
         <dt>Last push</dt><dd>${(d.pushedAt || '').slice(0,10)}</dd>
         <dt>Degree</dt><dd>${d.degree}</dd>
       </dl>
-      <a class="repo-link" href="${d.url}" target="_blank" rel="noopener">↗ open on github</a>
+      ${repoReference(d, '↗ open historical repository reference', 'repo-link')}
       <h4>Outbound (${outbound.length})</h4>
       <ul>${outbound.length ? outbound.map(e => `<li>→ <a href="#" data-target="${e.target.id || e.target}">${e.target.id || e.target}</a> <small style="opacity:0.5">${e.kind}</small></li>`).join('') : '<li style="opacity:0.5">none</li>'}</ul>
       <h4>Inbound (${inbound.length})</h4>
@@ -4307,6 +4318,13 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
     ));
   }
 
+  function repoReference(repo, label, className) {
+    if (repo.id === 'rapp-zoo') {
+      return `<span class="${className || ''}" title="Retired repository link">${escapeHtml(label)} · retired link</span>`;
+    }
+    return `<a class="${className || ''}" href="${repo.url}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`;
+  }
+
   // ----- wire controls
   document.getElementById('eco-show-offtopic').addEventListener('change', render);
   document.getElementById('eco-show-isolated').addEventListener('change', render);
@@ -4318,5 +4336,6 @@ body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); }
 })();
 </script>
 
+<!-- RAPP1-HISTORICAL-SECTION-END -->
 </body>
 </html>

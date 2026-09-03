@@ -1,4 +1,4 @@
-"""Product-local checks for the legacy ecosystem offspring inventory.
+"""Product-local observations for the legacy ecosystem offspring inventory.
 
 This module is not RAPP/1 protocol authority. It is imported by
 `tools/ecosystem_audit.py` to compare repository-product conventions.
@@ -6,11 +6,11 @@ This module is not RAPP/1 protocol authority. It is imported by
 Stdlib-only. Safe to read from the audit script which itself runs before
 any venv exists.
 
-The Bond Pulse audit walks every offspring listed in
+The ecosystem audit walks every offspring listed in
 `pages/metropolis/index.json`, looks up the offspring's `kind`, fetches
-the product-local expectations here, and reports drift. These checks are data,
-not protocol law — a future fix-bot can read this same dict and propose
-corrections per the same rules.
+the product-local observations here, and reports drift. These checks are data,
+not protocol law. Retired publication kinds are preserved only as explicitly
+historical shapes; they carry no live requirements and authorize no repair.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ SEED_REQUIRED_AGENTS = (
     "basic_agent.py",
 )
 
-# ── per-kind contract ──────────────────────────────────────────────────────
+# ── per-kind observations ─────────────────────────────────────────────────
 
 # Each KindContract dict carries:
 #   required_files          paths that MUST exist at offspring root
@@ -173,18 +173,23 @@ CONTRACTS: dict = {
         "notes": "Project braintrust — collaborative research pattern. Requires rar/ for participation kit.",
     },
 
-    # ── catalog: rapp-zoo, rapp-store, RAR (directory surfaces, not neighborhoods) ─
+    # ── retired catalog publication shape (historical only) ───────────────
     "catalog": {
-        "required_files": [
-            "index.html",  # the only required surface
-        ],
+        "required_files": [],
         "expected_product_schemas": {},
         "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
         "kernel_base_check":       False,
-        "optional_files":          ["rappid.json", "card.json", "soul.md"],
-        "notes": "Directory / catalog surface (rapp-zoo, RAPP_Store, RAPP_Sense_Store, RAR). gate_url is what matters; deeper structure varies per catalog.",
+        "optional_files":          [],
+        "lifecycle":               "historical-observation",
+        "historical_shape": {
+            "formerly_required_files": ["index.html"],
+            "formerly_optional_files": [
+                "rappid.json", "card.json", "soul.md",
+            ],
+        },
+        "notes": "Retired catalog publication shape retained as historical observation only; no live file contract.",
     },
 
     # ── template: forkable-as-template repos (no live state required) ──────
@@ -204,44 +209,56 @@ CONTRACTS: dict = {
         "notes": "Template repo — exists for forking. May carry partial scaffolding; only rappid.json is mandatory so fork lineage is recoverable.",
     },
 
-    # ── installer: special tooling repo (kody-w/rapp-installer) ────────────
+    # ── retired installer publication shape (historical only) ─────────────
     "installer": {
-        "required_files": [
-            "install.sh",
-        ],
+        "required_files": [],
         "expected_product_schemas": {},
         "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
         "kernel_base_check":       False,
-        "optional_files":          ["install.ps1", "install.cmd", "README.md"],
-        "notes": "The install one-liner host. Sacred URL shape per CONSTITUTION Article V; only checks the entry point exists.",
+        "optional_files":          [],
+        "lifecycle":               "historical-observation",
+        "historical_shape": {
+            "formerly_required_files": ["install.sh"],
+            "formerly_optional_files": [
+                "install.ps1", "install.cmd", "README.md",
+            ],
+        },
+        "notes": "Retired installer publication shape retained as historical observation only; no live file contract.",
     },
 
-    # ── egg-hub: the public catalog of .egg cartridges ─────────────────────
+    # ── retired legacy egg-hub publication shape (historical only) ────────
     "egg-hub": {
-        "required_files": [
-            "index.json",
-        ],
+        "required_files": [],
         "expected_product_schemas": {},
         "rappid_kind":             None,
         "identity_block_required": False,
         "rar_required":            False,
         "kernel_base_check":       False,
-        "optional_files":          ["README.md", "eggs/"],
-        "notes": "Public egg-cartridge catalog (kody-w/rapp-egg-hub). Mostly content-addressed eggs in a curated list.",
+        "optional_files":          [],
+        "lifecycle":               "historical-observation",
+        "historical_shape": {
+            "formerly_required_files": ["index.json"],
+            "formerly_optional_files": ["README.md", "eggs/"],
+        },
+        "notes": "Retired legacy egg-hub shape retained as historical observation only; no live file contract.",
     },
 }
+
+HISTORICAL_KINDS = frozenset({"catalog", "installer", "egg-hub"})
+for _kind, _observation in CONTRACTS.items():
+    _observation.setdefault("lifecycle", "product-observation")
 
 
 # ── kind resolution ────────────────────────────────────────────────────────
 
-# Map metropolis-index `kind` strings to contract keys. Some entries declare
+# Map metropolis-index `kind` strings to observation keys. Some entries declare
 # their kind explicitly (kind="ant-farm"); others (rapp-zoo, rapp-store, RAR)
 # need to be inferred from name/role/tags.
 
 _KIND_ALIASES: dict = {
-    # entry["kind"] value     → contract key
+    # entry["kind"] value     → observation key
     "ant-farm":      "ant-farm",
     "neighborhood":  "neighborhood",
     "workspace":     "workspace",
@@ -256,7 +273,7 @@ _KIND_ALIASES: dict = {
 
 
 def kind_for_entry(entry: dict) -> str:
-    """Map a metropolis index entry's `kind` field to a contract key.
+    """Map a metropolis index entry's `kind` field to an observation key.
 
     Resolution order:
       1. If `entry_role == "template"` regardless of declared kind → "template".
@@ -284,26 +301,27 @@ def kind_for_entry(entry: dict) -> str:
 
 
 def all_kinds() -> list:
-    """Sorted list of every contract key. Used by the audit to validate
-    that every kind declared in the metropolis index has a contract."""
+    """Sorted list of every observation key."""
     return sorted(CONTRACTS.keys())
 
 
 def contract_for_kind(kind: str) -> dict:
-    """Look up a contract by key. Returns the neighborhood contract if
-    the kind is unknown (audit will flag the unknown kind separately)."""
+    """Look up a product observation by key.
+
+    The legacy function name is retained for import compatibility.
+    """
     return CONTRACTS.get(kind) or CONTRACTS["neighborhood"]
 
 
 # ── self-check (importable) ────────────────────────────────────────────────
 
 def _self_check() -> dict:
-    """Verify the contract is internally consistent. Useful for tests."""
+    """Verify the observation table is internally consistent."""
     issues = []
     for kind, c in CONTRACTS.items():
         for required_field in ("required_files", "expected_product_schemas", "rappid_kind",
                                "identity_block_required", "rar_required", "kernel_base_check",
-                               "optional_files", "notes"):
+                               "optional_files", "notes", "lifecycle"):
             if required_field not in c:
                 issues.append(f"{kind}: missing field {required_field}")
         # Every product schema key must name a required or optional file.
@@ -314,6 +332,18 @@ def _self_check() -> dict:
                     f"{kind}: expected_product_schemas references {sch_path} "
                     "but it is not in required/optional files"
                 )
+        if kind in HISTORICAL_KINDS:
+            if c.get("lifecycle") != "historical-observation":
+                issues.append(f"{kind}: retired kind is not historical")
+            if (
+                c.get("required_files")
+                or c.get("expected_product_schemas")
+                or c.get("rappid_kind") is not None
+                or c.get("identity_block_required")
+                or c.get("rar_required")
+                or c.get("kernel_base_check")
+            ):
+                issues.append(f"{kind}: historical kind has live enforcement")
     return {
         "kinds": all_kinds(),
         "kind_count": len(CONTRACTS),
@@ -321,6 +351,7 @@ def _self_check() -> dict:
         "ok": not issues,
         "authority_state": "product-local-observation",
         "rapp_protocol_authority": False,
+        "historical_kinds": sorted(HISTORICAL_KINDS),
     }
 
 

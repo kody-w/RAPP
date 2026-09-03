@@ -230,8 +230,8 @@
       "path": "rapp_brainstem/rapp1_facade.py",
       "path_state": "tracked regular file mode 100644; target-owned loopback-only post-migration pre-acceptance candidate corrected in this ledger's containing commit; not publicly approved",
       "git_mode": "100644",
-      "git_blob": "690226b2492d86cf089ed222cb7cefe38af8c1e5",
-      "path_sha256": "4bd8e1c51290295c5dfd6dec73a5f12f3771ec674a5e856ab78edbfc61151a01",
+      "git_blob": "745a0ec50c91a79c5e83306b0d4a0f7e155c2946",
+      "path_sha256": "34e08be4c47e9437729160335f9555c5ffb25395b0070c38eeba31e70686d4b0",
       "route_candidate": "POST /chat",
       "control_route": "GET /health",
       "candidate_error_codes": [
@@ -264,8 +264,8 @@
       },
       "supporting_paths": {
         "rapp_brainstem/run_rapp1_facade.py": "4737fae8574e58177010653f8f83cf376b011add0c855e1c81a686ae4a74a9f9",
-        "rapp_brainstem/RAPP1_FACADE.md": "0f970f3e43edc2f4c4c8803b5800115f7714bb3683bc5185569e122e77a98f77",
-        "rapp_brainstem/test_rapp1_facade.py": "92c46db51854fd988aea4dafacae184218a30f43a3dd77688b67c028901a8f54"
+        "rapp_brainstem/RAPP1_FACADE.md": "bbfb683f63e01a370bff38a1f5f0178f4a32c0a907f376f26a37a362f2247176",
+        "rapp_brainstem/test_rapp1_facade.py": "5ead3754f93b5419c72ae6455441a5ca7090b7c279c7ea7367847db276d99801"
       },
       "publicly_approved": false
     },
@@ -721,7 +721,7 @@
       "where": {
         "candidate_source": "rapp_brainstem/rapp1_facade.py",
         "current_source_commit": null,
-        "current_source_sha256": "4bd8e1c51290295c5dfd6dec73a5f12f3771ec674a5e856ab78edbfc61151a01",
+        "current_source_sha256": "34e08be4c47e9437729160335f9555c5ffb25395b0070c38eeba31e70686d4b0",
         "current_source_state": "tracked target-owned loopback-only post-migration pre-acceptance candidate",
         "candidate_launcher": "rapp_brainstem/run_rapp1_facade.py",
         "candidate_contract": "rapp_brainstem/RAPP1_FACADE.md",

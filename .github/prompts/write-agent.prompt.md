@@ -1,34 +1,31 @@
-# Write a RAPP Agent
+# Retired Legacy-Agent Authoring Prompt
 
-Write a new single-file RAPP agent. Ask the user what the agent should do, then create the file.
+Read [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
+[`RAPP1_STATUS.md`](../../RAPP1_STATUS.md) first. This repository is not yet
+fully RAPP/1 conformant. Canonicalization, identity, frames, wire, eggs,
+registry, trust, and protocol evolution follow RAPP/1 rev-5 through those
+records. Its only target-owned synchronous protocol surface is
+the loopback pre-acceptance façade at `127.0.0.1:7073`; it imports no grail
+module and defaults to the exact `inference-refused` response until a reviewed,
+side-effect-free adapter is explicitly injected. Its request is required string
+`user_input` plus optional strings `session_id` and `idempotency_key`; success
+contains exactly `response`, `agent_logs` (array), and `session_id`; refusal is
+HTTP 422 with exactly nested `error.code` and `error.step`.
 
-## Rules
+Do **not** create or modify an agent under `rapp_brainstem/`, the prepared Cave
+installer, or any other contained legacy runtime. Refuse requests that rely on:
 
-Follow the v1 agent contract exactly. Read [AGENTS.md](../../AGENTS.md) and use [rapp_brainstem/agents/hacker_news_agent.py](../../rapp_brainstem/agents/hacker_news_agent.py) as the reference implementation.
+- missing dependencies being installed automatically;
+- the repository-local `SPEC.md` as protocol authority;
+- Tier 1/2/3 portability or deployment;
+- RAR publication, catalog insertion, planting, hatching, or installation; or
+- edits to `KERNEL_PIN.json` bytes, archives, generated mirrors, or
+  owner-authorized identity/trust records.
 
-## Checklist
+If the requester needs new behavior, explain that the old drop-in-agent path is
+retired. A future implementation must live in an explicitly named target-owned
+adapter outside the immutable grail, preserve the exact RAPP/1 §8 request,
+success, and refusal shapes, perform no implicit package installation or remote
+publication, and remain fail-closed without authenticated acceptance.
 
-1. Filename: `<thing>_agent.py` in `rapp_brainstem/agents/`
-2. Import `BasicAgent` from `agents.basic_agent`
-3. One class extending `BasicAgent`
-4. `self.name` — the tool name the LLM sees (PascalCase, no spaces)
-5. `self.metadata` — OpenAI function-calling schema with `name`, `description`, `parameters`
-6. `perform(**kwargs) -> str` returning `json.dumps({"status": "success|error", ...})`
-7. Optional: `data_slush` key in the return dict for chaining
-8. Optional: `system_context() -> str` for injecting into every system prompt
-9. Optional: `__manifest__` dict at module level for RAR registry
-
-## Constraints
-
-- **No sibling imports** — agents cannot import other agents
-- **No build steps** — the file must work when dropped into `agents/`
-- **No frameworks** — only `BasicAgent` as the base class
-- **Missing pip deps** are auto-installed at import time — declare them as normal imports
-- The agent must be portable across Tier 1 (local), Tier 2 (Azure), and Tier 3 (Copilot Studio)
-
-## After creating
-
-Run the brainstem tests to verify:
-```bash
-cd rapp_brainstem && python3 -m pytest test_local_agents.py -v
-```
+This prompt is a containment notice, not an authoring workflow.

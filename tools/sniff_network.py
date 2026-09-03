@@ -1,8 +1,9 @@
-"""sniff_network — decentralized RAPP network discovery (Article XLVII).
+"""Collect unverified RAPP network publication observations.
 
-Per the operator's framing: "robots.txt but for the rapp network." A new
-estate becomes part of the network the moment it's published per spec —
-NOT by registering with a central authority.
+Publication does not establish identity, membership, compliance, or RAPP/1
+acceptance. Every record emitted by this tool is explicitly unverified and has
+``accepted: false``. This repository has no implementation that authenticates
+fresh section-13 registry evidence, so this tool always refuses acceptance.
 
 PURE-RAW DISCOVERY (default — no GitHub API rate limits):
     1. Fetch the well-known seed at
@@ -23,7 +24,7 @@ OPTIONAL TOPIC FALLBACK (--via topic):
 USAGE:
     python3 tools/sniff_network.py                       # raw BFS, print summary
     python3 tools/sniff_network.py --json                # full envelope
-    python3 tools/sniff_network.py --apply               # write ~/.brainstem/network-sniff.json
+    python3 tools/sniff_network.py --out observations.json
     python3 tools/sniff_network.py --seed-url <url>      # start from a different seed
     python3 tools/sniff_network.py --max-hops 5          # cap BFS depth (default 10)
     python3 tools/sniff_network.py --via topic           # use gh search instead (slower, lags)
@@ -58,10 +59,84 @@ _BEACON_SCHEMA_VERSIONS = {"rapp-network-beacon/1.0", "rapp-network-beacon/1.1"}
 _SEED_SCHEMA = "rapp-network-seed/1.0"
 _DEFAULT_SEED_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/.well-known/rapp-network-seed.json"
 _FETCH_TIMEOUT = 8
+_SNIFF_SCHEMA = "rapp-network-sniff/1.0"
+_ACCEPTANCE_REASON = (
+    "Authenticated, fresh RAPP/1 section-13 registry evidence verification "
+    "is not implemented; publication observations cannot be accepted."
+)
 
 
 def _now_iso() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _unavailable(via: str, detail: str, **extra) -> dict:
+    return {
+        "schema": _SNIFF_SCHEMA,
+        "authority_state": "unverified-observation",
+        "rapp_protocol_authority": False,
+        "via": via,
+        "ok": False,
+        "accepted": False,
+        "status": "UNAVAILABLE",
+        "observation_complete": False,
+        "error": {
+            "code": "observation-unavailable",
+            "detail": detail,
+        },
+        "acceptance_error": {
+            "code": "authenticated-registry-unavailable",
+            "detail": _ACCEPTANCE_REASON,
+        },
+        **extra,
+    }
+
+
+def _unverified_record(**published_observation) -> dict:
+    return {
+        **published_observation,
+        "accepted": False,
+        "status": "UNVERIFIED",
+        "verification": {
+            "section_13_authenticated": False,
+            "freshness_verified": False,
+            "reason": _ACCEPTANCE_REASON,
+        },
+    }
+
+
+def _unverified_envelope(
+    via: str,
+    observations: list[dict],
+    skipped: list[dict],
+    **extra,
+) -> dict:
+    published_door_claim_count = sum(
+        observation.get("published_created_claim_count", 0)
+        + observation.get("published_member_claim_count", 0)
+        for observation in observations
+    )
+    return {
+        "schema": _SNIFF_SCHEMA,
+        "authority_state": "unverified-observation",
+        "rapp_protocol_authority": False,
+        "via": via,
+        "ok": False,
+        "accepted": False,
+        "status": "UNVERIFIED",
+        "observation_complete": True,
+        "acceptance_error": {
+            "code": "authenticated-registry-unavailable",
+            "detail": _ACCEPTANCE_REASON,
+        },
+        "observations_count": len(observations),
+        "observations_skipped": len(skipped),
+        "published_door_claim_count": published_door_claim_count,
+        "observations": observations,
+        "skipped": skipped,
+        "sniffed_at": _now_iso(),
+        **extra,
+    }
 
 
 def _raw_get_json(url: str) -> dict | None:
@@ -185,11 +260,11 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
     """BFS from a seed across operator beacons. All raw URLs."""
     seed = fetch_seed(seed_url)
     if not seed:
-        return {
-            "schema": "rapp-network-sniff/1.0", "via": "raw",
-            "ok": False,
-            "error": f"could not fetch seed at {seed_url}",
-        }
+        return _unavailable(
+            "raw",
+            f"could not fetch seed publication at {seed_url}",
+            seed_url=seed_url,
+        )
 
     if on_progress:
         on_progress(f"seed loaded: {len(seed.get('operators', []))} initial operators")
@@ -240,19 +315,21 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
                              "reason": f"operator_rappid invalid: {str(e)[:120]}"})
             continue
 
-        record: dict = {
-            "github":          handle,
-            "operator_rappid": op_rappid,
-            "beacon_url":      beacon_url,
-            "substrate":       _substrate_label(beacon_url),
-            "estate_url":      beacon.get("estate_url") or estate_url,
-            "grail_url":       beacon.get("grail_url", ""),
-            "spec_implements": beacon.get("protocol", {}).get("implements", []),
-            "minted_at":       beacon.get("minted_at"),
-            "indexable":       indexable,
-            "discovered_via":  source,
-            "hop":             hop,
-        }
+        record = _unverified_record(
+            published_github=handle,
+            published_operator_rappid=op_rappid,
+            beacon_url=beacon_url,
+            substrate=_substrate_label(beacon_url),
+            published_estate_url=beacon.get("estate_url") or estate_url,
+            published_grail_url=beacon.get("grail_url", ""),
+            published_protocol_claims=beacon.get("protocol", {}).get(
+                "implements", []
+            ),
+            published_minted_at=beacon.get("minted_at"),
+            published_indexable=indexable,
+            discovered_via=source,
+            hop=hop,
+        )
 
         # Article XLVIII: surface private extension presence WITHOUT fetching.
         # The beacon's private_estate_pointer + private_estate_commitment are
@@ -261,25 +338,23 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
         priv_pointer = beacon.get("private_estate_pointer", "") or ""
         priv_commit  = beacon.get("private_estate_commitment", "") or ""
         priv_count   = beacon.get("private_door_count", 0)
-        record["has_private_extension"] = bool(priv_pointer)
-        record["private_estate_pointer"] = priv_pointer
-        record["private_estate_commitment"] = priv_commit
-        record["private_door_count"] = priv_count
-        if not priv_pointer:
-            # Operator hasn't migrated to Article XLVIII yet — public-only is
-            # legacy mode now. Sniffer surfaces the compliance gap.
-            record["compliance"] = "legacy"
-        elif "article-xlviii" in (beacon.get("protocol", {}).get("implements", []) or []):
-            record["compliance"] = "xlviii"
-        else:
-            record["compliance"] = "partial"
+        record["published_private_extension_pointer_present"] = bool(
+            priv_pointer
+        )
+        record["published_private_estate_pointer"] = priv_pointer
+        record["published_private_estate_commitment"] = priv_commit
+        record["published_private_door_claim_count"] = priv_count
 
         if fetch_estates:
             # Use the per-node estate_url (could be github raw, LAN HTTP, file://, etc.)
             est = fetch_estate_at_url(estate_url) if estate_url else None
             if est:
-                record["created_count"] = len(est.get("created", []) or [])
-                record["member_count"]  = len(est.get("member", []) or [])
+                record["published_created_claim_count"] = len(
+                    est.get("created", []) or []
+                )
+                record["published_member_claim_count"] = len(
+                    est.get("member", []) or []
+                )
 
         operators.append(record)
 
@@ -291,22 +366,13 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
             if h_handle and h_handle not in visited and h_beacon:
                 queue.append((h_handle, h_beacon, h_estate, hop + 1, f"hint:{handle}"))
 
-    federation_doors = sum(op.get("created_count", 0) + op.get("member_count", 0)
-                            for op in operators)
-
-    return {
-        "schema":            "rapp-network-sniff/1.0",
-        "via":               "raw",
-        "ok":                True,
-        "seed_url":          seed_url,
-        "max_hops":          max_hops,
-        "operators_indexed": len(operators),
-        "operators_skipped": len(skipped),
-        "federation_doors":  federation_doors,
-        "operators":         operators,
-        "skipped":           skipped,
-        "sniffed_at":        _now_iso(),
-    }
+    return _unverified_envelope(
+        "raw",
+        operators,
+        skipped,
+        seed_url=seed_url,
+        max_hops=max_hops,
+    )
 
 
 # ─── Topic-search fallback (gh search repos) ──────────────────────────────
@@ -330,8 +396,10 @@ def sniff_via_bonjour(browse_seconds: int = 3, include_private: bool = False,
     same substrate-agnostic BFS as github-substrate (substrate label = "lan-http").
     """
     if not shutil.which("dns-sd"):
-        return {"schema": "rapp-network-sniff/1.0", "via": "bonjour",
-                 "ok": False, "error": "dns-sd CLI not found (required for Bonjour discovery on macOS / Avahi on Linux)"}
+        return _unavailable(
+            "bonjour",
+            "dns-sd CLI not found (required for Bonjour observation)",
+        )
 
     if on_progress:
         on_progress(f"browsing _rapp-estate._tcp.local for {browse_seconds}s…")
@@ -438,44 +506,39 @@ def sniff_via_bonjour(browse_seconds: int = 3, include_private: bool = False,
             skipped.append({"service": name, "reason": f"operator_rappid invalid: {str(e)[:120]}"})
             continue
 
-        record: dict = {
-            "github":          github_hint,
-            "service_name":    name,
-            "operator_rappid": op_rappid,
-            "beacon_url":      beacon_url,
-            "substrate":       "lan-http",
-            "estate_url":      beacon.get("estate_url") or estate_url_lan,
-            "minted_at":       beacon.get("minted_at"),
-            "indexable":       indexable,
-            "discovered_via":  "bonjour",
-            "compliance":      ("xlviii" if "article-xlviii" in (beacon.get("protocol", {}).get("implements", []) or []) else "partial"),
-            "txt_records":     txt_records,
-        }
+        record = _unverified_record(
+            published_github=github_hint,
+            service_name=name,
+            published_operator_rappid=op_rappid,
+            beacon_url=beacon_url,
+            substrate="lan-http",
+            published_estate_url=beacon.get("estate_url") or estate_url_lan,
+            published_minted_at=beacon.get("minted_at"),
+            published_indexable=indexable,
+            discovered_via="bonjour",
+            published_txt_records=txt_records,
+        )
 
         if fetch_estates:
             est = fetch_estate_at_url(estate_url_lan)
             if est:
-                record["created_count"] = len(est.get("created", []) or [])
-                record["member_count"]  = len(est.get("member", []) or [])
+                record["published_created_claim_count"] = len(
+                    est.get("created", []) or []
+                )
+                record["published_member_claim_count"] = len(
+                    est.get("member", []) or []
+                )
 
         operators.append(record)
 
-    federation_doors = sum(op.get("created_count", 0) + op.get("member_count", 0)
-                            for op in operators)
-    return {
-        "schema":            "rapp-network-sniff/1.0",
-        "via":               "bonjour",
-        "ok":                True,
-        "service_type":      "_rapp-estate._tcp.local",
-        "browsed_seconds":   browse_seconds,
-        "services_found":    len(instance_names),
-        "operators_indexed": len(operators),
-        "operators_skipped": len(skipped),
-        "federation_doors":  federation_doors,
-        "operators":         operators,
-        "skipped":           skipped,
-        "sniffed_at":        _now_iso(),
-    }
+    return _unverified_envelope(
+        "bonjour",
+        operators,
+        skipped,
+        service_type="_rapp-estate._tcp.local",
+        browsed_seconds=browse_seconds,
+        services_found=len(instance_names),
+    )
 
 
 def sniff_via_topic(limit: int = 100, include_private: bool = False,
@@ -488,8 +551,10 @@ def sniff_via_topic(limit: int = 100, include_private: bool = False,
         "--limit", str(limit),
     ])
     if rc != 0:
-        return {"schema": "rapp-network-sniff/1.0", "via": "topic",
-                 "ok": False, "error": f"gh search failed: {err.strip()[:200]}"}
+        return _unavailable(
+            "topic",
+            f"GitHub topic observation failed: {err.strip()[:200]}",
+        )
     try:
         repos = json.loads(out) or []
     except Exception:
@@ -522,46 +587,44 @@ def sniff_via_topic(limit: int = 100, include_private: bool = False,
         except InvalidRappidError as e:
             skipped.append({"repo": f"{owner}/{name}", "reason": f"bad rappid: {e}"})
             continue
-        record: dict = {
-            "github":          owner,
-            "operator_rappid": op_rappid,
-            "estate_url":      beacon.get("estate_url"),
-            "grail_url":       beacon.get("grail_url", ""),
-            "minted_at":       beacon.get("minted_at"),
-            "indexable":       indexable,
-            "discovered_via":  "topic",
-        }
+        record = _unverified_record(
+            published_github=owner,
+            published_operator_rappid=op_rappid,
+            published_estate_url=beacon.get("estate_url"),
+            published_grail_url=beacon.get("grail_url", ""),
+            published_minted_at=beacon.get("minted_at"),
+            published_indexable=indexable,
+            discovered_via="topic",
+        )
         if fetch_estates:
             est = fetch_estate_for_handle(owner)
             if est:
-                record["created_count"] = len(est.get("created", []) or [])
-                record["member_count"]  = len(est.get("member", []) or [])
+                record["published_created_claim_count"] = len(
+                    est.get("created", []) or []
+                )
+                record["published_member_claim_count"] = len(
+                    est.get("member", []) or []
+                )
         operators.append(record)
 
-    federation_doors = sum(op.get("created_count", 0) + op.get("member_count", 0)
-                            for op in operators)
-    return {
-        "schema":            "rapp-network-sniff/1.0",
-        "via":               "topic",
-        "ok":                True,
-        "topic":             _TOPIC,
-        "repos_found":       len(repos),
-        "operators_indexed": len(operators),
-        "operators_skipped": len(skipped),
-        "federation_doors":  federation_doors,
-        "operators":         operators,
-        "skipped":           skipped,
-        "sniffed_at":        _now_iso(),
-    }
+    return _unverified_envelope(
+        "topic",
+        operators,
+        skipped,
+        topic=_TOPIC,
+        repos_found=len(repos),
+    )
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────
 
 def _print_summary(out: dict) -> None:
-    print(f"=== rapp-network-sniff/1.0 (via {out.get('via','?')}) ===")
-    if not out.get("ok"):
-        print(f"  ERROR: {out.get('error', 'unknown')}")
+    print(f"=== {_SNIFF_SCHEMA} (via {out.get('via','?')}) ===")
+    if not out.get("observation_complete"):
+        error = out.get("error") or {}
+        print(f"  ERROR: {error.get('detail', 'unknown')}")
         return
+    print("  acceptance:        REFUSED (unverified publication observations)")
     if out["via"] == "raw":
         print(f"  seed:              {out['seed_url']}")
         print(f"  max hops:          {out['max_hops']}")
@@ -572,39 +635,45 @@ def _print_summary(out: dict) -> None:
     else:
         print(f"  topic:             {out.get('topic', '?')}")
         print(f"  repos found:       {out.get('repos_found', '?')}")
-    print(f"  operators indexed: {out['operators_indexed']}")
-    print(f"  federation doors:  {out['federation_doors']}")
-    print(f"  skipped:           {out['operators_skipped']}")
+    print(f"  observations:      {out['observations_count']}")
+    print(f"  published claims:  {out['published_door_claim_count']} doors")
+    print(f"  skipped:           {out['observations_skipped']}")
     print()
-    for op in out["operators"]:
+    for op in out["observations"]:
         marker = "★" if op.get("hop") == 0 else "·"
-        cc = op.get("created_count", "?")
-        mc = op.get("member_count", "?")
+        cc = op.get("published_created_claim_count", "?")
+        mc = op.get("published_member_claim_count", "?")
         hop_info = f"hop={op.get('hop')}" if "hop" in op else "topic"
-        compliance = op.get("compliance", "?")
-        compliance_marker = {
-            "xlviii": "🔒",       # full Article XLVIII compliance
-            "legacy": "⚠️",       # public-only (pre-XLVIII)
-            "partial": "·",      # has pointer but doesn't declare XLVIII
-        }.get(compliance, "?")
         substrate = op.get("substrate", "?")
-        print(f"  {marker} {op['github']:24s}  doors: {cc:>3} created · {mc:>3} member  ({hop_info}, via {op.get('discovered_via','?')}, substrate: {substrate})  [{compliance_marker} {compliance}]")
-        print(f"    estate: {op.get('estate_url','')}")
-        if op.get("grail_url"):
-            print(f"    grail:  {op['grail_url']}")
-        if op.get("has_private_extension"):
-            commit = (op.get("private_estate_commitment") or "")[:16]
-            count = op.get("private_door_count", 0)
-            print(f"    private extension: {op['private_estate_pointer']}  (commit: {commit}…, doors: {count}) [content NOT fetched per XLVIII.4]")
+        label = op.get("published_github", "(anonymous)")
+        print(
+            f"  {marker} {label:24s}  published claims: {cc!s:>3} created · "
+            f"{mc!s:>3} member  ({hop_info}, via "
+            f"{op.get('discovered_via','?')}, substrate: {substrate}) "
+            "[UNVERIFIED; accepted=false]"
+        )
+        print(f"    published estate: {op.get('published_estate_url','')}")
+        if op.get("published_grail_url"):
+            print(f"    published grail:  {op['published_grail_url']}")
+        if op.get("published_private_extension_pointer_present"):
+            commit = (
+                op.get("published_private_estate_commitment") or ""
+            )[:16]
+            count = op.get("published_private_door_claim_count", 0)
+            print(
+                "    published private pointer: "
+                f"{op['published_private_estate_pointer']}  "
+                f"(claimed commit: {commit}…, claimed doors: {count})"
+            )
     if out["skipped"]:
         print()
-        print(f"  Skipped ({out['operators_skipped']}):")
+        print(f"  Skipped ({out['observations_skipped']}):")
         for s in out["skipped"][:10]:
             label = s.get("handle") or s.get("repo") or "?"
             print(f"    - {label}: {s['reason']}")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--via", choices=["raw", "topic", "bonjour"], default="raw",
                     help="discovery method (raw=pure URL fetches; topic=gh search; bonjour=LAN mDNS)")
@@ -621,11 +690,11 @@ def main() -> int:
     ap.add_argument("--no-estates", action="store_true",
                     help="skip fetching each estate.json (faster)")
     ap.add_argument("--apply", action="store_true",
-                    help="write ~/.brainstem/network-sniff.json")
+                    help="legacy flag; acceptance/apply is refused and no default file is written")
     ap.add_argument("--out", default="", help="write the envelope to this path")
     ap.add_argument("--json", action="store_true",
                     help="emit full JSON envelope (default: human summary)")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     def _progress(msg: str) -> None:
         print(f"  · {msg}", file=sys.stderr)
@@ -646,9 +715,13 @@ def main() -> int:
                                fetch_estates=not args.no_estates,
                                on_progress=_progress)
 
-    if args.apply or args.out:
-        path = args.out or os.path.expanduser("~/.brainstem/network-sniff.json")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+    if args.apply:
+        out["apply_refused"] = True
+    if args.out:
+        path = os.path.expanduser(args.out)
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         Path(path).write_text(json.dumps(out, indent=2))
         out["_wrote_to"] = path
 
@@ -656,7 +729,7 @@ def main() -> int:
         print(json.dumps(out, indent=2))
     else:
         _print_summary(out)
-    return 0 if out.get("ok") else 1
+    return 1
 
 
 if __name__ == "__main__":

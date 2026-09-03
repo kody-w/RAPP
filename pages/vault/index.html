@@ -2,20 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>RAPP Vault — Second-brain wiki</title>
+<title>Historical RAPP Vault — read-only note viewer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="The RAPP platform's second-brain wiki — founding decisions, architecture moments, removal lessons, and process stories.">
-<meta property="og:title" content="RAPP Vault">
-<meta property="og:description" content="Second-brain wiki for the RAPP platform. Read in the browser, export as a real Obsidian vault.">
+<meta name="description" content="Read-only viewer for preserved RAPP decision and architecture history.">
+<meta name="robots" content="noindex,follow">
+<meta property="og:title" content="Historical RAPP Vault">
+<meta property="og:description" content="Preserved notes that do not establish current product, runtime, catalog, or deployment claims.">
 <meta property="og:url" content="https://kody-w.github.io/RAPP/pages/vault/">
 
-<!-- PWA: installable on every desktop + mobile browser, offline-readable. -->
-<link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#cba6f7" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#6f42c1" media="(prefers-color-scheme: light)">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Vault">
 <link rel="apple-touch-icon" href="./icon-192.svg">
 <link rel="icon" href="./icon-192.svg">
 
@@ -23,27 +19,34 @@
 </head>
 <body data-mode="loading" data-view="note">
 
+<aside role="note" style="position:relative;z-index:3;margin:0;padding:12px 18px;border-bottom:1px solid #d29922;background:#161b22;color:#e6edf3;font:14px/1.5 system-ui,sans-serif">
+  <strong>Historical, read-only note archive.</strong> Notes and generated
+  metadata may preserve superseded installer, cloud, catalog, browser, and
+  deployment language. They are not current capability claims and do not
+  override <a href="../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
+</aside>
+
 <aside id="sidebar">
   <header>
     <a class="brand" href="#README.md">
       <span class="dot"></span>
       <span class="brand-text">
-        <strong>RAPP Vault</strong>
-        <small id="subtitle">Second-brain wiki</small>
+        <strong>Historical RAPP Vault</strong>
+        <small id="subtitle">read-only note archive</small>
       </span>
     </a>
     <input id="search" type="search" placeholder="Search…  ( / )" autocomplete="off">
     <div class="actions">
-      <button id="exportBtn" type="button" title="Download as Obsidian-compatible zip">Export</button>
-      <button id="importBtn" type="button" title="Import a vault zip">Import</button>
-      <button id="resetBtn" type="button" title="Clear local cache and re-fetch from GitHub" hidden>Reset</button>
-      <input id="importFile" type="file" accept=".zip" hidden>
+      <button id="exportBtn" type="button" title="Historical export control disabled" disabled>Export disabled</button>
+      <button id="importBtn" type="button" title="Historical import control disabled" disabled>Import disabled</button>
+      <button id="resetBtn" type="button" title="Historical reset control disabled" hidden disabled>Reset disabled</button>
+      <input id="importFile" type="file" accept=".zip" hidden disabled>
     </div>
     <div class="actions secondary">
       <button id="graphBtn" type="button" title="Toggle graph view (g)">Graph</button>
       <button id="readingBtn" type="button" title="Toggle reading mode (m)">Reading</button>
       <button id="randomBtn" type="button" title="Open random note (r)">Random</button>
-      <button id="obsidianBtn" type="button" title="Open this note in Obsidian (o)">Obsidian</button>
+      <button id="obsidianBtn" type="button" title="External application launch disabled" disabled>Obsidian disabled</button>
     </div>
     <div id="modeBanner" class="mode-banner" hidden></div>
   </header>
@@ -75,22 +78,10 @@
 </main>
 
 <div id="kbHint" class="kb-hint" hidden>
-  <kbd>j</kbd>/<kbd>k</kbd> next/prev · <kbd>/</kbd> search · <kbd>g i</kbd> index · <kbd>r</kbd> random · <kbd>m</kbd> reading · <kbd>g</kbd> graph · <kbd>o</kbd> Obsidian · <kbd>?</kbd> close
+  <kbd>j</kbd>/<kbd>k</kbd> next/prev · <kbd>/</kbd> search · <kbd>g i</kbd> index · <kbd>r</kbd> random · <kbd>m</kbd> reading · <kbd>g</kbd> graph · <kbd>?</kbd> close
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="./vault.js"></script>
-<script>
-  // Register the service worker so the vault is installable + offline-readable.
-  // Best-effort — if registration fails the viewer still works fully online.
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((err) => {
-        console.warn('vault SW registration failed:', err);
-      });
-    });
-  }
-</script>
 </body>
 </html>

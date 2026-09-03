@@ -1,3 +1,8 @@
+---
+title: "Twin Lifecycle — Active, Archived, Purged"
+status: historical
+---
+
 # Twin Lifecycle — Active, Archived, Purged
 
 > **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is

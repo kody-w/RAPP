@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """ecosystem_audit — Bond Pulse drift detector.
 
-Walks every offspring listed in `pages/metropolis/index.json`, fetches
-its canonical files (via fixture in --offline or via `gh api` →
+Walks every offspring listed in `pages/metropolis/index.json`, observes
+its published files (via fixture in --offline or via `gh api` →
 `raw.githubusercontent.com` in --online), diffs against the per-kind
-contract in `tools/ecosystem_contract.py`, and emits both a human report
+observations in `tools/ecosystem_contract.py`, and emits both a human report
 (`pages/_audit/ecosystem-audit.md`) and a machine envelope
 (`pages/_audit/ecosystem-audit.json`, schema `rapp-ecosystem-audit/1.0`).
 That envelope and its checked product schemas are local observations, not
@@ -16,13 +16,15 @@ own installation succeeding.
 
 Modes:
     --offline   (default; CI-safe) Use checked-in tests/fixtures/<name>{-seed,}/
-    --online    Live network. Honors gh auth; falls back to raw.githubusercontent.com.
+    --online    Attempt fresh network evidence. Cache fallback is labelled stale,
+                makes the audit incomplete, and can never be reported as live.
                 Set ECOSYSTEM_AUDIT_ONLINE=1 to enable from env.
     --repo NAME Audit one offspring by name; default audits all entries
     --no-write  Print audit JSON to stdout; skip pages/_audit/ writes
     --strict    Exit 1 on drift_count > 0 (default: True)
 
-Exit code: 0 if drift_count == 0, 1 otherwise.
+Exit code: 0 for complete/no-drift evidence, 1 for observed drift, and 2 for
+unavailable or stale online evidence. ``--lenient`` never masks exit 2.
 
 The Bond Pulse heartbeat (`bond_rhythm_agent`) calls this script as a
 subprocess and parses the JSON envelope. Any direct caller can also
@@ -49,7 +51,7 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
 from ecosystem_contract import (  # noqa: E402
-    CONTRACTS, KERNEL_BASE_FILES, SEED_REQUIRED_AGENTS,
+    CONTRACTS, HISTORICAL_KINDS, KERNEL_BASE_FILES, SEED_REQUIRED_AGENTS,
     kind_for_entry, contract_for_kind, all_kinds,
 )
 from door_address import parse_rappid, InvalidRappidError  # noqa: E402
@@ -96,15 +98,17 @@ def _cache_key(url: str) -> str:
     return os.path.join(CACHE_DIR, _sha256_str(url)[:16] + ".bin")
 
 
-def _cache_get(url: str) -> bytes | None:
+def _cache_get(url: str) -> tuple[bytes | None, float | None]:
     p = _cache_key(url)
     if not os.path.exists(p):
-        return None
+        return None, None
     try:
         with open(p, "rb") as f:
-            return f.read()
+            body = f.read()
+        age = max(0.0, time.time() - os.path.getmtime(p))
+        return body, age
     except OSError:
-        return None
+        return None, None
 
 
 def _cache_put(url: str, body: bytes) -> None:
@@ -118,53 +122,109 @@ def _cache_put(url: str, body: bytes) -> None:
 
 # ── network fetch (online mode) ────────────────────────────────────────────
 
-def _gh_api(path: str) -> dict | list | None:
-    """Try gh CLI first (uses operator's auth + rate limit). Returns parsed JSON."""
+def _gh_api(path: str) -> tuple[dict | list | None, str, str]:
+    """Try gh CLI and preserve present/missing/unavailable state."""
     try:
         p = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=20)
         if p.returncode == 0 and p.stdout.strip():
             try:
-                return json.loads(p.stdout)
+                return json.loads(p.stdout), "present", ""
             except (ValueError, json.JSONDecodeError):
-                return None
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-    return None
+                return None, "unavailable", "GitHub API returned invalid JSON"
+        detail = (p.stderr or p.stdout or "GitHub API request failed").strip()
+        if "HTTP 404" in detail or "not found" in detail.lower():
+            return None, "missing", detail[:240]
+        return None, "unavailable", detail[:240]
+    except FileNotFoundError:
+        return None, "unavailable", "gh CLI is not installed"
+    except subprocess.TimeoutExpired:
+        return None, "unavailable", "GitHub API request timed out"
 
 
-def _raw_fetch(url: str) -> bytes | None:
-    """GET raw.githubusercontent.com (or any URL). Local-first cache."""
+def _raw_fetch(url: str) -> tuple[bytes | None, dict]:
+    """Fetch raw bytes while keeping cache fallback visibly stale."""
     try:
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
             body = r.read()
             _cache_put(url, body)
-            return body
-    except (urllib.error.URLError, urllib.error.HTTPError, OSError):
-        return _cache_get(url)
+            return body, {
+                "url": url,
+                "source": "raw.githubusercontent.com",
+                "status": "present",
+                "freshness": "live",
+                "observed_at": _now_iso(),
+            }
+    except urllib.error.HTTPError as exc:
+        if exc.code in {404, 410}:
+            return None, {
+                "url": url,
+                "source": "raw.githubusercontent.com",
+                "status": "missing",
+                "freshness": "live",
+                "observed_at": _now_iso(),
+                "detail": f"HTTP {exc.code}",
+            }
+        detail = f"HTTP {exc.code}: {exc.reason}"
+    except (urllib.error.URLError, OSError) as exc:
+        detail = str(exc)
+
+    cached, age = _cache_get(url)
+    if cached is not None:
+        return cached, {
+            "url": url,
+            "source": "cache",
+            "status": "stale",
+            "freshness": "stale",
+            "cache_age_seconds": age,
+            "observed_at": _now_iso(),
+            "detail": f"live fetch unavailable: {detail}",
+        }
+    return None, {
+        "url": url,
+        "source": "none",
+        "status": "unavailable",
+        "freshness": "unavailable",
+        "observed_at": _now_iso(),
+        "detail": detail,
+    }
 
 
-def _fetch_offspring_file(owner_repo: str, path: str) -> tuple[bytes | None, str]:
-    """Fetch one file from an offspring repo. Returns (bytes, source).
-    source ∈ {"gh-api", "raw.githubusercontent.com", "cache", "missing"}.
-    """
+def _fetch_offspring_file(owner_repo: str, path: str) -> tuple[bytes | None, dict]:
+    """Fetch one file and return bytes plus source/freshness evidence."""
     # Prefer gh api (auth + rate limit)
     api_path = f"repos/{owner_repo}/contents/{path}"
-    blob = _gh_api(api_path)
+    blob, api_status, api_detail = _gh_api(api_path)
     if isinstance(blob, dict) and blob.get("content"):
         try:
-            return base64.b64decode(blob["content"]), "gh-api"
+            return base64.b64decode(blob["content"]), {
+                "url": f"https://api.github.com/{api_path}",
+                "source": "gh-api",
+                "status": "present",
+                "freshness": "live",
+                "observed_at": _now_iso(),
+            }
         except (ValueError, TypeError):
             pass
+    if api_status == "missing":
+        return None, {
+            "url": f"https://api.github.com/{api_path}",
+            "source": "gh-api",
+            "status": "missing",
+            "freshness": "live",
+            "observed_at": _now_iso(),
+            "detail": api_detail,
+        }
+
     # Fallback to raw.githubusercontent.com
     raw_url = f"https://raw.githubusercontent.com/{owner_repo}/main/{path}"
-    body = _raw_fetch(raw_url)
-    if body is not None:
-        return body, "raw.githubusercontent.com"
-    cached = _cache_get(raw_url)
-    if cached is not None:
-        return cached, "cache"
-    return None, "missing"
+    body, evidence = _raw_fetch(raw_url)
+    if evidence["status"] == "unavailable" and api_detail:
+        evidence["detail"] = (
+            f"GitHub API unavailable: {api_detail}; "
+            f"raw fetch unavailable: {evidence.get('detail', '')}"
+        )
+    return body, evidence
 
 
 # ── offline fixture discovery ─────────────────────────────────────────────
@@ -225,16 +285,29 @@ def _metropolis_rappid_drift(value) -> list[dict]:
     }]
 
 
-# ── per-offspring diff against contract ───────────────────────────────────
+# ── per-offspring product observation checks ──────────────────────────────
 
 def _diff_offspring(name: str, kind: str, contract: dict,
                     file_getter, owner_repo: str | None) -> dict:
-    """Run the contract checks against an offspring. file_getter is a
+    """Run product-observation checks against an offspring. file_getter is a
     callable(path) -> (bytes | None, source_label).
 
     Returns a dict {ok: bool, drift: list, fingerprint_sha256: str | None,
                     rappid: str | None, fetched_from: str}.
     """
+    if contract.get("lifecycle") == "historical-observation":
+        return {
+            "ok": True,
+            "drift": [],
+            "fingerprint_sha256": None,
+            "rappid": None,
+            "fetched_from": "none",
+            "evidence_complete": True,
+            "file_evidence": {},
+            "historical_observation": contract.get("historical_shape", {}),
+            "kind_lifecycle": "historical-observation",
+        }
+
     drift = []
     sources_seen = set()
     fingerprint_sha256 = None
@@ -245,9 +318,9 @@ def _diff_offspring(name: str, kind: str, contract: dict,
     # 1. required_files presence
     for path in contract.get("required_files", []):
         body, source = file_getter(path)
-        if source != "missing":
+        if source not in {"missing", "unavailable"}:
             sources_seen.add(source)
-        if body is None:
+        if body is None and source == "missing":
             drift.append({"category": "missing_files", "path": path,
                           "detail": f"required file '{path}' not found"})
 
@@ -256,7 +329,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
         contract.get("expected_product_schemas") or {}
     ).items():
         body, source = file_getter(path)
-        if source != "missing":
+        if source not in {"missing", "unavailable"}:
             sources_seen.add(source)
         if body is None:
             # Already covered by missing_files above (if required); skip silent for optional
@@ -283,7 +356,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
     # 3. Every encountered rappid is exact, regardless of whether kind is enforced.
     if not rappid_record_seen:
         body, source = file_getter("rappid.json")
-        if source != "missing":
+        if source not in {"missing", "unavailable"}:
             sources_seen.add(source)
         if body is not None:
             try:
@@ -333,7 +406,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
     # 4. identity_block_required (soul.md must mention "Identity")
     if contract.get("identity_block_required"):
         body, source = file_getter("soul.md")
-        if source != "missing":
+        if source not in {"missing", "unavailable"}:
             sources_seen.add(source)
         if body is None:
             # Already in missing_files if required; otherwise flag explicitly
@@ -351,7 +424,7 @@ def _diff_offspring(name: str, kind: str, contract: dict,
     # 5. rar_required + sha256-validate against agents/
     if contract.get("rar_required"):
         body, source = file_getter("rar/index.json")
-        if source != "missing":
+        if source not in {"missing", "unavailable"}:
             sources_seen.add(source)
         if body is None:
             # already reported as missing_file if required
@@ -373,10 +446,12 @@ def _diff_offspring(name: str, kind: str, contract: dict,
                     expected_sha = (item.get("sha256") or "").lower()
                     if not rel or not expected_sha:
                         continue
-                    file_body, _ = file_getter(rel)
-                    if file_body is None:
+                    file_body, file_source = file_getter(rel)
+                    if file_body is None and file_source == "missing":
                         drift.append({"category": "missing_files", "path": rel,
                                       "detail": f"rar/index.json declares {rel} but file is absent"})
+                        continue
+                    if file_body is None:
                         continue
                     actual_sha = _sha256_bytes(file_body)
                     if actual_sha != expected_sha:
@@ -393,32 +468,56 @@ def _diff_offspring(name: str, kind: str, contract: dict,
         for fname in SEED_REQUIRED_AGENTS:
             rel = f"agents/{fname}"
             body, source = file_getter(rel)
-            if source != "missing":
+            if source not in {"missing", "unavailable"}:
                 sources_seen.add(source)
-            if body is None:
+            if body is None and source == "missing":
                 drift.append({"category": "missing_files", "path": rel,
                               "detail": f"seed-portable kernel base {rel} required by kind"})
 
-    fetched_from = ",".join(sorted(sources_seen)) if sources_seen else "none"
+    file_evidence = dict(getattr(file_getter, "evidence", {}))
+    evidence_issues = [
+        {
+            "path": path,
+            "source": evidence.get("source"),
+            "freshness": evidence.get("freshness"),
+            "status": evidence.get("status"),
+            "detail": evidence.get("detail", ""),
+        }
+        for path, evidence in sorted(file_evidence.items())
+        if evidence.get("status") in {"stale", "unavailable"}
+        or evidence.get("freshness") in {"stale", "unavailable"}
+    ]
+    evidence_complete = not evidence_issues
+    observed_sources = {
+        str(evidence.get("source"))
+        for evidence in file_evidence.values()
+        if evidence.get("source")
+    }
+    fetched_from = ",".join(sorted(observed_sources or sources_seen)) or "none"
     return {
-        "ok": not drift,
+        "ok": not drift and evidence_complete,
         "drift": drift,
         "fingerprint_sha256": fingerprint_sha256,
         "rappid": rappid,
         "fetched_from": fetched_from,
+        "evidence_complete": evidence_complete,
+        "evidence_issues": evidence_issues,
+        "file_evidence": file_evidence,
+        "kind_lifecycle": contract.get("lifecycle", "product-observation"),
     }
 
 
-# ── classification (push vs pull vs informational) ────────────────────────
+# ── owner-reviewed plan classification ────────────────────────────────────
 
 def _classify_drift(offspring_result: dict, kind: str) -> str:
-    """Map an offspring's drift entries to a direction the Bond Pulse should
-    suggest. Heuristic — the rhythm agent receives this as a STARTING POINT.
-    """
+    """Classify observations without authorizing execution."""
+    if kind in HISTORICAL_KINDS:
+        return "HISTORICAL"
+    if not offspring_result.get("evidence_complete", True):
+        return "EVIDENCE_INCOMPLETE"
     drift = offspring_result.get("drift") or []
     if not drift:
         return "ALIGNED"
-    # Anything missing on the offspring side that we have locally → push direction
     has_missing = any(d.get("category") == "missing_files" for d in drift)
     has_schema = any(
         d.get("category") in ("product_schema_drift", "rappid_drift")
@@ -426,62 +525,114 @@ def _classify_drift(offspring_result: dict, kind: str) -> str:
     )
     has_kernel = any(d.get("category") == "kernel_drift" for d in drift)
     if has_kernel:
-        return "GLOBAL_TO_LOCAL"  # offspring has a kernel snapshot we should refresh from
+        return "GLOBAL_TO_LOCAL"
     if has_missing or has_schema:
         return "LOCAL_TO_GLOBAL"
     return "INFORMATIONAL"
 
 
-def _suggest_action(offspring_name: str, owner_repo: str | None,
-                    direction: str, kind: str) -> dict | None:
+def _owner_review_guidance(
+    offspring_name: str,
+    owner_repo: str | None,
+    direction: str,
+    kind: str,
+) -> dict | None:
     if direction == "ALIGNED":
         return None
-    if direction == "LOCAL_TO_GLOBAL":
-        agent = "Graft" if kind in ("neighborhood", "ant-farm", "braintrust", "workspace") else "Launch"
-        gate = owner_repo or f"<owner>/{offspring_name}"
-        return {
-            "direction": direction,
-            "agent_to_invoke": agent,
-            "offspring": offspring_name,
-            "one_liner": (f"{agent}.perform(upstream_repo={gate!r}, dry_run=False)"
-                          if agent == "Graft"
-                          else f"{agent}.perform(target_repo={gate!r}, instructions='…', dry_run=False)"),
-            "reason": f"Offspring missing/diverged on required files; push the local version up via {agent}.",
-        }
-    if direction == "GLOBAL_TO_LOCAL":
-        gate = owner_repo or f"<owner>/{offspring_name}"
-        return {
-            "direction": direction,
-            "agent_to_invoke": "RarLoader",
-            "offspring": offspring_name,
-            "one_liner": f"RarLoader.perform(gate_repo={gate!r}, dry_run=False)",
-            "reason": "Offspring's rar kit / kernel files differ from local cache — refresh local from offspring.",
-        }
+    source = owner_repo or f"<owner>/{offspring_name}"
+    guidance = {
+        "LOCAL_TO_GLOBAL": (
+            "Review the source-labelled differences and decide whether an "
+            "owner-authorized publication change should be proposed."
+        ),
+        "GLOBAL_TO_LOCAL": (
+            "Review the source-labelled differences and decide whether a "
+            "separately verified local update should be proposed."
+        ),
+        "EVIDENCE_INCOMPLETE": (
+            "Restore fresh online evidence and rerun before considering any "
+            "change."
+        ),
+        "HISTORICAL": (
+            "Retain this retired kind as historical observation only; do not "
+            "repair or reactivate it from this report."
+        ),
+        "INFORMATIONAL": (
+            "Review the observation; no executable change is proposed."
+        ),
+    }.get(direction, "Review the observation; no executable change is proposed.")
     return {
-        "direction": "INFORMATIONAL",
-        "agent_to_invoke": None,
+        "status": "owner-review-required",
+        "owner_review_required": True,
+        "executable": False,
+        "direction": direction,
         "offspring": offspring_name,
-        "one_liner": None,
-        "reason": "Cosmetic drift only; no action required.",
+        "kind": kind,
+        "source_repository": source,
+        "guidance": guidance,
     }
 
 
 # ── main audit ─────────────────────────────────────────────────────────────
 
 def _build_file_getter_offline(fixture_dir: str | None):
+    cached: dict[str, tuple[bytes | None, dict]] = {}
+
     def get(path: str):
-        if fixture_dir is None:
-            return None, "missing"
-        body = _read_fixture_file(fixture_dir, path)
-        return (body, "fixture") if body is not None else (None, "missing")
+        if path not in cached:
+            body = (
+                _read_fixture_file(fixture_dir, path)
+                if fixture_dir is not None
+                else None
+            )
+            cached[path] = (
+                body,
+                {
+                    "path": path,
+                    "source": "fixture" if fixture_dir else "none",
+                    "status": "present" if body is not None else "missing",
+                    "freshness": "offline-fixture",
+                    "fixture_dir": fixture_dir,
+                },
+            )
+        body, evidence = cached[path]
+        get.evidence[path] = evidence
+        return body, "fixture" if body is not None else "missing"
+
+    get.evidence = {}
     return get
 
 
 def _build_file_getter_online(owner_repo: str | None):
+    cached: dict[str, tuple[bytes | None, dict]] = {}
+
     def get(path: str):
         if not owner_repo:
-            return None, "missing"
-        return _fetch_offspring_file(owner_repo, path)
+            evidence = {
+                "path": path,
+                "source": "none",
+                "status": "unavailable",
+                "freshness": "unavailable",
+                "detail": "entry has no resolvable owner/repository source",
+            }
+            get.evidence[path] = evidence
+            return None, "unavailable"
+        if path not in cached:
+            body, evidence = _fetch_offspring_file(owner_repo, path)
+            evidence = {"path": path, **evidence}
+            cached[path] = (body, evidence)
+        body, evidence = cached[path]
+        get.evidence[path] = evidence
+        status = evidence.get("status")
+        if status == "missing":
+            source_label = "missing"
+        elif status == "unavailable":
+            source_label = "unavailable"
+        else:
+            source_label = str(evidence.get("source") or "unknown")
+        return body, source_label
+
+    get.evidence = {}
     return get
 
 
@@ -501,6 +652,9 @@ def audit_ecosystem(*, mode: str = "offline",
             "schema": AUDIT_SCHEMA,
             "audited_at": _now_iso(),
             "ok": False,
+            "status": "EVIDENCE_INCOMPLETE",
+            "evidence_complete": False,
+            "incomplete_count": 1,
             "error": f"metropolis index not found at {metropolis_path}",
         }
 
@@ -547,6 +701,11 @@ def audit_ecosystem(*, mode: str = "offline",
                     "drift": entry_identity_drift,
                     "fetched_from": "none",
                     "fingerprint_sha256": None,
+                    "evidence_complete": True,
+                    "file_evidence": {},
+                    "kind_lifecycle": contract.get(
+                        "lifecycle", "product-observation"
+                    ),
                     "_note": (
                         "--offline mode; no "
                         f"tests/fixtures/{name}/ or {name}-seed/ found."
@@ -556,14 +715,15 @@ def audit_ecosystem(*, mode: str = "offline",
                     result["skip_reason"] = "no_fixture"
                 offspring_results.append(result)
                 bucket = by_kind.setdefault(
-                    kind, {"ok": 0, "drift": 0, "skipped": 0}
+                    kind,
+                    {"ok": 0, "drift": 0, "incomplete": 0, "skipped": 0},
                 )
                 if result["skipped"]:
                     bucket["skipped"] += 1
                 else:
                     bucket["drift"] += 1
                     direction = _classify_drift(result, kind)
-                    action = _suggest_action(
+                    action = _owner_review_guidance(
                         name, owner_repo, direction, kind
                     )
                     if action:
@@ -587,30 +747,77 @@ def audit_ecosystem(*, mode: str = "offline",
                     f"metropolis={entry_rappid!r}"
                 ),
             })
-        result["ok"] = not result["drift"]
+        result["ok"] = (
+            not result["drift"]
+            and result.get("evidence_complete", True)
+        )
         result["name"] = name
         result["kind"] = kind
-        result["kind_contract_version"] = "1.0"
+        result["kind_observation_version"] = "1.0"
         result["entry_metropolis_rappid"] = entry_rappid
         offspring_results.append(result)
 
-        bucket = by_kind.setdefault(kind, {"ok": 0, "drift": 0, "skipped": 0})
+        bucket = by_kind.setdefault(
+            kind,
+            {"ok": 0, "drift": 0, "incomplete": 0, "skipped": 0},
+        )
         if result["ok"]:
             bucket["ok"] += 1
         else:
-            bucket["drift"] += 1
+            if not result.get("evidence_complete", True):
+                bucket["incomplete"] += 1
+            if result["drift"]:
+                bucket["drift"] += 1
             direction = _classify_drift(result, kind)
-            action = _suggest_action(name, owner_repo, direction, kind)
+            action = _owner_review_guidance(
+                name, owner_repo, direction, kind
+            )
             if action:
                 next_actions.append(action)
 
-    drift_count = sum(1 for r in offspring_results if not r.get("ok") and not r.get("skipped"))
+    drift_count = sum(
+        1
+        for result in offspring_results
+        if result.get("drift") and not result.get("skipped")
+    )
+    incomplete_count = sum(
+        1
+        for result in offspring_results
+        if not result.get("evidence_complete", True)
+        and not result.get("skipped")
+    )
+    evidence_complete = incomplete_count == 0
 
     summary = {
-        "_purpose": "Quick scan: which offspring need GLOBAL→LOCAL pull, LOCAL→GLOBAL push, or just informational.",
-        "needs_local_to_global_push": [a["offspring"] for a in next_actions if a["direction"] == "LOCAL_TO_GLOBAL"],
-        "needs_global_to_local_pull": [a["offspring"] for a in next_actions if a["direction"] == "GLOBAL_TO_LOCAL"],
-        "informational_only": [a["offspring"] for a in next_actions if a["direction"] == "INFORMATIONAL"],
+        "_purpose": (
+            "Source-labelled observations for owner review; this report "
+            "authorizes no execution."
+        ),
+        "local_to_global_candidates": [
+            item["offspring"]
+            for item in next_actions
+            if item["direction"] == "LOCAL_TO_GLOBAL"
+        ],
+        "global_to_local_candidates": [
+            item["offspring"]
+            for item in next_actions
+            if item["direction"] == "GLOBAL_TO_LOCAL"
+        ],
+        "evidence_incomplete": [
+            item["offspring"]
+            for item in next_actions
+            if item["direction"] == "EVIDENCE_INCOMPLETE"
+        ],
+        "historical_only": [
+            item["offspring"]
+            for item in next_actions
+            if item["direction"] == "HISTORICAL"
+        ],
+        "informational_only": [
+            item["offspring"]
+            for item in next_actions
+            if item["direction"] == "INFORMATIONAL"
+        ],
     }
 
     audit = {
@@ -623,11 +830,21 @@ def audit_ecosystem(*, mode: str = "offline",
         "metropolis_path": metropolis_path,
         "offspring_count": len(offspring_results),
         "drift_count": drift_count,
+        "incomplete_count": incomplete_count,
+        "evidence_complete": evidence_complete,
+        "status": (
+            "EVIDENCE_INCOMPLETE"
+            if not evidence_complete
+            else "DRIFT_OBSERVED"
+            if drift_count
+            else "COMPLETE"
+        ),
         "by_kind": by_kind,
         "offspring": offspring_results,
         "summary": summary,
         "next_actions": next_actions,
-        "ok": drift_count == 0,
+        "owner_review_required": bool(next_actions),
+        "ok": drift_count == 0 and evidence_complete,
     }
 
     if write_outputs:
@@ -641,58 +858,104 @@ def audit_ecosystem(*, mode: str = "offline",
 def render_human_report(audit: dict) -> str:
     """Markdown rendering of the audit dict."""
     lines = []
-    lines.append("# Bond Pulse — Ecosystem Alignment Audit\n")
+    lines.append("# Bond Pulse — Ecosystem Observation Audit\n")
     lines.append(f"> Schema: `{audit.get('schema')}`. Generated by `tools/ecosystem_audit.py`.\n")
+    lines.append(
+        "> This report is source-labelled owner-review guidance only. "
+        "It authorizes no execution.\n"
+    )
     lines.append(f"- **Audited at:** {audit.get('audited_at')}")
     lines.append(f"- **Mode:** `{audit.get('mode')}`")
+    lines.append(f"- **Status:** `{audit.get('status')}`")
+    lines.append(f"- **Evidence complete:** `{audit.get('evidence_complete')}`")
     lines.append(f"- **Metropolis:** {audit.get('metropolis_url')}")
     lines.append(f"- **Offspring audited:** {audit.get('offspring_count')}")
     lines.append(f"- **Drift count:** {audit.get('drift_count')}")
+    lines.append(f"- **Incomplete evidence count:** {audit.get('incomplete_count')}")
     lines.append("")
 
     by_kind = audit.get("by_kind") or {}
     if by_kind:
         lines.append("## By kind\n")
-        lines.append("| Kind | Aligned | Drifted | Skipped |")
-        lines.append("|---|---|---|---|")
+        lines.append("| Kind | Aligned | Drifted | Incomplete | Skipped |")
+        lines.append("|---|---|---|---|---|")
         for kind in sorted(by_kind.keys()):
             b = by_kind[kind]
-            lines.append(f"| `{kind}` | {b.get('ok', 0)} | {b.get('drift', 0)} | {b.get('skipped', 0)} |")
+            lines.append(
+                f"| `{kind}` | {b.get('ok', 0)} | {b.get('drift', 0)} | "
+                f"{b.get('incomplete', 0)} | {b.get('skipped', 0)} |"
+            )
         lines.append("")
 
     summary = audit.get("summary") or {}
-    push = summary.get("needs_local_to_global_push") or []
-    pull = summary.get("needs_global_to_local_pull") or []
+    push = summary.get("local_to_global_candidates") or []
+    pull = summary.get("global_to_local_candidates") or []
+    incomplete = summary.get("evidence_incomplete") or []
+    historical = summary.get("historical_only") or []
     info = summary.get("informational_only") or []
-    if push or pull or info:
-        lines.append("## Suggested directions\n")
+    if push or pull or incomplete or historical or info:
+        lines.append("## Observation classifications\n")
         if push:
-            lines.append(f"**LOCAL → GLOBAL push** ({len(push)}): {', '.join(push)}")
+            lines.append(
+                f"**LOCAL → GLOBAL candidates** ({len(push)}): "
+                f"{', '.join(push)}"
+            )
         if pull:
-            lines.append(f"**GLOBAL → LOCAL pull** ({len(pull)}): {', '.join(pull)}")
+            lines.append(
+                f"**GLOBAL → LOCAL candidates** ({len(pull)}): "
+                f"{', '.join(pull)}"
+            )
+        if incomplete:
+            lines.append(
+                f"**Evidence incomplete** ({len(incomplete)}): "
+                f"{', '.join(incomplete)}"
+            )
+        if historical:
+            lines.append(
+                f"**Historical only** ({len(historical)}): "
+                f"{', '.join(historical)}"
+            )
         if info:
             lines.append(f"**Informational only** ({len(info)}): {', '.join(info)}")
         lines.append("")
 
     actions = audit.get("next_actions") or []
     if actions:
-        lines.append("## Next actions\n")
+        lines.append("## Owner-reviewed plan guidance\n")
         for a in actions:
-            lines.append(f"- **{a['offspring']}** ({a['direction']}) — `{a.get('one_liner') or '(no action)'}`")
-            lines.append(f"  - {a.get('reason', '')}")
+            lines.append(
+                f"- **{a['offspring']}** ({a['direction']}) — "
+                f"{a.get('guidance', '')}"
+            )
+            lines.append("  - Executable: `false`; owner review required.")
         lines.append("")
 
     lines.append("## Per-offspring detail\n")
     for o in (audit.get("offspring") or []):
-        status = "🟡 skipped" if o.get("skipped") else ("✅ aligned" if o.get("ok") else "⚠️ drifted")
+        if o.get("skipped"):
+            status = "🟡 skipped"
+        elif not o.get("evidence_complete", True):
+            status = "⛔ evidence incomplete"
+        elif o.get("kind_lifecycle") == "historical-observation":
+            status = "📜 historical observation"
+        else:
+            status = "✅ aligned" if o.get("ok") else "⚠️ drifted"
         lines.append(f"### {o.get('name')} — {status}\n")
         lines.append(f"- kind: `{o.get('kind')}`")
+        lines.append(f"- lifecycle: `{o.get('kind_lifecycle')}`")
         lines.append(f"- rappid: `{(o.get('rappid') or o.get('entry_metropolis_rappid') or '(none)')[:96]}`")
         lines.append(f"- fetched_from: `{o.get('fetched_from')}`")
         if o.get("skipped"):
             lines.append(f"- skip_reason: `{o.get('skip_reason')}`")
         for d in (o.get("drift") or []):
             lines.append(f"- ⚠️ **{d.get('category')}** at `{d.get('path')}` — {d.get('detail')}")
+        for issue in (o.get("evidence_issues") or []):
+            lines.append(
+                f"- ⛔ **evidence** at `{issue.get('path')}` — "
+                f"source={issue.get('source')}, "
+                f"freshness={issue.get('freshness')}: "
+                f"{issue.get('detail')}"
+            )
         lines.append("")
 
     return "\n".join(lines) + "\n"
@@ -730,12 +993,15 @@ def _resolve_mode(args) -> str:
 def main(argv=None):
     p = argparse.ArgumentParser(
         prog="ecosystem_audit",
-        description="Bond Pulse drift detector — audit offspring repos against the per-kind contract.",
+        description=(
+            "Source-labelled ecosystem observations with owner-reviewed, "
+            "non-executable plan guidance."
+        ),
     )
     p.add_argument("--offline", action="store_true",
                    help="Use checked-in fixtures only (default; CI-safe).")
     p.add_argument("--online", action="store_true",
-                   help="Fetch live offspring data via gh api + raw.githubusercontent.com.")
+                   help="Attempt fresh evidence via gh api + raw.githubusercontent.com.")
     p.add_argument("--repo", default=None,
                    help="Audit one offspring by name or owner/repo.")
     p.add_argument("--metropolis", default=None,
@@ -769,8 +1035,11 @@ def main(argv=None):
             "schema": AUDIT_SCHEMA,
             "audited_at": audit.get("audited_at"),
             "mode": audit.get("mode"),
+            "status": audit.get("status"),
+            "evidence_complete": audit.get("evidence_complete"),
             "offspring_count": audit.get("offspring_count"),
             "drift_count": audit.get("drift_count"),
+            "incomplete_count": audit.get("incomplete_count"),
             "by_kind": audit.get("by_kind"),
             "outputs": {
                 "markdown": os.path.join(args.out_dir or DEFAULT_AUDIT_OUT_DIR, "ecosystem-audit.md"),
@@ -778,9 +1047,12 @@ def main(argv=None):
             },
         }, indent=2))
 
+    if not audit.get("evidence_complete", False):
+        return 2
     if args.strict and audit.get("drift_count", 0) > 0:
-        sys.exit(1)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

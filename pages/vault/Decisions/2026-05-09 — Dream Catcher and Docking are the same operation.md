@@ -1,3 +1,8 @@
+---
+title: "Dream Catcher and Docking are the same operation at different scopes"
+status: historical
+---
+
 # Dream Catcher and Docking are the same operation at different scopes
 
 > **Historical/superseded protocol decision.** Preserve this dated record

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Assert the target-owned planter is a side-effect-free HTTP 410 retirement.
+# Assert the target-owned planter is a side-effect-free retirement.
 
 set -euo pipefail
 
@@ -45,8 +45,8 @@ for route in \
     installer/seed.html \
     pages/metropolis/plant-from-discord.html
 do
-    grep -qi "HTTP 410" "$ROOT/$route" || {
-        echo "FAIL: $route is not a 410 tombstone" >&2
+    grep -qi "retired semantic tombstone" "$ROOT/$route" || {
+        echo "FAIL: $route is not a semantic tombstone" >&2
         exit 1
     }
     if grep -Eqi '<script|<iframe|<form|fetch\(|plant\.sh' "$ROOT/$route"; then
@@ -60,4 +60,4 @@ if grep -q 'plant-from-discord' "$ROOT/pages/metropolis/index.html"; then
     exit 1
 fi
 
-echo "plant retirement: shell and browser callers return 410 with no producer path"
+echo "plant retirement: shell callers return 410; browser routes are inert semantic tombstones"

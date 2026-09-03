@@ -5,11 +5,16 @@
     "report_date": "2026-07-17",
     "baseline_tracked_paths": 640,
     "post_audit_tracked_paths": 691,
-    "integrated_main_commit": "bd122780ac90010e607ce9549e7c5ed18bee5d73",
+    "integrated_main_commit": "d71b6f9fbf6c2f9e790b358e67e17fe83baae4dd",
     "integrated_tracked_paths": 702,
     "integrated_tracked_bytes": 7938989,
-    "integration_note": "Current closure tree includes the machine-readable AI entrypoint and offline contract test; the 691-row final verifier ledger remains a dated source report.",
-    "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; the current AI-entrypoint tree count is recorded separately in this integration fixture.",
+    "mutable_generated_paths": [],
+    "current_inventory": {
+      "tracked_paths": 707,
+      "stable_tracked_bytes": 7812625
+    },
+    "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
+    "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
     "path_set_digest": "sha256(sorted UTF-8 paths joined with newline, including final newline)",
     "provenance": {
       "existing_report": {
@@ -468,14 +473,12 @@
     },
     "voice_twin_wire": {
       "provenance": "Requested exact façade documentation check; not a final-ledger ID.",
-      "expected_count": 9,
-      "path_set_sha256": "dda129ecee5bbfbc28ae24b82448168f07907b4818a58f4c676d8c46ac46beb7",
+      "expected_count": 7,
+      "path_set_sha256": "82f978af43d3a10cfe332d13645aa9a00e2b5f171ad2b8b01095b6c4eb3aefc5",
       "paths": [
         "pages/docs/ROADMAP.md",
         "installer/shortcuts/README.md",
         "installer/shortcuts/brainstem-voice/README.md",
-        "installer/shortcuts/brainstem-voice/index.html",
-        "installer/shortcuts/index.html",
         "installer/shortcuts/protocol.md",
         "pages/vault/Architecture/Surfaces — Mobile, Watch, Voice.md",
         "pages/vault/Founding Decisions/Voice and Twin Are Forever.md",
@@ -487,9 +490,9 @@
       "expected_count": 3,
       "path_set_sha256": "c9bba8f59689ee0df4c0df065404470df9a02c6872fbe80619b17b8c18ca8706",
       "sha256": {
-        "pages/index.html": "48b874fff2da3e27c0e14ab33001b24e34b2dce60f3e6a9cc3db2a44b444f7d1",
-        "cave/rar/index.json": "c997c3ab2b58fb1eec081630a93ad8c3dc6750a6ce9017a07c38f973017461ba",
-        "cave/super-rar/index.json": "04f5f7282e71376081e180b0be5e7a04d2f1b2873a0998c2c4b66e6a8e13a4e3"
+        "pages/index.html": "676d567739ff70ef7753798bd1b41c8691aefb4d0e47911169663a8dc4f224e7",
+        "cave/rar/index.json": "1817e4a08525c8cabb4ff1e120847cafdd0d215b4830ec2b974d1979c464ecb1",
+        "cave/super-rar/index.json": "eea91205adcc21683b6e926b848e963b13f318165dbbaddfeb71904cd931b309"
       },
       "paths": [
         "pages/index.html",
@@ -502,7 +505,7 @@
       "expected_count": 2,
       "path_set_sha256": "7423edeb7b7b24efda534a4ddf76d6483f10f16473eabd7dfb5ed640f314a27c",
       "sha256": {
-        "pages/_site/partials/footer.html": "f4e27778f0d6b636e7cf50047229692d9790668eda5fa027837711852193347d",
+        "pages/_site/partials/footer.html": "c23caaccb2f0cf93cf760c89f482b009f283ef4b2037ea8b18106de47856d1de",
         "installer/README.md": "2cdbeb34454c1dced1a2e6c5698b9256adac76d8a4ab355fda00687349a670fe"
       },
       "paths": [
@@ -524,9 +527,8 @@
       ".md",
       ".html"
     ],
-    "expected_tracked_document_count": 284,
+    "expected_tracked_document_count": 285,
     "excluded_prefixes": {
-      ".github/prompts/": "prompt fixtures, not published RAPP/1 contract guidance",
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
       "pages/vault/Blog Drafts/": "explicitly unpublished draft archive",
       "pages/vault/Decisions/": "dated decision records preserved as history",
@@ -613,6 +615,8 @@
   "classifications": {
     "current": [
       ".github/copilot-instructions.md",
+      ".github/prompts/test-agent.prompt.md",
+      ".github/prompts/write-agent.prompt.md",
       "ANTIPATTERNS.md",
       "CLAUDE.md",
       "CONSTITUTION.md",
@@ -621,10 +625,9 @@
       "README.md",
       "TEMPLATE.md",
       "cave/index.html",
+      "cave/specs/SUPER_RAR.md",
       "installer/shortcuts/README.md",
       "installer/shortcuts/brainstem-voice/README.md",
-      "installer/shortcuts/brainstem-voice/index.html",
-      "installer/shortcuts/index.html",
       "installer/shortcuts/protocol.md",
       "pages/README.md",
       "pages/docs/AGENTS.md",
@@ -660,7 +663,6 @@
       "cave/specs/CAVE_PROTOCOL.md",
       "cave/specs/PUBLIC_BOUNDARY.md",
       "cave/specs/README.md",
-      "cave/specs/SUPER_RAR.md",
       "pages/docs/ESTATE_SPEC.md",
       "pages/docs/PUBLIC_PRIVATE_BOUNDARY.md",
       "pages/docs/QR_FRONT_GATE.md",
@@ -760,6 +762,8 @@
       "installer/plant.html",
       "installer/plant_qr.html",
       "installer/seed.html",
+      "installer/shortcuts/brainstem-voice/index.html",
+      "installer/shortcuts/index.html",
       "pages/_site/partials/footer.html",
       "pages/metropolis/index.html",
       "pages/metropolis/plant-from-discord.html",

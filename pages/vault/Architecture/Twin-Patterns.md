@@ -1,3 +1,8 @@
+---
+title: "Twin Patterns — Global Parallel Omniscience"
+status: historical
+---
+
 # Twin Patterns — Global Parallel Omniscience
 
 > **Historical/superseded protocol narrative.** Preserve this dated account as

@@ -1,0 +1,97 @@
+title: RAPP
+url: https://kody-w.github.io
+baseurl: /RAPP
+encoding: utf-8
+
+include:
+  - .well-known/rapp-network-seed.json
+  - _site
+  - pages/_site
+  - pages/vault/index.html
+  - pages/vault/icon-192.svg
+  - pages/vault/icon-512.svg
+  - pages/vault/_manifest.json
+  - pages/vault/_wikilink_aliases.json
+  - pages/vault/vault.css
+  - pages/vault/vault.js
+  - pages/vault/sw.js
+
+defaults:
+  - scope:
+      path: pages/docs/skill.md
+    values:
+      permalink: /pages/docs/skill.md
+
+exclude:
+  - .github
+  - tests
+  - tools
+  - scripts
+  - worker
+  - community_rapp
+  - plant
+  - rapp1_core
+  - rapp_brainstem
+  - rapp_kernel
+  - rapp_swarm
+  - responsible-ai
+  - specs
+  - cave/agents
+  - cave/card.json
+  - cave/cubbies
+  - cave/facets.json
+  - cave/holo.md
+  - cave/holo.svg
+  - cave/INVITE.md
+  - cave/members.json
+  - cave/neighborhood.json
+  - cave/onboarding
+  - cave/rar
+  - cave/rappid.json
+  - cave/rapplications/rapp-installer
+  - cave/README.md
+  - cave/super-rar
+  - cave/tests
+  - cave/tools
+  - pages/_lib
+  - pages/metropolis/README.md
+  - pages/metropolis/activity-snapshot.json
+  - pages/metropolis/federated-demo.json
+  - pages/metropolis/index.json
+  - pages/tutorials/commons.egg
+  - pages/tutorials/egg_hatcher_agent.py
+  - pages/tutorials/sample-session.egg
+  - pages/vault
+  - pages/vault/manifest.webmanifest
+  - docs/install.cmd
+  - docs/install.command
+  - docs/install.sh
+  - installer/README.md
+  - installer/azuredeploy.json
+  - installer/hatchling
+  - installer/initialize-variant.sh
+  - installer/install-swarm.sh
+  - installer/install.cmd
+  - installer/install.ps1
+  - installer/install.sh
+  - installer/integration_plant.sh
+  - installer/MSFTAIBASMultiAgentCopilot_1_0_0_5.zip
+  - installer/plant.sh
+  - installer/shortcuts/README.md
+  - installer/shortcuts/brainstem-voice/README.md
+  - installer/shortcuts/brainstem-voice/protocol.md
+  - installer/shortcuts/protocol.md
+  - installer/shortcuts/sign.sh
+  - installer/start-local.sh
+  - installer/test_plant.sh
+  - MSFTAIBASMultiAgentCopilot_1_0_0_5.zip
+  - azuredeploy.json
+  - check_kernel_pin.py
+  - deploy.ps1
+  - deploy.sh
+  - install.cmd
+  - install.command
+  - install.ps1
+  - install.sh
+  - requirements-rapp1-core.txt
+  - skill.md

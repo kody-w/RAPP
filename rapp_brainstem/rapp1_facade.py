@@ -123,10 +123,8 @@ def runtime_config(
         port = int(port_text)
     except (TypeError, ValueError) as exc:
         raise ValueError("RAPP1_FACADE_PORT must be an integer") from exc
-    if not 1 <= port <= 65535:
-        raise ValueError("RAPP1_FACADE_PORT must be between 1 and 65535")
-    if port == GRAIL_PORT:
-        raise ValueError("the RAPP/1 facade must not use the grail port")
+    if port != DEFAULT_PORT:
+        raise ValueError("RAPP1_FACADE_PORT must equal 7073")
 
     configured_path = env.get("RAPP1_FACADE_DB")
     database_path = (

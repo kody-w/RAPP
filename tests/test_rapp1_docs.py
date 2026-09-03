@@ -51,7 +51,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertEqual(audit["post_audit_tracked_paths"], 691)
         self.assertEqual(
             audit["integrated_main_commit"],
-            "bd122780ac90010e607ce9549e7c5ed18bee5d73",
+            "d71b6f9fbf6c2f9e790b358e67e17fe83baae4dd",
         )
         tracked = [
             path
@@ -60,10 +60,20 @@ class Rapp1DocumentationTests(unittest.TestCase):
             ).decode().split("\0")
             if path
         ]
-        self.assertEqual(len(tracked), audit["integrated_tracked_paths"])
+        current = audit["current_inventory"]
+        mutable = set(audit["mutable_generated_paths"])
+        self.assertEqual(len(tracked), current["tracked_paths"])
         self.assertEqual(
-            sum((ROOT / path).stat().st_size for path in tracked),
-            audit["integrated_tracked_bytes"],
+            sum(
+                (ROOT / path).stat().st_size
+                for path in tracked
+                if path not in mutable
+            ),
+            current["stable_tracked_bytes"],
+        )
+        self.assertEqual(
+            audit["mutable_generated_paths"],
+            [],
         )
         self.assertIn("owner-evidence hash", audit["status_boundary"])
 
@@ -283,6 +293,14 @@ class Rapp1DocumentationTests(unittest.TestCase):
             )
         self.assertTrue(any("bounded markers" in error for error in errors), errors)
 
+    def test_load_bearing_pitch_history_remains_renderable(self) -> None:
+        text = (ROOT / "pitch-playbook.html").read_text(encoding="utf-8")
+        self.assertNotIn('<div hidden aria-hidden="true">', text)
+        self.assertIn('class="historical-snapshot"', text)
+        self.assertIn("Your AI stack is", text)
+        self.assertIn("RAPP1_AUTHORITY.json", text)
+        self.assertIn("RAPP1_STATUS.md", text)
+
     def test_legacy_frame_marker_is_not_current_guidance(self) -> None:
         legacy_form = "rapp-frame/1.0"
         for path in self.fixture["classifications"]["current"]:
@@ -331,6 +349,8 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 "installer/plant.html",
                 "installer/plant_qr.html",
                 "installer/seed.html",
+                "installer/shortcuts/brainstem-voice/index.html",
+                "installer/shortcuts/index.html",
                 "pages/_site/partials/footer.html",
                 "pages/metropolis/index.html",
                 "pages/metropolis/plant-from-discord.html",
@@ -363,7 +383,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 self.assertIn("RAPP1_STATUS.md", text)
                 self.assertIn("RAPP1_AUTHORITY.json", text)
             else:
-                self.assertIn("HTTP 410", text)
+                self.assertIn("Retired semantic tombstone", text)
                 self.assertIn("retired", text.lower())
 
     def test_final_closure_paths_are_asserted_not_owner_excluded(self) -> None:
@@ -511,11 +531,22 @@ class Rapp1DocumentationTests(unittest.TestCase):
 
     def test_tutorial_navigation_mutation_is_rejected(self) -> None:
         path = "pages/_site/index.json"
-        text = (ROOT / path).read_text(encoding="utf-8")
-        mutated = text + '\n"pages/tutorials/hatch-egg.html"\n'
+        manifest = json.loads((ROOT / path).read_text(encoding="utf-8"))
+        tutorial = next(
+            page
+            for section in manifest["sections"]
+            for page in section["pages"]
+            if page["path"] == "tutorials/hatch-egg.html"
+        )
+        tutorial["navigation"] = True
+        mutated = json.dumps(manifest)
         errors = self._category_mutation_errors(path, mutated)
         self.assertTrue(
-            any(path in error and "advertises retired hatch-egg" in error for error in errors),
+            any(
+                path in error
+                and "retired hatch tutorial" in error
+                for error in errors
+            ),
             errors,
         )
 

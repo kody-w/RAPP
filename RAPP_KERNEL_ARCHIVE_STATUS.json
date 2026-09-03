@@ -1,0 +1,35 @@
+{
+  "schema": "rapp-kernel-archive-status/1.0",
+  "record_kind": "target-owned-archive-disposition",
+  "status": "historical-archive-alias",
+  "target": {
+    "manifest_path": "rapp_kernel/manifest.json",
+    "declared_schema": "rapp-kernel/1.1",
+    "declared_latest": "0.6.0",
+    "manifest_sha256": "a2826eb8820f4487948bfdb1bf3f80b4ca8ccdf902553d5d109cb8de3bb85889"
+  },
+  "archive_payload": {
+    "path": "rapp_kernel/latest/brainstem.py",
+    "version": "0.6.0",
+    "sha256": "f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa",
+    "bytes_edit_allowed": false
+  },
+  "disposition": {
+    "classification": "unauthenticated historical v0.6.0 archive alias",
+    "is_current_release": false,
+    "is_protocol_authority": false,
+    "is_distribution_authority": false,
+    "is_install_source": false,
+    "is_authenticated_registry": false,
+    "statement": "The word latest in rapp_kernel/manifest.json is preserved archive metadata. It does not identify the current grail, current protocol, or an accepted executable."
+  },
+  "current_machine_guidance": {
+    "protocol_authority": "RAPP1_AUTHORITY.json",
+    "repository_status": "RAPP1_STATUS.md",
+    "immutable_grail_pin": "KERNEL_PIN.json",
+    "active_grail_repository": "kody-w/rapp-installer",
+    "active_grail_tag": "brainstem-v0.6.9",
+    "acceptance": "No kernel bytes are accepted from this archive alias. Follow the structural authority pin, current status, immutable grail boundary, and authenticated RAPP/1 trust requirements."
+  },
+  "recorded_at": "2026-09-02T23:39:41Z"
+}

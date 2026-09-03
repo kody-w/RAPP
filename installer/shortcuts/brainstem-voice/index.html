@@ -1,72 +1,25 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Brainstem Voice — retired design</title>
-<meta name="description" content="Retired, unshipped Apple Shortcut design for the loopback pre-acceptance RAPP/1 facade.">
-<style>
-:root{color-scheme:dark;--bg:#0d1117;--panel:#161b22;--line:#30363d;
---fg:#e6edf3;--dim:#8b949e;--link:#58a6ff;--warn:#d29922}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
-font:16px/1.6 system-ui,sans-serif}.shell{max-width:760px;margin:auto;padding:48px 24px}
-a{color:var(--link)}h1{font-size:2rem}.status,.card{border:1px solid var(--line);
-border-radius:12px;padding:18px 22px;margin:20px 0;background:var(--panel)}
-.status{border-color:var(--warn)}code,pre{font-family:ui-monospace,monospace}
-code{background:#0d1117;padding:2px 5px;border-radius:4px}pre{overflow:auto;
-background:#0d1117;border:1px solid var(--line);border-radius:8px;padding:14px}
-li{margin:.45rem 0}.dim{color:var(--dim)}
-</style>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retired semantic tombstone — Brainstem Voice Shortcut</title>
+<meta name="description" content="The former Brainstem Voice Shortcut page is retired and inert.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="/RAPP/pages/_site/css/tokens.css">
+<link rel="stylesheet" href="/RAPP/pages/_site/css/base.css">
+<style>main{max-width:720px;margin:0 auto;padding:72px 24px}.status{color:var(--warn);font:700 12px var(--font-mono);text-transform:uppercase;letter-spacing:.1em}h1{font-size:clamp(2rem,7vw,3.5rem);margin:12px 0 18px}.box{margin:28px 0;padding:18px;border:1px solid var(--border2);border-radius:12px;background:var(--surface)}nav{display:flex;gap:12px;flex-wrap:wrap}</style>
 </head>
 <body>
-<main class="shell">
-  <p class="dim"><a href="../">shortcuts</a> / brainstem-voice</p>
-  <h1>🎙️ Brainstem Voice — retired design</h1>
-  <div class="status">
-    <strong>No Shortcut, public endpoint, or install is shipped.</strong>
-    Canonicalization, identity, frames, wire, eggs, registry, trust, and
-    protocol evolution follow RAPP/1 rev-5 through
-    <a href="../../../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
-    <a href="../../../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
-  </div>
-
-  <section class="card">
-    <h2>Correct local design</h2>
-    <p>The former Apple Shortcut idea is preserved as pre-acceptance design
-    history. A future private experiment would:</p>
-    <ol>
-      <li>collect text;</li>
-      <li>POST only required string <code>user_input</code> plus optional
-      strings <code>session_id</code> and <code>idempotency_key</code> to
-      <code>http://127.0.0.1:7073/chat</code>;</li>
-      <li>read <code>response</code> from an exact three-member success, where
-      <code>agent_logs</code> is an array;</li>
-      <li>derive speech locally from that string; and</li>
-      <li>speak the locally derived text.</li>
-    </ol>
-    <pre><code>{"user_input":"What is next?"}
-
-{"response":"...","agent_logs":[],"session_id":"..."}</code></pre>
-    <p>HTTP 422 is exactly
-    <code>{"error":{"code":"&lt;code&gt;","step":null}}</code>.</p>
-  </section>
-
-  <section class="card">
-    <h2>Voice and twin stay inside the string</h2>
-    <p>If <code>response</code> contains <code>|||VOICE|||</code>, a client may
-    speak the following segment and stop before <code>|||TWIN|||</code>.
-    Otherwise it may speak the full response.</p>
-    <p>There is no <code>voice_response</code>, <code>twin_response</code>,
-    mode flag, client history, identity field, or other extra wire member.</p>
-  </section>
-
-  <section class="card">
-    <h2>Publication status</h2>
-    <p>The promised iCloud link and downloadable <code>.shortcut</code> were
-    never published. Tier 2 and public browser paths are retired. Do not present
-    this page as an install surface or a conformant deployment.</p>
-    <p><a href="../protocol.md">Read the exact local adapter contract →</a></p>
-  </section>
+<main>
+  <p class="status">Retired semantic tombstone · 2026-09-02</p>
+  <h1>The Brainstem Voice Shortcut is retired.</h1>
+  <p>This preserved URL does not install a Shortcut, contact a local server,
+    collect credentials, or invoke a voice endpoint.</p>
+  <div class="box"><strong>No shipped browser or mobile runtime.</strong>
+    Historical voice presentation does not change the exact RAPP/1 response
+    contract.</div>
+  <nav><a href="/RAPP/installer/shortcuts/">Shortcut retirement notice</a><a href="/RAPP/RAPP1_STATUS.md">RAPP/1 status</a></nav>
 </main>
 </body>
 </html>

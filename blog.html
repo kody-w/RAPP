@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Engineering Blog — RAPP Brainstem</title>
-<meta name="description" content="Engineering deep-dives on RAPP Brainstem design decisions and architecture.">
+<title>Historical Engineering Blog — RAPP</title>
+<meta name="description" content="Dated RAPP implementation articles preserved as superseded engineering history.">
+<meta name="robots" content="noindex,follow">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -103,10 +104,20 @@
   </div>
 
   <div class="page-header">
-    <h1>⚙️ Engineering Blog</h1>
-    <p>Design decisions, architecture deep-dives, and lessons from building the brainstem.</p>
+    <h1>⚙️ Historical Engineering Blog</h1>
+    <p>Dated implementation history, not current runtime or deployment guidance.</p>
   </div>
 
+  <aside class="callout" role="note" style="margin-bottom:32px">
+    <strong>Superseded historical record.</strong> Articles below describe
+    earlier local server, installer, Azure, authentication, and release
+    behavior. No current installer, production service, cloud tier, catalog,
+    deployment path, or shipped browser runtime is offered. Follow
+    <a href="RAPP1_STATUS.md">RAPP1_STATUS.md</a> and
+    <a href="RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a>.
+  </aside>
+
+  <!-- RAPP1-HISTORICAL-SECTION-START -->
   <!-- ── Post: Fixing the Device Code Auth Race ── -->
   <div class="post">
     <div class="post-header">
@@ -370,12 +381,13 @@ def login_poll():
     </div>
   </div>
 
+  <!-- RAPP1-HISTORICAL-SECTION-END -->
 </div>
 
 <div class="links">
   <a href="index.html">Home</a>
   <a href="release-notes.html">Release Notes</a>
-  <a href="https://github.com/kody-w/rapp-installer">GitHub</a>
+  <a href="https://github.com/kody-w/RAPP">Repository source</a>
 </div>
 
 </body>

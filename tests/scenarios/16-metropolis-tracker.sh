@@ -1,153 +1,91 @@
 #!/usr/bin/env bash
-# Scenario 16 — RAPP Metropolis tracker.
-#
-# Verifies the structure + content of the canonical metropolis index at
-# pages/metropolis/. Anyone can fork this directory to run their own
-# tracker; federation happens via federated_trackers cross-references.
+# Scenario 16 — retired Metropolis directory containment.
 
 source "$(dirname "$0")/_lib.sh"
 scenario_parse_args "$@"
 
-heading "Scenario 16 — RAPP Metropolis (decentralized neighborhood directory)"
-note "Pattern: Kazaa/torrent-style index of planted neighborhoods"
-note "Showcases: anyone can host their own tracker; federation via cross-tracker links"
+heading "Scenario 16 — Historical Metropolis containment"
+note "Preserves legacy directory evidence without publishing a live catalog"
 
 METRO_DIR="$REPO_ROOT/pages/metropolis"
 INDEX="$METRO_DIR/index.json"
-
-# 1. Index exists + valid JSON
-if [ ! -f "$INDEX" ]; then
-  step_fail "metropolis index missing"; scenario_summary
-fi
-step_pass "metropolis index.json present"
-
-if python3 -c "import json; json.load(open('$INDEX'))" 2>/dev/null; then
-  step_pass "metropolis index.json is valid JSON"
-else
-  step_fail "metropolis index.json is malformed"
-fi
-
-# 2. Schema is rapp-metropolis-index/1.0
-SCHEMA=$(python3 -c "import json; print(json.load(open('$INDEX')).get('schema'))")
-if [ "$SCHEMA" = "rapp-metropolis-index/1.0" ]; then
-  step_pass "schema = rapp-metropolis-index/1.0"
-else
-  step_fail "unexpected schema: $SCHEMA"
-fi
-
-# 3. Has at least the 5 canonical seeds + 2 sibling directories
-COUNT=$(python3 -c "import json; print(len(json.load(open('$INDEX'))['entries']))")
-if [ "$COUNT" -ge 5 ]; then
-  step_pass "$COUNT entries listed (≥5 expected)"
-else
-  step_fail "only $COUNT entries"
-fi
-
-# 4. Each entry has the required fields per rapp-metropolis-entry/1.0
-MISSING=$(python3 - "$INDEX" <<'PY'
-import json, sys
-required = ["schema", "name", "display_name", "kind", "visibility", "join_via"]
-idx = json.load(open(sys.argv[1]))
-missing = []
-for i, e in enumerate(idx.get("entries") or []):
-    for r in required:
-        if r not in e:
-            missing.append(f"entry[{i}].{r}")
-print("\n".join(missing))
-PY
-)
-if [ -z "$MISSING" ]; then
-  step_pass "every entry has required schema fields"
-else
-  step_fail "missing fields: $MISSING"
-fi
-
-# 5. Each entry's schema is rapp-metropolis-entry/1.0
-ENTRY_SCHEMAS=$(python3 - "$INDEX" <<'PY'
-import json, sys
-idx = json.load(open(sys.argv[1]))
-schemas = set(e.get("schema") for e in idx["entries"])
-print(",".join(sorted(schemas)))
-PY
-)
-if [ "$ENTRY_SCHEMAS" = "rapp-metropolis-entry/1.0" ]; then
-  step_pass "all entries declare rapp-metropolis-entry/1.0"
-else
-  step_fail "entry schemas: $ENTRY_SCHEMAS"
-fi
-
-# 6. The index covers the canonical 5 seeds
-EXPECTED=("microsoft-se-team-neighborhood" "public-art-collective" "private-workspace-template" "braintrust-template" "local-only-test")
-COVERED=$(python3 - "$INDEX" <<'PY'
-import json, sys
-idx = json.load(open(sys.argv[1]))
-print(",".join(sorted(e["name"] for e in idx["entries"])))
-PY
-)
-ALL_OK=1
-for s in "${EXPECTED[@]}"; do
-  if ! echo "$COVERED" | grep -q "$s"; then
-    step_fail "$s not in metropolis index"
-    ALL_OK=0
-  fi
-done
-if [ "$ALL_OK" -eq 1 ]; then
-  step_pass "all 5 canonical seeds listed in metropolis"
-fi
-
-# 7. Federation primitive is present (even if empty)
-if python3 -c "import json; idx=json.load(open('$INDEX')); assert 'federated_trackers' in idx" 2>/dev/null; then
-  step_pass "federated_trackers field present (federation primitive)"
-else
-  step_fail "federated_trackers field missing"
-fi
-
-# 8. Index page exists + references index.json
-HTML="$METRO_DIR/index.html"
-if [ -f "$HTML" ] && grep -q "./index.json" "$HTML" && grep -q "rapp-metropolis" "$HTML"; then
-  step_pass "directory HTML present + fetches index.json client-side"
-else
-  step_fail "directory HTML missing or doesn't fetch index.json"
-fi
-
-# 9. README declares the protocol + the "anyone can fork" property
+SNAPSHOT="$METRO_DIR/activity-snapshot.json"
 README="$METRO_DIR/README.md"
-if [ -f "$README" ] && grep -q "fork" "$README" && grep -q "tracker" "$README"; then
-  step_pass "README declares the decentralization + fork-your-own protocol"
+HARVESTER="$REPO_ROOT/scripts/harvest-metropolis-activity.py"
+WORKFLOW="$REPO_ROOT/.github/workflows/harvest-metropolis-activity.yml"
+
+heading "Step 1 — Directory data is explicitly historical and unaccepted"
+python3 - "$INDEX" "$SNAPSHOT" <<'PY' \
+  && step_pass "index and activity snapshot refuse current acceptance" \
+  || step_fail "Metropolis data is not fail-closed"
+import json
+import sys
+
+for path in sys.argv[1:]:
+    data = json.load(open(path, encoding="utf-8"))
+    assert data["status"] == "historical-retired", path
+    assert data["accepted"] is False, path
+    warning = data["warning"].lower()
+    assert "not live" in warning or "not a live" in warning, path
+
+index = json.load(open(sys.argv[1], encoding="utf-8"))
+assert index["rapp_protocol_authority"] is False
+assert index["protocol"]["status"] == "retired"
+assert index["protocol"]["registration"].startswith("Closed.")
+PY
+
+heading "Step 2 — Invalid legacy identities remain evidence, not reminted state"
+python3 - "$INDEX" <<'PY' \
+  && step_pass "legacy identity drift remains visible for migration review" \
+  || step_fail "legacy identity evidence was hidden or rewritten"
+import json
+import re
+import sys
+
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+strict = re.compile(r"^rappid:@[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?/[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?:[0-9a-f]{64}$")
+legacy = [
+    entry["neighborhood_rappid"]
+    for entry in data["entries"]
+    if entry.get("neighborhood_rappid")
+    and not strict.fullmatch(entry["neighborhood_rappid"])
+]
+assert legacy, "expected preserved non-RAPP/1 identities"
+PY
+
+heading "Step 3 — Human documentation is bounded history"
+if grep -q "RAPP1-HISTORICAL-SECTION-START" "$README" \
+  && grep -q "RAPP1_AUTHORITY.json" "$README" \
+  && grep -q "RAPP1_STATUS.md" "$README"; then
+  step_pass "README preserves the old protocol inside a current retirement boundary"
 else
-  step_fail "README missing or incomplete"
+  step_fail "README lacks historical or authority boundaries"
 fi
 
-# 10. Distinct rappids per entry (where rappid is set)
-DUPS=$(python3 - "$INDEX" <<'PY'
-import json, sys
-idx = json.load(open(sys.argv[1]))
-rappids = [e.get("neighborhood_rappid") for e in idx["entries"] if e.get("neighborhood_rappid")]
-seen, dups = set(), []
-for r in rappids:
-    if r in seen: dups.append(r)
-    seen.add(r)
-print(",".join(dups))
-PY
-)
-if [ -z "$DUPS" ]; then
-  step_pass "all listed rappids are distinct (no double-listings)"
+heading "Step 4 — Scheduled publication is gone"
+if [ ! -e "$WORKFLOW" ]; then
+  step_pass "no scheduled workflow can republish activity"
 else
-  step_fail "duplicate rappids: $DUPS"
+  step_fail "scheduled Metropolis writer still exists"
+fi
+
+heading "Step 5 — Known harvester path is an inert tombstone"
+set +e
+HARVEST_OUTPUT="$(python3 "$HARVESTER" 2>&1)"
+HARVEST_RC=$?
+set -e
+if [ "$HARVEST_RC" -eq 78 ] \
+  && echo "$HARVEST_OUTPUT" | grep -q "metropolis-activity-harvester-retired"; then
+  step_pass "harvester refuses with exit 78 and a machine-readable reason"
+else
+  step_fail "harvester did not refuse safely (rc=$HARVEST_RC)"
 fi
 
 heading "Why this matters"
 cat <<'EOF'
-  The metropolis is the AI version of a torrent tracker — a decentralized
-  index of who's seeding what. Each entry is a real GitHub repo (the seed).
-  Each brainstem subscribed to a neighborhood is a seeder for that
-  neighborhood. The directory is just JSON + an HTML renderer; anyone can
-  fork + run their own tracker; trackers federate by linking to each other.
-
-  This makes neighborhood discovery a first-class capability without
-  introducing any central infrastructure. Just like Napster + Kazaa
-  without their central server failure mode — torrents-without-trackers
-  finally apply to AI work, not just media.
+  The legacy directory and its invalid identities remain inspectable, but no
+  schedule, registration path, live-presence writer, or trust claim can turn
+  the snapshot back into a current catalog.
 EOF
 
 scenario_summary

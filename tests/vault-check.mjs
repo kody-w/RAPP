@@ -3,15 +3,25 @@
 // completeness, and PII posture. Run from the repo root or anywhere; paths
 // resolve relative to the script's location.
 //
+// Pass --write-manifest to reconcile manifest metadata from tracked notes.
+//
 // Exits non-zero on any failure. Prints a summary either way.
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative, sep } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
 const VAULT = resolve(REPO, 'pages', 'vault');
+const writeManifest = process.argv.includes('--write-manifest');
+const UNPUBLISHED_PREFIXES = ['Blog Drafts/'];
 
 let failures = 0;
 let warnings = 0;
@@ -50,21 +60,82 @@ try {
   process.exit(1);
 }
 
-const manifestPaths = new Set(manifest.notes.map((n) => n.path));
+let manifestPaths = new Set(manifest.notes.map((n) => n.path));
+let excludedPaths = new Set(
+  (manifest.excluded_notes || []).map((note) => note.path),
+);
 const filesystemPaths = new Set(mdRel);
+
+if (writeManifest) {
+  const publicPaths = mdRel.filter((path) => !isUnpublished(path));
+  const existingOrder = manifest.notes
+    .map((note) => note.path)
+    .filter((path, index, paths) => (
+      publicPaths.includes(path) && paths.indexOf(path) === index
+    ));
+  const existingPaths = new Set(existingOrder);
+  const missingPaths = publicPaths
+    .filter((path) => !existingPaths.has(path))
+    .sort((left, right) => left.localeCompare(right));
+  manifest.notes = [...existingOrder, ...missingPaths].map((path) => {
+    const raw = readFileSync(resolve(VAULT, path), 'utf8');
+    const frontmatter = parseFrontmatter(raw).meta;
+    const segments = path.split('/');
+    return {
+      path,
+      title: frontmatter.title || basename(path).replace(/\.md$/, ''),
+      section: segments.length > 1 ? segments[0] : null,
+      status: frontmatter.status || 'stub',
+    };
+  });
+  manifest.excluded_notes = mdRel
+    .filter(isUnpublished)
+    .sort((left, right) => left.localeCompare(right))
+    .map((path) => ({
+      path,
+      reason: 'Explicitly unpublished draft archive.',
+    }));
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  manifestPaths = new Set(manifest.notes.map((note) => note.path));
+  excludedPaths = new Set(manifest.excluded_notes.map((note) => note.path));
+  console.log(
+    `Updated manifest with ${manifest.notes.length} public notes `
+    + `and ${manifest.excluded_notes.length} explicit exclusions.`,
+  );
+}
 
 for (const p of manifestPaths) {
   if (!filesystemPaths.has(p)) {
     fail(`manifest references missing file: ${p}`);
   }
-}
-for (const p of filesystemPaths) {
-  if (!manifestPaths.has(p)) {
-    warn(`filesystem has note not in manifest: ${p}`);
+  if (isUnpublished(p)) {
+    fail(`manifest publishes explicitly unpublished note: ${p}`);
   }
 }
-if (manifestPaths.size && [...manifestPaths].every((p) => filesystemPaths.has(p))) {
-  ok(`manifest covers ${manifestPaths.size} notes; all paths resolve`);
+for (const p of excludedPaths) {
+  if (!filesystemPaths.has(p)) {
+    fail(`manifest exclusion references missing file: ${p}`);
+  }
+  if (!isUnpublished(p)) {
+    fail(`manifest excludes note outside unpublished policy: ${p}`);
+  }
+  if (manifestPaths.has(p)) {
+    fail(`manifest both publishes and excludes note: ${p}`);
+  }
+}
+for (const p of filesystemPaths) {
+  if (!manifestPaths.has(p) && !excludedPaths.has(p)) {
+    fail(`filesystem has note not in manifest: ${p}`);
+  }
+}
+if (
+  manifestPaths.size
+  && [...manifestPaths, ...excludedPaths].every((p) => filesystemPaths.has(p))
+) {
+  ok(
+    `manifest publishes ${manifestPaths.size} notes and explicitly excludes `
+    + `${excludedPaths.size}; all paths resolve`,
+  );
 }
 
 // ── 2. Frontmatter sanity ───────────────────────────────────────────────────
@@ -293,6 +364,10 @@ function stripQuotes(s) {
 
 function basename(path) {
   return path.split('/').pop();
+}
+
+function isUnpublished(path) {
+  return UNPUBLISHED_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
 function truncate(s, n) {

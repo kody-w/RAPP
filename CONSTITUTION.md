@@ -4100,11 +4100,10 @@ standard.
 
 The current status is [`RAPP1_STATUS.md`](./RAPP1_STATUS.md):
 **NOT YET FULLY RAPP/1 CONFORMANT**. No full-compliance claim is permitted while
-any of these owner dependencies remains open: the signed monotonic registry and
-out-of-band anchor, lawful root re-anchor, signed replacement invite, or
-external mirror correction. Audit coverage and structural gates are evidence
-of work performed; neither substitutes for those authenticated governance
-actions.
+any of these three owner dependencies remains open: the signed monotonic
+registry and out-of-band anchor, lawful root re-anchor, or signed replacement
+invite. Audit coverage and structural gates are evidence of work performed;
+neither substitutes for those authenticated governance actions.
 
 ---
 

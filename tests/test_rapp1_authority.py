@@ -189,7 +189,7 @@ class Rapp1AuthorityTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
         )
         self.assertEqual(
-            integration_fixture["audit"]["integrated_tracked_paths"],
+            integration_fixture["audit"]["current_inventory"]["tracked_paths"],
             tracked_count,
         )
         self.assertTrue(

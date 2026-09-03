@@ -46,8 +46,8 @@ def test_runner_has_one_explicit_authoritative_gate_set():
         "ui-smoke",
         "ecosystem-audit-offline",
         "organism-offline",
-        "metropolis-directory",
-        "metropolis-federation",
+        "metropolis-retirement",
+        "metropolis-federation-retirement",
         "distribution-retirement",
         "t2t-removal",
         "plant-retirement",
@@ -87,11 +87,8 @@ def test_python_gate_covers_target_owned_offline_pytests():
         ),
     } <= set(runner.EXCLUDED_EXTERNAL_SUITES)
     assert {
-        "tests/doorman/chat.js",
-        "tests/doorman/smoke.js",
         "tests/dreamcatcher-conformance/runner.py",
         "tests/mirror-drift.sh",
-        "tests/osi/L4a-tether-browser.sh",
     } <= set(runner.EXCLUDED_EXTERNAL_SUITES)
 
 
@@ -381,8 +378,8 @@ def test_conformance_workflow_is_immutable_and_runs_canonical_runner():
 
 def test_every_workflow_dependency_ref_is_immutable():
     references = static_checks.workflow_action_references()
-    assert len(references) == 12
-    assert static_checks.check_workflow_actions() == 12
+    assert len(references) == 10
+    assert static_checks.check_workflow_actions() == 10
     assert all(
         re.fullmatch(r"[0-9a-f]{40}", value.rsplit("@", 1)[1])
         for _, _, value in references

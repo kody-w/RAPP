@@ -110,6 +110,20 @@ html, body{
   -webkit-tap-highlight-color:transparent;
   transition:background-color .25s ease;
 }
+.historical-banner{
+  position:fixed; z-index:150; top:10px; left:50%;
+  transform:translateX(-50%);
+  width:min(860px, calc(100vw - 180px));
+  margin:0; padding:8px 12px;
+  border:1px solid var(--border2); border-radius:9px;
+  background:color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  font-size:11px; line-height:1.35; text-align:center;
+  backdrop-filter:blur(10px);
+}
+@media(max-width:700px){
+  .historical-banner{top:6px;width:calc(100vw - 24px);font-size:9px}
+}
 
 /* Stage = the viewport area where the current slide lives */
 .stage{
@@ -1246,15 +1260,14 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
 </head>
 <body>
 
-<aside role="note" style="max-width:900px;margin:24px auto;padding:16px 20px;border:1px solid currentColor;border-radius:10px">
-  <strong>Historical concept deck — not a current product claim.</strong>
-  Three-tier, installer, browser, and Copilot Studio claims in the bounded deck
-  are retired. Follow RAPP/1 rev-5 through
+<aside class="historical-banner" role="note">
+  <strong>Historical concept deck.</strong> Local presentation controls only;
+  downloads and network actions are disabled. RAPP/1 rev-5:
   <a href="../RAPP1_AUTHORITY.json">RAPP1_AUTHORITY.json</a> and
   <a href="../RAPP1_STATUS.md">RAPP1_STATUS.md</a>.
 </aside>
 <!-- RAPP1-HISTORICAL-SECTION-START -->
-<div hidden aria-hidden="true">
+<div class="historical-snapshot" data-status="historical">
 <div class="rotate-hint">
   <div class="rot-icon">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1594,19 +1607,19 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   <p class="lede" style="font-size:18px; max-width:920px;">Cowork can produce a brief. Copilot can produce a brief. Neither can be in your teammate's hands in eight seconds — running, against their data, with no signup, no SaaS, no docs to read.</p>
 
   <div class="share-stage">
-    <a class="download-card stream-in" href="https://raw.githubusercontent.com/kody-w/RAR/main/agents/@howardh/chief_of_staff_agent.py" download="chief_of_staff_agent.py" style="--d:0s">
+    <div class="download-card stream-in" aria-disabled="true" style="--d:0s">
       <div class="file-icon">{ }</div>
       <div class="file-info">
         <div class="file-name">chief_of_staff_agent.py</div>
-        <div class="file-sub">live from the RAR registry · one file · zero infra</div>
+        <div class="file-sub">historical RAR example · no active download</div>
       </div>
       <div class="cta-btn">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 3v12M6 11l6 6 6-6M5 21h14"/>
         </svg>
-        <span>Download</span>
+        <span>Retired</span>
       </div>
-    </a>
+    </div>
 
     <div class="share-methods">
       <div class="method stream-in" style="--d:0.25s">
@@ -1993,39 +2006,6 @@ ul.clean li strong{ color:var(--text); font-weight:700; }
   if (!Number.isNaN(start) && start >= 1 && start <= slides.length) show(start - 1);
   else show(0);
 
-  // ── Agent file download — fetched live from the public RAR registry ─
-  const AGENT_PY_URL = "https://raw.githubusercontent.com/kody-w/RAR/main/agents/@howardh/chief_of_staff_agent.py";
-  const AGENT_PY_FILENAME = "chief_of_staff_agent.py";
-  async function downloadAgentPy(e){
-    e.preventDefault();
-    const card = e.currentTarget;
-    const cta = card.querySelector('.cta-btn span');
-    const original = cta ? cta.textContent : null;
-    if (cta) cta.textContent = 'Fetching…';
-    try{
-      const resp = await fetch(AGENT_PY_URL, { cache: 'no-store' });
-      if (!resp.ok) throw new Error('fetch failed: ' + resp.status);
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = AGENT_PY_FILENAME;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        if (cta) cta.textContent = original;
-      }, 100);
-    } catch (err){
-      // Fallback: open the raw URL directly
-      if (cta) cta.textContent = original;
-      window.location.href = AGENT_PY_URL;
-    }
-  }
-  document.querySelectorAll('a.download-card').forEach(a => {
-    a.addEventListener('click', downloadAgentPy);
-  });
 })();
 </script>
 

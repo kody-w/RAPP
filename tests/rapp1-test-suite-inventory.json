@@ -28,6 +28,12 @@
       "gate": "offline-boundary"
     },
     {
+      "path": "tests/check_pages.py",
+      "disposition": "canonical-child",
+      "reason": "Exhaustively validates the published Pages graph, manifest, inert history, and crawl boundary.",
+      "gate": "html-smoke"
+    },
+    {
       "path": "tests/check_rapp1_static.py",
       "disposition": "canonical-direct",
       "reason": "Runs strict syntax, immutable-action, quarantine, and suite-inventory inspections.",
@@ -35,13 +41,15 @@
     },
     {
       "path": "tests/doorman/chat.js",
-      "disposition": "external",
-      "reason": "Requires a live authenticated doorman/chat deployment; canonical static inspection still checks JavaScript syntax."
+      "disposition": "canonical-child",
+      "reason": "Retired credential-safe tombstone exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/doorman/smoke.js",
-      "disposition": "external",
-      "reason": "Requires a live authenticated doorman/chat deployment; canonical static inspection still checks JavaScript syntax."
+      "disposition": "canonical-child",
+      "reason": "Retired no-network tombstone exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/dreamcatcher-conformance/runner.py",
@@ -132,28 +140,32 @@
     },
     {
       "path": "tests/osi/L4a-tether-browser.sh",
-      "disposition": "external",
-      "reason": "Installs/launches Playwright Chromium and contacts the public PeerJS broker."
+      "disposition": "canonical-child",
+      "reason": "Retired browser-suite tombstone exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/osi/_lib.sh",
-      "disposition": "external",
-      "reason": "Helper for the external OSI selector/browser suite; shell syntax remains statically checked."
+      "disposition": "canonical-helper",
+      "reason": "Shared offline helper for canonical ecosystem and Metropolis retirement scenarios.",
+      "gate": "ecosystem-audit-offline"
     },
     {
       "path": "tests/osi/browser/L4a-tether.spec.mjs",
-      "disposition": "external",
-      "reason": "Behavioral child of the external Playwright/PeerJS suite; syntax remains statically checked."
+      "disposition": "canonical-child",
+      "reason": "Retired no-network JavaScript tombstone exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/osi/browser/fixture.html",
-      "disposition": "external",
-      "reason": "Browser fixture for the external Playwright/PeerJS suite; HTML still receives static parse coverage."
+      "disposition": "canonical-child",
+      "reason": "Inert CSP-locked historical fixture exercised by the browser containment gate.",
+      "gate": "worker-containment"
     },
     {
       "path": "tests/osi/run.sh",
       "disposition": "canonical-entrypoint",
-      "reason": "Compatibility alias that execs the authoritative runner; external OSI browser behavior remains separate."
+      "reason": "Compatibility alias that execs the authoritative runner; retired browser evidence is contained by the worker gate."
     },
     {
       "path": "tests/rapp1_core/test_canonical_identity.py",
@@ -193,20 +205,20 @@
     {
       "path": "tests/scenarios/16-metropolis-tracker.sh",
       "disposition": "canonical-direct",
-      "reason": "Checks the local metropolis index and renderer without network access.",
-      "gate": "metropolis-directory"
+      "reason": "Checks retired Metropolis data, documentation, schedule, and harvester containment.",
+      "gate": "metropolis-retirement"
     },
     {
       "path": "tests/scenarios/20-cross-tracker-federation.sh",
       "disposition": "canonical-direct",
-      "reason": "Checks local cross-tracker merge and deduplication fixtures.",
-      "gate": "metropolis-federation"
+      "reason": "Checks that retained federation fixtures are historical and non-authoritative.",
+      "gate": "metropolis-federation-retirement"
     },
     {
       "path": "tests/scenarios/_lib.sh",
       "disposition": "canonical-helper",
-      "reason": "Sourced by both canonical offline metropolis scenario scripts.",
-      "gate": "metropolis-directory"
+      "reason": "Sourced by both canonical offline Metropolis retirement scenarios.",
+      "gate": "metropolis-retirement"
     },
     {
       "path": "tests/test-t2t-removal.sh",
@@ -271,6 +283,12 @@
       "path": "tests/test_kernel_pin_local.py",
       "disposition": "canonical-direct",
       "reason": "Exercises local pin success, tamper rejection, and absence of network clients.",
+      "gate": "python-offline"
+    },
+    {
+      "path": "tests/test_metropolis_activity_harvester.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies the retired activity harvester has no schedule, network client, or repository write path.",
       "gate": "python-offline"
     },
     {

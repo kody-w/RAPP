@@ -33,7 +33,7 @@ RAPP/1 acceptance.
 | `e2e/07-ui-smoke.sh` + `e2e/08-html-pages.sh` | Local served-UI and target-owned HTML smoke checks. |
 | `features/F10-ecosystem-audit.sh` | Offline ecosystem contract and drift fixtures. |
 | `organism/run-all.sh` | Retained local kernel, encoding, storage, and concurrency fixtures. |
-| `scenarios/16-metropolis-tracker.sh` + `scenarios/20-cross-tracker-federation.sh` | Offline tracker and federation fixtures. |
+| `scenarios/16-metropolis-tracker.sh` + `scenarios/20-cross-tracker-federation.sh` | Offline retirement checks for the historical tracker and federation fixtures. |
 | `../installer/test_plant.sh` | Side-effect-free target-owned planter retirement. |
 
 Every tracked test candidate is classified in

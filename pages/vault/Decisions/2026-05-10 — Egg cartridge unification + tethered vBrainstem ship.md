@@ -1,3 +1,8 @@
+---
+title: "Egg cartridge unification + tethered vBrainstem ship"
+status: historical
+---
+
 # 2026-05-10 — Egg cartridge unification + tethered vBrainstem ship
 
 > **Historical/superseded protocol decision.** Preserve this dated ship record

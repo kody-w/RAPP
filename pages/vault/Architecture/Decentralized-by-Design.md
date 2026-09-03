@@ -1,3 +1,8 @@
+---
+title: "Decentralized by Design — Bitcoin-Grade Network Properties on Top of Git"
+status: historical
+---
+
 # Decentralized by Design — Bitcoin-Grade Network Properties on Top of Git
 
 > **HISTORICAL VAULT NOTE — superseded current guidance.** The bounded body is

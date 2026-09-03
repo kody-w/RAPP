@@ -1,3 +1,8 @@
+---
+title: "Bibliography is the braintrust primitive — each pattern has its own shape"
+status: historical
+---
+
 # Bibliography is the braintrust primitive — each pattern has its own shape
 
 **Date:** 2026-05-08
