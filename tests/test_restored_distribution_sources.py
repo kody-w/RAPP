@@ -231,6 +231,41 @@ UNCONDITIONAL = (
     ("rapp_brainstem/start.ps1", "powershell"),
     ("rapp_brainstem/utils/boot.py", "python"),
 )
+IMPORT_SEALED = {
+    "tools/sign_release.py": (
+        "_ensure_cryptography",
+        "_load_pem",
+        "cmd_keygen",
+        "cmd_sign",
+        "cmd_verify",
+        "main",
+    ),
+    "installer/hatchling": (
+        "_write_json",
+        "_git",
+        "_stamp_org_rappid",
+        "_tag_generation",
+        "_snapshot_state",
+        "_restore_state",
+        "cmd_stamp",
+        "cmd_hatch",
+        "cmd_tag_current",
+        "cmd_revert",
+        "cmd_reset",
+        "main",
+    ),
+    "tools/lan_advertise.py": (
+        "_stage_beacon_locally",
+        "_start_http_server",
+        "_start_bonjour_advertisement",
+        "main",
+    ),
+    "rapp_brainstem/tls_proxy.py": (
+        "ensure_cert",
+        "ProxyHandler",
+        "main",
+    ),
+}
 
 
 def _git(*args: str, stdin: bytes | None = None) -> bytes:
@@ -250,7 +285,8 @@ def _historical_bytes(relative: str) -> bytes:
         b"REM RAPP_RESTORED_HISTORICAL_SOURCE_BEGIN\n",
     ):
         if marker in data:
-            return data.split(marker, 1)[1]
+            data = data.split(marker, 1)[1]
+            break
     for start_marker, end_marker in (
         (
             b"# RAPP_RESTORED_GATE_BEGIN\n",
@@ -259,6 +295,10 @@ def _historical_bytes(relative: str) -> bytes:
         (
             b"\n# RAPP_RESTORED_IMPORT_OVERRIDE_BEGIN\n",
             b"# RAPP_RESTORED_IMPORT_OVERRIDE_END\n",
+        ),
+        (
+            b"\n# RAPP_RESTORED_IMPORT_SEAL_BEGIN\n",
+            b"# RAPP_RESTORED_IMPORT_SEAL_END\n",
         ),
     ):
         if start_marker not in data:
@@ -673,6 +713,59 @@ def test_boot_module_is_importable_but_public_main_always_refuses(capsys):
         module.main()
     assert refusal.value.code == 78
     assert "410 Gone" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(("relative", "entrypoints"), tuple(IMPORT_SEALED.items()))
+def test_imported_historical_entrypoints_are_sealed_before_effects(
+    relative,
+    entrypoints,
+    tmp_path,
+):
+    environment, effects, sentinel, *_ = _sentinel_environment(tmp_path)
+    before = _snapshot(effects)
+    script = """
+import importlib.machinery
+import importlib.util
+import json
+import sys
+
+path = sys.argv[1]
+entrypoints = json.loads(sys.argv[2])
+name = "sealed_" + path.replace("/", "_").replace(".", "_")
+loader = importlib.machinery.SourceFileLoader(name, path)
+spec = importlib.util.spec_from_loader(name, loader)
+module = importlib.util.module_from_spec(spec)
+loader.exec_module(module)
+for entrypoint in entrypoints:
+    target = getattr(module, entrypoint)
+    try:
+        target()
+    except RuntimeError as error:
+        if "target-owned CLI plan gate" not in str(error):
+            raise
+    else:
+        raise AssertionError(f"imported entrypoint remained callable: {entrypoint}")
+print(json.dumps(entrypoints))
+"""
+    result = subprocess.run(
+        (
+            sys.executable,
+            "-c",
+            script,
+            os.fspath(ROOT / relative),
+            json.dumps(entrypoints),
+        ),
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        capture_output=True,
+        timeout=15,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads(result.stdout) == list(entrypoints)
+    assert not sentinel.exists()
+    assert _snapshot(effects) == before
 
 
 def test_non_native_launchers_gate_before_historical_commands():

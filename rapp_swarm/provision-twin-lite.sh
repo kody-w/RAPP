@@ -166,6 +166,11 @@ refuse_deploy() {
     return 78
 }
 
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    unset -f historical_provision_twin_lite print_plan refuse_deploy
+    return 0
+fi
+
 case "${1:-plan}" in
     plan|--plan|inspect|--inspect|check|--check)
         print_plan

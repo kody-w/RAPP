@@ -14,6 +14,8 @@ import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -235,6 +237,43 @@ SHELL_DEFAULTS = {
     "tools/sim/loop_orchestrator.sh": ("--run",),
     "tools/sim/push_canvas.sh": ("--apply",),
 }
+SOURCE_SEALED_SHELLS = {
+    "rapp_swarm/build.sh": (
+        "historical_build",
+        "print_plan",
+        "refuse_apply",
+    ),
+    "rapp_swarm/provision-twin.sh": (
+        "historical_provision_twin",
+        "print_plan",
+        "refuse_deploy",
+    ),
+    "rapp_swarm/provision-twin-lite.sh": (
+        "historical_provision_twin_lite",
+        "print_plan",
+        "refuse_deploy",
+    ),
+    "rapp_swarm/twin-egg.sh": (
+        "historical_twin_egg",
+        "print_plan",
+        "refuse_package",
+    ),
+    "rapp_swarm/twin-sim.sh": (
+        "historical_twin_sim",
+        "print_sandbox_replay",
+        "refuse_run",
+    ),
+    "tools/sim/loop_orchestrator.sh": (
+        "historical_orchestrator_cycle",
+        "print_sandbox_replay",
+        "refuse_run",
+    ),
+    "tools/sim/push_canvas.sh": (
+        "historical_push_canvas",
+        "print_plan",
+        "refuse_apply",
+    ),
+}
 
 PYTHON_DEFAULTS = (
     "rapp_swarm/function_app.py",
@@ -399,6 +438,58 @@ def test_shell_defaults_and_rejected_modes_invoke_no_external_effect(tmp_path):
         assert not marker.exists(), relative
 
     assert list(home.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    ("relative", "functions"),
+    tuple(SOURCE_SEALED_SHELLS.items()),
+)
+def test_sourcing_restored_shells_exports_no_callable_entrypoints(
+    relative,
+    functions,
+    tmp_path,
+):
+    marker = tmp_path / "effects.log"
+    sentinels = tmp_path / "sentinels"
+    _write_command_sentinels(sentinels, marker)
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "HOME": str(tmp_path / "home"),
+            "PATH": f"{sentinels}:/usr/bin:/bin",
+            "RAPP_EFFECT_MARKER": str(marker),
+        }
+    )
+    command = """
+source "$1"
+shift
+for function_name in "$@"; do
+  if declare -F "$function_name" >/dev/null; then
+    printf 'exported function: %s\\n' "$function_name" >&2
+    exit 41
+  fi
+done
+"""
+    result = subprocess.run(
+        (
+            "/bin/bash",
+            "-c",
+            command,
+            "rapp-source-seal",
+            os.fspath(ROOT / relative),
+            *functions,
+        ),
+        cwd=tmp_path,
+        env=environment,
+        text=True,
+        capture_output=True,
+        timeout=10,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert not marker.exists()
 
 
 def test_python_no_flag_modes_are_deterministic_and_effect_free(tmp_path):

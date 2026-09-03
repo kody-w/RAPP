@@ -395,3 +395,23 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+# RAPP_RESTORED_IMPORT_SEAL_BEGIN
+if __name__ != "__main__":
+    def _rapp_import_refusal(*_args, **_kwargs):
+        raise RuntimeError(
+            "imported historical LAN entrypoints are unavailable; "
+            "use the target-owned CLI plan gate"
+        )
+
+    for _rapp_name in (
+        "_read_operator_rappid",
+        "_read_local_beacon",
+        "_stage_beacon_locally",
+        "_detect_lan_ip",
+        "_start_http_server",
+        "_start_bonjour_advertisement",
+        "main",
+    ):
+        globals()[_rapp_name] = _rapp_import_refusal
+# RAPP_RESTORED_IMPORT_SEAL_END

@@ -350,3 +350,15 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+# RAPP_RESTORED_IMPORT_SEAL_BEGIN
+if __name__ != "__main__":
+    def _rapp_import_refusal(*_args, **_kwargs):
+        raise RuntimeError(
+            "imported historical TLS entrypoints are unavailable; "
+            "use the target-owned CLI plan gate"
+        )
+
+    for _rapp_name in ("ensure_cert", "ProxyHandler", "main"):
+        globals()[_rapp_name] = _rapp_import_refusal
+# RAPP_RESTORED_IMPORT_SEAL_END

@@ -101,6 +101,11 @@ refuse_run() {
   return 78
 }
 
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+  unset -f historical_orchestrator_cycle print_sandbox_replay refuse_run
+  return 0
+fi
+
 case "${1:-sandbox}" in
   sandbox|--sandbox|plan|--plan|inspect|--inspect|check|--check)
     print_sandbox_replay

@@ -349,3 +349,22 @@ def main(argv=None):
 
 if __name__ == "__main__":
     main()
+
+# RAPP_RESTORED_IMPORT_SEAL_BEGIN
+if __name__ != "__main__":
+    def _rapp_import_refusal(*_args, **_kwargs):
+        raise RuntimeError(
+            "imported historical signing entrypoints are unavailable; "
+            "use the target-owned CLI plan gate"
+        )
+
+    for _rapp_name in (
+        "_ensure_cryptography",
+        "_load_pem",
+        "cmd_keygen",
+        "cmd_sign",
+        "cmd_verify",
+        "main",
+    ):
+        globals()[_rapp_name] = _rapp_import_refusal
+# RAPP_RESTORED_IMPORT_SEAL_END

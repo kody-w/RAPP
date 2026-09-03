@@ -636,3 +636,40 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+# RAPP_RESTORED_IMPORT_SEAL_BEGIN
+if __name__ != "__main__":
+    def _rapp_import_refusal(*_args, **_kwargs):
+        raise RuntimeError(
+            "imported historical hatchling entrypoints are unavailable; "
+            "use the target-owned CLI plan gate"
+        )
+
+    for _rapp_name in (
+        "_repo_root",
+        "_repo_rappid_path",
+        "_read_json",
+        "_write_json",
+        "_git",
+        "_now_iso",
+        "_short_host",
+        "_stamp_org_rappid",
+        "_list_generation_tags",
+        "_next_generation_n",
+        "_tag_generation",
+        "_state_paths",
+        "_generation_state_path",
+        "_snapshot_state",
+        "_restore_state",
+        "cmd_stamp",
+        "cmd_status",
+        "cmd_clutch",
+        "cmd_hatch",
+        "cmd_tag_current",
+        "cmd_revert",
+        "cmd_reset",
+        "cmd_verify",
+        "main",
+    ):
+        globals()[_rapp_name] = _rapp_import_refusal
+# RAPP_RESTORED_IMPORT_SEAL_END

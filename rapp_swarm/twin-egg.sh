@@ -347,6 +347,11 @@ refuse_package() {
     return 78
 }
 
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    unset -f historical_twin_egg print_plan refuse_package
+    return 0
+fi
+
 case "${1:-plan}" in
     plan|--plan|inspect|--inspect|check|--check)
         print_plan
