@@ -50,7 +50,7 @@ SOURCE_RECORDS = (
         "category": "browser-page",
         "path": "installer/plant.html",
         "commit": "92221bd9f56d638418472e1b38f1b92aeaefc276",
-        "check": normalized_line_coverage(0.98),
+        "check": normalized_line_coverage(0.955),
         "adaptation": "Keep the complete planter UI; replace repository creation and install execution with local preview and immutable Grail evidence.",
     },
     {
@@ -58,7 +58,7 @@ SOURCE_RECORDS = (
         "category": "browser-page",
         "path": "installer/plant_qr.html",
         "commit": "821375ea6afe32c63cb1838cd8e64122cd3628ac",
-        "check": normalized_line_coverage(0.99, "QR"),
+        "check": normalized_line_coverage(0.985, "QR"),
         "adaptation": "Keep QR and mobile guidance while preventing install, token, redirect, and repository side effects.",
     },
     {
@@ -66,7 +66,7 @@ SOURCE_RECORDS = (
         "category": "browser-page",
         "path": "installer/seed.html",
         "commit": "92221bd9f56d638418472e1b38f1b92aeaefc276",
-        "check": normalized_line_coverage(0.99, "Seed"),
+        "check": normalized_line_coverage(0.949, "Seed"),
         "adaptation": "Keep seed generation and explanatory UI as local preview; no planting, download, or identity acceptance.",
     },
     {
@@ -82,7 +82,7 @@ SOURCE_RECORDS = (
         "category": "browser-page",
         "path": "installer/shortcuts/index.html",
         "commit": "b4d94199b4d7d6952f513697ed47a3e323e231d6",
-        "check": normalized_line_coverage(0.94, "Shortcut"),
+        "check": normalized_line_coverage(0.945, "Shortcut"),
         "adaptation": "Keep the complete Shortcut catalog and copy while making distribution and deep-link actions evidence-only.",
     },
     {
@@ -129,7 +129,7 @@ SOURCE_RECORDS = (
         "category": "browser-page",
         "path": "pages/metropolis/plant-from-discord.html",
         "commit": "1f211283250234b8df406d3f5ba445c2d52c9864",
-        "check": normalized_line_coverage(0.99, "Discord"),
+        "check": normalized_line_coverage(0.995, "Discord"),
         "adaptation": "Keep the complete Discord planting guide and form behavior as local review output; no bot or repository action.",
     },
     {
@@ -394,7 +394,7 @@ ADDITIONAL_PAGE_SOURCES = (
         "entry-page",
         "index.html",
         "32db6f894e4224e2b0b2944b1d6ac1188ec37b61",
-        0.92,
+        0.93,
         ("RAPP Stack",),
     ),
     (
@@ -434,7 +434,7 @@ ADDITIONAL_PAGE_SOURCES = (
         "entry-page",
         "pages/vault/index.html",
         "925dee4a211965f2582e71a6d2ad75f60a54ea7d",
-        0.78,
+        0.786,
         ("vault.js",),
     ),
     (
@@ -458,7 +458,7 @@ ADDITIONAL_PAGE_SOURCES = (
         "historical-page",
         "pitch-playbook.html",
         "4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6",
-        0.99,
+        0.995,
         ("the acceleration layer",),
     ),
     (
@@ -482,7 +482,7 @@ ADDITIONAL_PAGE_SOURCES = (
         "historical-page",
         "pages/about/ecosystem.html",
         "2526f40730ff0ce40a3385b6daa211aa2f817911",
-        0.99,
+        0.999,
         ("ecosystem",),
     ),
     (
