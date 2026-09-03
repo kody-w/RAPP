@@ -1,9 +1,10 @@
-"""Collect unverified RAPP network publication observations.
+"""Collect complete, source-labelled RAPP network publication observations.
 
 Publication does not establish identity, membership, compliance, or RAPP/1
-acceptance. Every record emitted by this tool is explicitly unverified and has
-``accepted: false``. This repository has no implementation that authenticates
-fresh section-13 registry evidence, so this tool always refuses acceptance.
+acceptance. Every record carries the parsed publication payload and retrieval
+provenance separately from ``accepted: false``. This repository has no
+implementation that authenticates fresh section-13 registry evidence, so this
+tool observes fully while refusing acceptance.
 
 PURE-RAW DISCOVERY (default — no GitHub API rate limits):
     1. Fetch the well-known seed at
@@ -24,7 +25,8 @@ OPTIONAL TOPIC FALLBACK (--via topic):
 USAGE:
     python3 tools/sniff_network.py                       # raw BFS, print summary
     python3 tools/sniff_network.py --json                # full envelope
-    python3 tools/sniff_network.py --out observations.json
+    python3 tools/sniff_network.py --out observations.json \
+        --owner-approval /path/to/approval.json
     python3 tools/sniff_network.py --seed-url <url>      # start from a different seed
     python3 tools/sniff_network.py --max-hops 5          # cap BFS depth (default 10)
     python3 tools/sniff_network.py --via topic           # use gh search instead (slower, lags)
@@ -36,6 +38,7 @@ Stdlib only for --via raw (the default). gh CLI only for --via topic.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -48,9 +51,11 @@ from collections import deque
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 sys.path.insert(0, str(_REPO_ROOT / "tools"))
 
 from door_address import door_from_rappid, InvalidRappidError, estate_url  # noqa: E402
+from rapp1_core import strict_loads  # noqa: E402
 
 
 _TOPIC = "rapp-estate"
@@ -60,6 +65,7 @@ _SEED_SCHEMA = "rapp-network-seed/1.0"
 _DEFAULT_SEED_URL = "https://raw.githubusercontent.com/kody-w/RAPP/main/.well-known/rapp-network-seed.json"
 _FETCH_TIMEOUT = 8
 _SNIFF_SCHEMA = "rapp-network-sniff/1.0"
+_APPROVAL_SCHEMA = "rapp-tool-owner-approval/1.0"
 _ACCEPTANCE_REASON = (
     "Authenticated, fresh RAPP/1 section-13 registry evidence verification "
     "is not implemented; publication observations cannot be accepted."
@@ -68,6 +74,34 @@ _ACCEPTANCE_REASON = (
 
 def _now_iso() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _parsed_payload_sha256(value: object) -> str:
+    encoded = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _provenance(
+    *,
+    url: str,
+    source: str,
+    discovered_via: str,
+    status: str = "observed",
+    **extra,
+) -> dict:
+    return {
+        "url": url,
+        "source": source,
+        "discovered_via": discovered_via,
+        "status": status,
+        "observed_at": _now_iso(),
+        **extra,
+    }
 
 
 def _unavailable(via: str, detail: str, **extra) -> dict:
@@ -121,9 +155,9 @@ def _unverified_envelope(
         "authority_state": "unverified-observation",
         "rapp_protocol_authority": False,
         "via": via,
-        "ok": False,
+        "ok": True,
         "accepted": False,
-        "status": "UNVERIFIED",
+        "status": "OBSERVED_UNVERIFIED",
         "observation_complete": True,
         "acceptance_error": {
             "code": "authenticated-registry-unavailable",
@@ -289,7 +323,20 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
             continue
         visited.add(handle)
         if hop > max_hops:
-            skipped.append({"handle": handle, "reason": f"max_hops={max_hops} exceeded"})
+            skipped.append(
+                {
+                    "handle": handle,
+                    "reason": f"max_hops={max_hops} exceeded",
+                    "accepted": False,
+                    "provenance": _provenance(
+                        url=beacon_url,
+                        source=_substrate_label(beacon_url),
+                        discovered_via=source,
+                        status="not-fetched",
+                        hop=hop,
+                    ),
+                }
+            )
             continue
 
         if on_progress:
@@ -297,30 +344,73 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
 
         beacon = fetch_beacon_at_url(beacon_url)
         if not beacon:
-            skipped.append({"handle": handle,
-                             "reason": f"no valid beacon at {beacon_url}"})
+            skipped.append(
+                {
+                    "handle": handle,
+                    "reason": f"no valid beacon at {beacon_url}",
+                    "accepted": False,
+                    "provenance": _provenance(
+                        url=beacon_url,
+                        source=_substrate_label(beacon_url),
+                        discovered_via=source,
+                        status="missing-or-invalid",
+                        hop=hop,
+                    ),
+                }
+            )
             continue
 
         indexable = bool(beacon.get("discovery", {}).get("indexable", True))
         if not indexable and not include_private:
-            skipped.append({"handle": handle,
-                             "reason": "discovery.indexable=false (opt-out honored)"})
+            skipped.append(
+                {
+                    "handle": handle,
+                    "reason": (
+                        "discovery.indexable=false (opt-out honored)"
+                    ),
+                    "accepted": False,
+                    "observed": {"beacon": beacon},
+                    "provenance": _provenance(
+                        url=beacon_url,
+                        source=_substrate_label(beacon_url),
+                        discovered_via=source,
+                        hop=hop,
+                        parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                    ),
+                }
+            )
             continue
 
         op_rappid = beacon.get("operator_rappid", "")
         try:
             door_from_rappid(op_rappid)
         except InvalidRappidError as e:
-            skipped.append({"handle": handle,
-                             "reason": f"operator_rappid invalid: {str(e)[:120]}"})
+            skipped.append(
+                {
+                    "handle": handle,
+                    "reason": (
+                        f"operator_rappid invalid: {str(e)[:120]}"
+                    ),
+                    "accepted": False,
+                    "observed": {"beacon": beacon},
+                    "provenance": _provenance(
+                        url=beacon_url,
+                        source=_substrate_label(beacon_url),
+                        discovered_via=source,
+                        hop=hop,
+                        parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                    ),
+                }
+            )
             continue
 
+        effective_estate_url = beacon.get("estate_url") or estate_url
         record = _unverified_record(
             published_github=handle,
             published_operator_rappid=op_rappid,
             beacon_url=beacon_url,
             substrate=_substrate_label(beacon_url),
-            published_estate_url=beacon.get("estate_url") or estate_url,
+            published_estate_url=effective_estate_url,
             published_grail_url=beacon.get("grail_url", ""),
             published_protocol_claims=beacon.get("protocol", {}).get(
                 "implements", []
@@ -329,6 +419,21 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
             published_indexable=indexable,
             discovered_via=source,
             hop=hop,
+            observed={"beacon": beacon, "estate": None},
+            provenance={
+                "beacon": _provenance(
+                    url=beacon_url,
+                    source=_substrate_label(beacon_url),
+                    discovered_via=source,
+                    hop=hop,
+                    parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                ),
+                "estate": {
+                    "url": effective_estate_url,
+                    "status": "not-requested",
+                    "observed_at": None,
+                },
+            },
         )
 
         # Article XLVIII: surface private extension presence WITHOUT fetching.
@@ -346,14 +451,31 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
         record["published_private_door_claim_count"] = priv_count
 
         if fetch_estates:
-            # Use the per-node estate_url (could be github raw, LAN HTTP, file://, etc.)
-            est = fetch_estate_at_url(estate_url) if estate_url else None
+            est = (
+                fetch_estate_at_url(effective_estate_url)
+                if effective_estate_url
+                else None
+            )
             if est:
                 record["published_created_claim_count"] = len(
                     est.get("created", []) or []
                 )
                 record["published_member_claim_count"] = len(
                     est.get("member", []) or []
+                )
+                record["observed"]["estate"] = est
+                record["provenance"]["estate"] = _provenance(
+                    url=effective_estate_url,
+                    source=_substrate_label(effective_estate_url),
+                    discovered_via=f"estate:{handle}",
+                    parsed_payload_sha256=_parsed_payload_sha256(est),
+                )
+            else:
+                record["provenance"]["estate"] = _provenance(
+                    url=effective_estate_url,
+                    source=_substrate_label(effective_estate_url),
+                    discovered_via=f"estate:{handle}",
+                    status="missing-or-invalid",
                 )
 
         operators.append(record)
@@ -372,13 +494,23 @@ def sniff_via_raw(seed_url: str = _DEFAULT_SEED_URL,
         skipped,
         seed_url=seed_url,
         max_hops=max_hops,
+        observed_seed=seed,
+        seed_provenance=_provenance(
+            url=seed_url,
+            source=_substrate_label(seed_url),
+            discovered_via="seed",
+            parsed_payload_sha256=_parsed_payload_sha256(seed),
+        ),
     )
 
 
 # ─── Topic-search fallback (gh search repos) ──────────────────────────────
 
 def _gh(args: list[str]) -> tuple[int, str, str]:
-    p = subprocess.run(["gh", *args], capture_output=True, text=True)
+    try:
+        p = subprocess.run(["gh", *args], capture_output=True, text=True)
+    except FileNotFoundError:
+        return 127, "", "gh CLI is not installed"
     return p.returncode, p.stdout, p.stderr
 
 
@@ -479,7 +611,23 @@ def sniff_via_bonjour(browse_seconds: int = 3, include_private: bool = False,
                         txt_records[k] = v
 
         if not host or not port:
-            skipped.append({"service": name, "reason": "could not resolve host:port"})
+            skipped.append(
+                {
+                    "service": name,
+                    "reason": "could not resolve host:port",
+                    "accepted": False,
+                    "observed": {
+                        "resolve_output": resolve_out,
+                        "txt_records": txt_records,
+                    },
+                    "provenance": _provenance(
+                        url=f"mdns://{name}._rapp-estate._tcp.local",
+                        source="dns-sd",
+                        discovered_via="bonjour",
+                        status="resolve-incomplete",
+                    ),
+                }
+            )
             continue
 
         beacon_path = txt_records.get("beacon_path", f"/{_BEACON_PATH}").lstrip("/")
@@ -490,43 +638,137 @@ def sniff_via_bonjour(browse_seconds: int = 3, include_private: bool = False,
 
         beacon = fetch_beacon_at_url(beacon_url)
         if not beacon:
-            skipped.append({"service": name, "host": host, "port": port,
-                             "reason": f"no valid beacon at {beacon_url}"})
+            skipped.append(
+                {
+                    "service": name,
+                    "host": host,
+                    "port": port,
+                    "reason": f"no valid beacon at {beacon_url}",
+                    "accepted": False,
+                    "observed": {
+                        "resolve_output": resolve_out,
+                        "txt_records": txt_records,
+                    },
+                    "provenance": _provenance(
+                        url=beacon_url,
+                        source="lan-http",
+                        discovered_via="bonjour",
+                        status="missing-or-invalid",
+                    ),
+                }
+            )
             continue
 
         indexable = bool(beacon.get("discovery", {}).get("indexable", True))
         if not indexable and not include_private:
-            skipped.append({"service": name, "reason": "indexable=false (opt-out honored)"})
+            skipped.append(
+                {
+                    "service": name,
+                    "reason": "indexable=false (opt-out honored)",
+                    "accepted": False,
+                    "observed": {
+                        "resolve_output": resolve_out,
+                        "txt_records": txt_records,
+                        "beacon": beacon,
+                    },
+                    "provenance": _provenance(
+                        url=beacon_url,
+                        source="lan-http",
+                        discovered_via="bonjour",
+                        parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                    ),
+                }
+            )
             continue
 
         op_rappid = beacon.get("operator_rappid", "")
         try:
             door_from_rappid(op_rappid)
         except InvalidRappidError as e:
-            skipped.append({"service": name, "reason": f"operator_rappid invalid: {str(e)[:120]}"})
+            skipped.append(
+                {
+                    "service": name,
+                    "reason": (
+                        f"operator_rappid invalid: {str(e)[:120]}"
+                    ),
+                    "accepted": False,
+                    "observed": {
+                        "resolve_output": resolve_out,
+                        "txt_records": txt_records,
+                        "beacon": beacon,
+                    },
+                    "provenance": _provenance(
+                        url=beacon_url,
+                        source="lan-http",
+                        discovered_via="bonjour",
+                        parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                    ),
+                }
+            )
             continue
 
+        effective_estate_url = beacon.get("estate_url") or estate_url_lan
         record = _unverified_record(
             published_github=github_hint,
             service_name=name,
             published_operator_rappid=op_rappid,
             beacon_url=beacon_url,
             substrate="lan-http",
-            published_estate_url=beacon.get("estate_url") or estate_url_lan,
+            published_estate_url=effective_estate_url,
             published_minted_at=beacon.get("minted_at"),
             published_indexable=indexable,
             discovered_via="bonjour",
             published_txt_records=txt_records,
+            observed={
+                "resolve_output": resolve_out,
+                "txt_records": txt_records,
+                "beacon": beacon,
+                "estate": None,
+            },
+            provenance={
+                "service": _provenance(
+                    url=f"mdns://{name}._rapp-estate._tcp.local",
+                    source="dns-sd",
+                    discovered_via="bonjour",
+                    host=host,
+                    port=port,
+                ),
+                "beacon": _provenance(
+                    url=beacon_url,
+                    source="lan-http",
+                    discovered_via="bonjour",
+                    parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                ),
+                "estate": {
+                    "url": effective_estate_url,
+                    "status": "not-requested",
+                    "observed_at": None,
+                },
+            },
         )
 
         if fetch_estates:
-            est = fetch_estate_at_url(estate_url_lan)
+            est = fetch_estate_at_url(effective_estate_url)
             if est:
                 record["published_created_claim_count"] = len(
                     est.get("created", []) or []
                 )
                 record["published_member_claim_count"] = len(
                     est.get("member", []) or []
+                )
+                record["observed"]["estate"] = est
+                record["provenance"]["estate"] = _provenance(
+                    url=effective_estate_url,
+                    source="lan-http",
+                    discovered_via=f"estate:{name}",
+                    parsed_payload_sha256=_parsed_payload_sha256(est),
+                )
+            else:
+                record["provenance"]["estate"] = _provenance(
+                    url=effective_estate_url,
+                    source="lan-http",
+                    discovered_via=f"estate:{name}",
+                    status="missing-or-invalid",
                 )
 
         operators.append(record)
@@ -538,6 +780,13 @@ def sniff_via_bonjour(browse_seconds: int = 3, include_private: bool = False,
         service_type="_rapp-estate._tcp.local",
         browsed_seconds=browse_seconds,
         services_found=len(instance_names),
+        observed_browse_output=browse_out,
+        browse_provenance=_provenance(
+            url="mdns://_rapp-estate._tcp.local",
+            source="dns-sd",
+            discovered_via="bonjour",
+            browse_seconds=browse_seconds,
+        ),
     )
 
 
@@ -564,46 +813,150 @@ def sniff_via_topic(limit: int = 100, include_private: bool = False,
     skipped: list[dict] = []
     for r in repos:
         if not isinstance(r, dict):
+            skipped.append(
+                {
+                    "reason": "topic result is not an object",
+                    "accepted": False,
+                    "observed": {"search_result": r},
+                }
+            )
             continue
         owner = (r.get("owner") or {}).get("login", "")
         name = r.get("name", "")
         if name != "rapp-estate":
-            skipped.append({"repo": f"{owner}/{name}",
-                             "reason": "topic match but not <handle>/rapp-estate"})
+            skipped.append(
+                {
+                    "repo": f"{owner}/{name}",
+                    "reason": "topic match but not <handle>/rapp-estate",
+                    "accepted": False,
+                    "observed": {"search_result": r},
+                    "provenance": _provenance(
+                        url=f"https://github.com/{owner}/{name}",
+                        source="gh-search",
+                        discovered_via="topic",
+                    ),
+                }
+            )
             continue
         if on_progress:
             on_progress(f"validating: {owner}/rapp-estate")
         beacon = fetch_beacon_for_handle(owner)
         if not beacon:
-            skipped.append({"repo": f"{owner}/{name}", "reason": "no valid beacon"})
+            skipped.append(
+                {
+                    "repo": f"{owner}/{name}",
+                    "reason": "no valid beacon",
+                    "accepted": False,
+                    "observed": {"search_result": r},
+                    "provenance": _provenance(
+                        url=github_beacon_url(owner),
+                        source="github-raw",
+                        discovered_via="topic",
+                        status="missing-or-invalid",
+                    ),
+                }
+            )
             continue
         indexable = bool(beacon.get("discovery", {}).get("indexable", True))
         if not indexable and not include_private:
-            skipped.append({"repo": f"{owner}/{name}", "reason": "indexable=false"})
+            skipped.append(
+                {
+                    "repo": f"{owner}/{name}",
+                    "reason": "indexable=false",
+                    "accepted": False,
+                    "observed": {
+                        "search_result": r,
+                        "beacon": beacon,
+                    },
+                    "provenance": _provenance(
+                        url=github_beacon_url(owner),
+                        source="github-raw",
+                        discovered_via="topic",
+                        parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                    ),
+                }
+            )
             continue
         op_rappid = beacon.get("operator_rappid", "")
         try:
             door_from_rappid(op_rappid)
         except InvalidRappidError as e:
-            skipped.append({"repo": f"{owner}/{name}", "reason": f"bad rappid: {e}"})
+            skipped.append(
+                {
+                    "repo": f"{owner}/{name}",
+                    "reason": f"bad rappid: {e}",
+                    "accepted": False,
+                    "observed": {
+                        "search_result": r,
+                        "beacon": beacon,
+                    },
+                    "provenance": _provenance(
+                        url=github_beacon_url(owner),
+                        source="github-raw",
+                        discovered_via="topic",
+                        parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                    ),
+                }
+            )
             continue
+        effective_estate_url = (
+            beacon.get("estate_url") or github_estate_url(owner)
+        )
         record = _unverified_record(
             published_github=owner,
             published_operator_rappid=op_rappid,
-            published_estate_url=beacon.get("estate_url"),
+            published_estate_url=effective_estate_url,
             published_grail_url=beacon.get("grail_url", ""),
             published_minted_at=beacon.get("minted_at"),
             published_indexable=indexable,
             discovered_via="topic",
+            observed={
+                "search_result": r,
+                "beacon": beacon,
+                "estate": None,
+            },
+            provenance={
+                "search": _provenance(
+                    url=f"https://github.com/{owner}/{name}",
+                    source="gh-search",
+                    discovered_via="topic",
+                    parsed_payload_sha256=_parsed_payload_sha256(r),
+                ),
+                "beacon": _provenance(
+                    url=github_beacon_url(owner),
+                    source="github-raw",
+                    discovered_via="topic",
+                    parsed_payload_sha256=_parsed_payload_sha256(beacon),
+                ),
+                "estate": {
+                    "url": effective_estate_url,
+                    "status": "not-requested",
+                    "observed_at": None,
+                },
+            },
         )
         if fetch_estates:
-            est = fetch_estate_for_handle(owner)
+            est = fetch_estate_at_url(effective_estate_url)
             if est:
                 record["published_created_claim_count"] = len(
                     est.get("created", []) or []
                 )
                 record["published_member_claim_count"] = len(
                     est.get("member", []) or []
+                )
+                record["observed"]["estate"] = est
+                record["provenance"]["estate"] = _provenance(
+                    url=effective_estate_url,
+                    source=_substrate_label(effective_estate_url),
+                    discovered_via=f"estate:{owner}",
+                    parsed_payload_sha256=_parsed_payload_sha256(est),
+                )
+            else:
+                record["provenance"]["estate"] = _provenance(
+                    url=effective_estate_url,
+                    source=_substrate_label(effective_estate_url),
+                    discovered_via=f"estate:{owner}",
+                    status="missing-or-invalid",
                 )
         operators.append(record)
 
@@ -613,6 +966,13 @@ def sniff_via_topic(limit: int = 100, include_private: bool = False,
         skipped,
         topic=_TOPIC,
         repos_found=len(repos),
+        observed_search_results=repos,
+        search_provenance=_provenance(
+            url=f"gh-search://repos?topic={_TOPIC}&limit={limit}",
+            source="gh-search",
+            discovered_via="topic",
+            parsed_payload_sha256=_parsed_payload_sha256(repos),
+        ),
     )
 
 
@@ -673,6 +1033,101 @@ def _print_summary(out: dict) -> None:
             print(f"    - {label}: {s['reason']}")
 
 
+def _write_target(path: str, via: str) -> dict[str, str]:
+    return {
+        "path": os.path.abspath(os.path.expanduser(path)),
+        "via": via,
+        "operation": "network-sniff-write",
+    }
+
+
+def _inspect_owner_approval(
+    approval_path: str,
+    *,
+    operation: str,
+    target: dict[str, str],
+) -> dict:
+    if not approval_path:
+        return {
+            "supplied": False,
+            "structurally_matching": False,
+            "authenticated": False,
+            "fresh": False,
+            "status": "MISSING",
+            "detail": "an explicit owner-approval artifact is required",
+        }
+    path = Path(os.path.expanduser(approval_path))
+    try:
+        raw = path.read_bytes()
+        value = strict_loads(raw)
+    except (OSError, TypeError, ValueError) as exc:
+        return {
+            "supplied": True,
+            "path": str(path),
+            "structurally_matching": False,
+            "authenticated": False,
+            "fresh": False,
+            "status": "INVALID",
+            "detail": f"owner-approval artifact could not be inspected: {exc}",
+        }
+    structurally_matching = (
+        type(value) is dict
+        and value.get("schema") == _APPROVAL_SCHEMA
+        and value.get("operation") == operation
+        and value.get("target") == target
+    )
+    return {
+        "supplied": True,
+        "path": str(path),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_length": len(raw),
+        "schema": value.get("schema") if type(value) is dict else None,
+        "operation": value.get("operation") if type(value) is dict else None,
+        "target": value.get("target") if type(value) is dict else None,
+        "structurally_matching": structurally_matching,
+        "authenticated": False,
+        "fresh": False,
+        "status": "STRUCTURAL_ONLY" if structurally_matching else "MISMATCH",
+        "detail": (
+            _ACCEPTANCE_REASON
+            if structurally_matching
+            else "artifact schema, operation, or target does not exactly match"
+        ),
+    }
+
+
+def _write_gate(path: str, via: str, approval_path: str) -> dict:
+    target = _write_target(path, via)
+    approval = _inspect_owner_approval(
+        approval_path,
+        operation="network-sniff-write",
+        target=target,
+    )
+    if not approval["supplied"]:
+        code = "owner-approval-artifact-required"
+    elif not approval["structurally_matching"]:
+        code = "owner-approval-artifact-invalid"
+    else:
+        code = "authenticated-registry-unavailable"
+    return {
+        "permitted": False,
+        "code": code,
+        "detail": approval["detail"],
+        "target": target,
+        "approval": approval,
+        "prerequisites": {
+            "explicit_write_flag": True,
+            "owner_approval_artifact_supplied": approval["supplied"],
+            "owner_approval_artifact_matches": approval[
+                "structurally_matching"
+            ],
+            "section_13_registry_authenticated": False,
+            "registry_freshness_verified": False,
+            "out_of_band_estate_owner_anchor_verified": False,
+        },
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--via", choices=["raw", "topic", "bonjour"], default="raw",
@@ -690,8 +1145,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-estates", action="store_true",
                     help="skip fetching each estate.json (faster)")
     ap.add_argument("--apply", action="store_true",
-                    help="legacy flag; acceptance/apply is refused and no default file is written")
-    ap.add_argument("--out", default="", help="write the envelope to this path")
+                    help="request a gated write to ~/.brainstem/network-sniff.json")
+    ap.add_argument("--out", default="", help="request a gated write to this path")
+    ap.add_argument(
+        "--owner-approval",
+        default="",
+        help="target-owned approval artifact required by --apply or --out",
+    )
     ap.add_argument("--json", action="store_true",
                     help="emit full JSON envelope (default: human summary)")
     args = ap.parse_args(argv)
@@ -715,21 +1175,31 @@ def main(argv: list[str] | None = None) -> int:
                                fetch_estates=not args.no_estates,
                                on_progress=_progress)
 
-    if args.apply:
-        out["apply_refused"] = True
-    if args.out:
-        path = os.path.expanduser(args.out)
-        parent = os.path.dirname(path)
-        if parent:
-            os.makedirs(parent, exist_ok=True)
-        Path(path).write_text(json.dumps(out, indent=2))
-        out["_wrote_to"] = path
+    write_requested = bool(args.apply or args.out)
+    if write_requested:
+        path = (
+            os.path.expanduser("~/.brainstem/network-sniff.json")
+            if args.apply
+            else os.path.expanduser(args.out)
+        )
+        gate = _write_gate(path, args.via, args.owner_approval)
+        out["write_gate"] = gate
+        out["write_requested"] = True
+        out["write_permitted"] = gate["permitted"]
+        if gate["permitted"]:
+            parent = os.path.dirname(path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            Path(path).write_text(json.dumps(out, indent=2) + "\n")
+            out["wrote_to"] = path
 
     if args.json:
         print(json.dumps(out, indent=2))
     else:
         _print_summary(out)
-    return 1
+    if write_requested and not out.get("write_permitted"):
+        return 2
+    return 0 if out.get("observation_complete") else 1
 
 
 if __name__ == "__main__":

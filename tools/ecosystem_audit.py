@@ -10,6 +10,11 @@ observations in `tools/ecosystem_contract.py`, and emits both a human report
 That envelope and its checked product schemas are local observations, not
 RAPP/1 protocol authority.
 
+Default operation is read-only and prints the complete comparison envelope.
+Output-file or cache writes require an explicit write request, a matching
+owner-approval artifact, and authenticated fresh RAPP/1 section-13 authority.
+The last prerequisite is unavailable here, so current write requests refuse.
+
 Stdlib-only — runs from a fresh `git clone` with no pip install. Mirrors
 `bond.py`'s discipline: the substrate health check can't depend on its
 own installation succeeding.
@@ -20,7 +25,8 @@ Modes:
                 makes the audit incomplete, and can never be reported as live.
                 Set ECOSYSTEM_AUDIT_ONLINE=1 to enable from env.
     --repo NAME Audit one offspring by name; default audits all entries
-    --no-write  Print audit JSON to stdout; skip pages/_audit/ writes
+    --write     Request gated pages/_audit/ output writes
+    --no-write  Compatibility flag for the default read-only mode
     --strict    Exit 1 on drift_count > 0 (default: True)
 
 Exit code: 0 for complete/no-drift evidence, 1 for observed drift, and 2 for
@@ -68,6 +74,11 @@ USER_AGENT = "rapp-ecosystem-audit/1.0"
 HTTP_TIMEOUT = 12.0
 
 AUDIT_SCHEMA = "rapp-ecosystem-audit/1.0"
+APPROVAL_SCHEMA = "rapp-tool-owner-approval/1.0"
+AUTHORITY_REASON = (
+    "No authenticated, fresh RAPP/1 section-13 registry rooted in an "
+    "out-of-band estate-owner anchor is available to authorize writes."
+)
 
 # Identity block sentinel — soul.md must contain this string per ANTIPATTERNS §4
 IDENTITY_BLOCK_SENTINEL = "Identity"  # tolerant — matches "## Identity" or "## Identity — read this every turn"
@@ -141,19 +152,25 @@ def _gh_api(path: str) -> tuple[dict | list | None, str, str]:
         return None, "unavailable", "GitHub API request timed out"
 
 
-def _raw_fetch(url: str) -> tuple[bytes | None, dict]:
+def _raw_fetch(
+    url: str,
+    *,
+    update_cache: bool = False,
+) -> tuple[bytes | None, dict]:
     """Fetch raw bytes while keeping cache fallback visibly stale."""
     try:
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
             body = r.read()
-            _cache_put(url, body)
+            if update_cache:
+                _cache_put(url, body)
             return body, {
                 "url": url,
                 "source": "raw.githubusercontent.com",
                 "status": "present",
                 "freshness": "live",
                 "observed_at": _now_iso(),
+                "cache_updated": bool(update_cache),
             }
     except urllib.error.HTTPError as exc:
         if exc.code in {404, 410}:
@@ -190,7 +207,12 @@ def _raw_fetch(url: str) -> tuple[bytes | None, dict]:
     }
 
 
-def _fetch_offspring_file(owner_repo: str, path: str) -> tuple[bytes | None, dict]:
+def _fetch_offspring_file(
+    owner_repo: str,
+    path: str,
+    *,
+    update_cache: bool = False,
+) -> tuple[bytes | None, dict]:
     """Fetch one file and return bytes plus source/freshness evidence."""
     # Prefer gh api (auth + rate limit)
     api_path = f"repos/{owner_repo}/contents/{path}"
@@ -218,7 +240,7 @@ def _fetch_offspring_file(owner_repo: str, path: str) -> tuple[bytes | None, dic
 
     # Fallback to raw.githubusercontent.com
     raw_url = f"https://raw.githubusercontent.com/{owner_repo}/main/{path}"
-    body, evidence = _raw_fetch(raw_url)
+    body, evidence = _raw_fetch(raw_url, update_cache=update_cache)
     if evidence["status"] == "unavailable" and api_detail:
         evidence["detail"] = (
             f"GitHub API unavailable: {api_detail}; "
@@ -295,19 +317,6 @@ def _diff_offspring(name: str, kind: str, contract: dict,
     Returns a dict {ok: bool, drift: list, fingerprint_sha256: str | None,
                     rappid: str | None, fetched_from: str}.
     """
-    if contract.get("lifecycle") == "historical-observation":
-        return {
-            "ok": True,
-            "drift": [],
-            "fingerprint_sha256": None,
-            "rappid": None,
-            "fetched_from": "none",
-            "evidence_complete": True,
-            "file_evidence": {},
-            "historical_observation": contract.get("historical_shape", {}),
-            "kind_lifecycle": "historical-observation",
-        }
-
     drift = []
     sources_seen = set()
     fingerprint_sha256 = None
@@ -504,6 +513,11 @@ def _diff_offspring(name: str, kind: str, contract: dict,
         "evidence_issues": evidence_issues,
         "file_evidence": file_evidence,
         "kind_lifecycle": contract.get("lifecycle", "product-observation"),
+        "historical_observation": (
+            contract.get("historical_shape")
+            if contract.get("lifecycle") == "historical-observation"
+            else None
+        ),
     }
 
 
@@ -511,10 +525,10 @@ def _diff_offspring(name: str, kind: str, contract: dict,
 
 def _classify_drift(offspring_result: dict, kind: str) -> str:
     """Classify observations without authorizing execution."""
-    if kind in HISTORICAL_KINDS:
-        return "HISTORICAL"
     if not offspring_result.get("evidence_complete", True):
         return "EVIDENCE_INCOMPLETE"
+    if kind in HISTORICAL_KINDS:
+        return "HISTORICAL"
     drift = offspring_result.get("drift") or []
     if not drift:
         return "ALIGNED"
@@ -540,37 +554,114 @@ def _owner_review_guidance(
     if direction == "ALIGNED":
         return None
     source = owner_repo or f"<owner>/{offspring_name}"
+    strategy = None
+    if direction == "LOCAL_TO_GLOBAL":
+        mechanism = (
+            "Graft"
+            if kind in ("neighborhood", "ant-farm", "braintrust", "workspace")
+            else "Launch"
+        )
+        strategy = {
+            "historical_mechanism": mechanism,
+            "target_repository": source,
+            "parameter_plan": (
+                {"upstream_repo": source, "dry_run": True}
+                if mechanism == "Graft"
+                else {
+                    "target_repo": source,
+                    "instructions": "<owner-reviewed-diff>",
+                    "dry_run": True,
+                }
+            ),
+            "intent": (
+                "prepare a publication proposal for missing or divergent "
+                "offspring files"
+            ),
+        }
+    elif direction == "GLOBAL_TO_LOCAL":
+        strategy = {
+            "historical_mechanism": "RarLoader",
+            "source_repository": source,
+            "parameter_plan": {
+                "gate_repo": source,
+                "dry_run": True,
+            },
+            "intent": (
+                "prepare a separately verified local refresh proposal from "
+                "offspring bytes"
+            ),
+        }
+    elif direction == "HISTORICAL":
+        strategy = {
+            "historical_mechanism": "compare-only",
+            "source_repository": source,
+            "intent": (
+                "retain the former required and optional file shape as drift "
+                "evidence without reactivating the retired surface"
+            ),
+        }
+
     guidance = {
         "LOCAL_TO_GLOBAL": (
-            "Review the source-labelled differences and decide whether an "
-            "owner-authorized publication change should be proposed."
+            "Review the exact source-labelled differences and the historical "
+            "publication strategy; prepare a separate owner-authorized change "
+            "proposal if still desired."
         ),
         "GLOBAL_TO_LOCAL": (
-            "Review the source-labelled differences and decide whether a "
-            "separately verified local update should be proposed."
+            "Review the exact source-labelled differences and the historical "
+            "loader strategy; verify every candidate byte before a separate "
+            "local update proposal."
         ),
         "EVIDENCE_INCOMPLETE": (
-            "Restore fresh online evidence and rerun before considering any "
-            "change."
+            "Restore fresh online evidence and rerun before planning a change."
         ),
         "HISTORICAL": (
-            "Retain this retired kind as historical observation only; do not "
-            "repair or reactivate it from this report."
+            "Preserve and compare the retired shape as historical evidence; "
+            "do not repair or reactivate it from this report."
         ),
         "INFORMATIONAL": (
             "Review the observation; no executable change is proposed."
         ),
-    }.get(direction, "Review the observation; no executable change is proposed.")
+    }.get(
+        direction,
+        "Review the observation; no executable change is proposed.",
+    )
     return {
+        "schema": "rapp-ecosystem-repair-plan/1.0",
         "status": "owner-review-required",
         "owner_review_required": True,
         "executable": False,
+        "auto_execute": False,
+        "apply_permitted": False,
         "direction": direction,
         "offspring": offspring_name,
         "kind": kind,
         "source_repository": source,
         "guidance": guidance,
+        "historical_strategy": strategy,
+        "required_gates": [
+            "fresh source evidence",
+            "exact diff review",
+            "explicit owner approval",
+            "authenticated RAPP/1 authority where acceptance is claimed",
+            "separate non-automatic execution",
+        ],
     }
+
+
+def _suggest_action(
+    offspring_name: str,
+    owner_repo: str | None,
+    direction: str,
+    kind: str,
+) -> dict | None:
+    """Compatibility name for the retained, non-executable repair planner."""
+    return _owner_review_guidance(
+        offspring_name,
+        owner_repo,
+        direction,
+        kind,
+    )
 
 
 # ── main audit ─────────────────────────────────────────────────────────────
@@ -636,12 +727,107 @@ def _build_file_getter_online(owner_repo: str | None):
     return get
 
 
+def _inspect_owner_approval(
+    approval_path: str,
+    *,
+    operation: str,
+    target: dict,
+) -> dict:
+    if not approval_path:
+        return {
+            "supplied": False,
+            "structurally_matching": False,
+            "authenticated": False,
+            "fresh": False,
+            "status": "MISSING",
+            "detail": "an explicit owner-approval artifact is required",
+        }
+    path = os.path.expanduser(approval_path)
+    try:
+        with open(path, "rb") as handle:
+            raw = handle.read()
+        value = json.loads(raw)
+    except (OSError, TypeError, ValueError) as exc:
+        return {
+            "supplied": True,
+            "path": path,
+            "structurally_matching": False,
+            "authenticated": False,
+            "fresh": False,
+            "status": "INVALID",
+            "detail": f"owner-approval artifact could not be inspected: {exc}",
+        }
+    structurally_matching = (
+        type(value) is dict
+        and value.get("schema") == APPROVAL_SCHEMA
+        and value.get("operation") == operation
+        and value.get("target") == target
+    )
+    return {
+        "supplied": True,
+        "path": path,
+        "sha256": _sha256_bytes(raw),
+        "byte_length": len(raw),
+        "schema": value.get("schema") if type(value) is dict else None,
+        "operation": value.get("operation") if type(value) is dict else None,
+        "target": value.get("target") if type(value) is dict else None,
+        "structurally_matching": structurally_matching,
+        "authenticated": False,
+        "fresh": False,
+        "status": "STRUCTURAL_ONLY" if structurally_matching else "MISMATCH",
+        "detail": (
+            AUTHORITY_REASON
+            if structurally_matching
+            else "artifact schema, operation, or target does not exactly match"
+        ),
+    }
+
+
+def _output_write_gate(out_dir: str, approval_path: str) -> dict:
+    target = {
+        "out_dir": os.path.abspath(os.path.expanduser(out_dir)),
+        "artifacts": [
+            "ecosystem-audit.json",
+            "ecosystem-audit.md",
+        ],
+    }
+    approval = _inspect_owner_approval(
+        approval_path,
+        operation="ecosystem-audit-write",
+        target=target,
+    )
+    if not approval["supplied"]:
+        code = "owner-approval-artifact-required"
+    elif not approval["structurally_matching"]:
+        code = "owner-approval-artifact-invalid"
+    else:
+        code = "authenticated-registry-unavailable"
+    return {
+        "permitted": False,
+        "code": code,
+        "detail": approval["detail"],
+        "target": target,
+        "approval": approval,
+        "prerequisites": {
+            "explicit_write_flag": True,
+            "owner_approval_artifact_supplied": approval["supplied"],
+            "owner_approval_artifact_matches": approval[
+                "structurally_matching"
+            ],
+            "section_13_registry_authenticated": False,
+            "registry_freshness_verified": False,
+            "out_of_band_estate_owner_anchor_verified": False,
+        },
+    }
+
+
 def audit_ecosystem(*, mode: str = "offline",
                     repo_filter: str | None = None,
                     metropolis_index_path: str | None = None,
                     fixtures_dir: str | None = None,
                     out_dir: str | None = None,
-                    write_outputs: bool = True) -> dict:
+                    write_outputs: bool = False,
+                    owner_approval_path: str = "") -> dict:
     """Run the audit. Returns the rapp-ecosystem-audit/1.0 envelope."""
     metropolis_path = metropolis_index_path or DEFAULT_METROPOLIS
     fixtures = fixtures_dir or DEFAULT_FIXTURES_DIR
@@ -723,7 +909,7 @@ def audit_ecosystem(*, mode: str = "offline",
                 else:
                     bucket["drift"] += 1
                     direction = _classify_drift(result, kind)
-                    action = _owner_review_guidance(
+                    action = _suggest_action(
                         name, owner_repo, direction, kind
                     )
                     if action:
@@ -753,6 +939,7 @@ def audit_ecosystem(*, mode: str = "offline",
         )
         result["name"] = name
         result["kind"] = kind
+        result["kind_contract_version"] = "1.0"
         result["kind_observation_version"] = "1.0"
         result["entry_metropolis_rappid"] = entry_rappid
         offspring_results.append(result)
@@ -769,7 +956,7 @@ def audit_ecosystem(*, mode: str = "offline",
             if result["drift"]:
                 bucket["drift"] += 1
             direction = _classify_drift(result, kind)
-            action = _owner_review_guidance(
+            action = _suggest_action(
                 name, owner_repo, direction, kind
             )
             if action:
@@ -824,6 +1011,8 @@ def audit_ecosystem(*, mode: str = "offline",
         "schema": AUDIT_SCHEMA,
         "authority_state": "product-local-observation",
         "rapp_protocol_authority": False,
+        "accepted": False,
+        "auto_execute": False,
         "audited_at": _now_iso(),
         "mode": mode,
         "metropolis_url": metropolis_url,
@@ -843,12 +1032,20 @@ def audit_ecosystem(*, mode: str = "offline",
         "offspring": offspring_results,
         "summary": summary,
         "next_actions": next_actions,
+        "repair_plans": next_actions,
         "owner_review_required": bool(next_actions),
+        "write_outputs_requested": bool(write_outputs),
         "ok": drift_count == 0 and evidence_complete,
     }
 
     if write_outputs:
-        _write_outputs(audit, out)
+        write_gate = _output_write_gate(out, owner_approval_path)
+        audit["output_write"] = write_gate
+        if write_gate["permitted"]:
+            _write_outputs(audit, out)
+            audit["output_write"]["written"] = True
+        else:
+            audit["output_write"]["written"] = False
 
     return audit
 
@@ -928,6 +1125,21 @@ def render_human_report(audit: dict) -> str:
                 f"{a.get('guidance', '')}"
             )
             lines.append("  - Executable: `false`; owner review required.")
+            strategy = a.get("historical_strategy") or {}
+            if strategy:
+                lines.append(
+                    "  - Retained strategy: "
+                    f"`{strategy.get('historical_mechanism')}`"
+                )
+                if strategy.get("parameter_plan"):
+                    lines.append(
+                        "  - Read-only parameter plan: `"
+                        + json.dumps(
+                            strategy["parameter_plan"],
+                            sort_keys=True,
+                        )
+                        + "`"
+                    )
         lines.append("")
 
     lines.append("## Per-offspring detail\n")
@@ -1009,9 +1221,19 @@ def main(argv=None):
     p.add_argument("--fixtures-dir", default=None,
                    help="Override tests/fixtures/ directory (used by --offline).")
     p.add_argument("--out-dir", default=None,
-                   help="Override pages/_audit output directory.")
+                   help="Target directory used only with --write.")
+    p.add_argument(
+        "--write",
+        action="store_true",
+        help="request gated JSON and Markdown output writes",
+    )
     p.add_argument("--no-write", action="store_true",
-                   help="Print audit JSON to stdout; skip file writes.")
+                   help="compatibility flag for default read-only behavior")
+    p.add_argument(
+        "--owner-approval",
+        default="",
+        help="target-owned approval artifact required with --write",
+    )
     p.add_argument("--strict", action="store_true", default=True,
                    help="Exit 1 if drift_count > 0 (default).")
     p.add_argument("--lenient", dest="strict", action="store_false",
@@ -1019,16 +1241,19 @@ def main(argv=None):
     args = p.parse_args(argv)
 
     mode = _resolve_mode(args)
+    write_requested = bool(args.write and not args.no_write)
     audit = audit_ecosystem(
         mode=mode,
         repo_filter=args.repo,
         metropolis_index_path=args.metropolis,
         fixtures_dir=args.fixtures_dir,
         out_dir=args.out_dir,
-        write_outputs=not args.no_write,
+        write_outputs=write_requested,
+        owner_approval_path=args.owner_approval,
     )
 
-    if args.no_write:
+    write_result = audit.get("output_write") or {}
+    if not write_result.get("written"):
         print(json.dumps(audit, indent=2))
     else:
         print(json.dumps({
@@ -1047,6 +1272,8 @@ def main(argv=None):
             },
         }, indent=2))
 
+    if write_requested and not write_result.get("written"):
+        return 2
     if not audit.get("evidence_complete", False):
         return 2
     if args.strict and audit.get("drift_count", 0) > 0:

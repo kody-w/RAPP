@@ -139,29 +139,68 @@ def test_tutorial_hatcher_always_refuses_without_reading(migration_dir):
 
 
 @pytest.mark.parametrize("dry_run", [False, True])
-def test_private_estate_is_always_non_success_plan_only(dry_run):
+def test_private_estate_retains_full_plan_and_defaults_read_only(
+    dry_run, migration_dir, monkeypatch
+):
+    monkeypatch.setattr(
+        private_estate_init,
+        "_load_operator_identity",
+        lambda _path, _owner: (RAPPID, "operator"),
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_repo_observation",
+        lambda slug: {
+            "status": "missing",
+            "source": "test",
+            "repository": slug,
+        },
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_SECRET_PATH",
+        migration_dir / "private-estate-secret",
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_LOCAL_MAP_PATH",
+        migration_dir / "private-estate-map.json",
+    )
+    for name in ("_gh_create_private", "_gh_put_file", "_ensure_secret"):
+        monkeypatch.setattr(
+            private_estate_init,
+            name,
+            lambda *_args, _name=name, **_kwargs: (_ for _ in ()).throw(
+                AssertionError(f"default plan called {_name}")
+            ),
+        )
+
     result = private_estate_init.init_private_estate(
         "kody-w", dry_run=dry_run
     )
 
-    assert result["ok"] is False
+    assert result["ok"] is True
     assert result["accepted"] is False
-    assert result["status"] == "OWNER_AUTHORITY_REQUIRED"
-    assert result["mode"] == "plan-only"
+    assert result["status"] == "PLAN_READY"
+    assert result["mode"] == "inspect-plan"
     assert result["plan_only"] is True
     assert result["apply_permitted"] is False
     assert result["repository_mutation_permitted"] is False
     assert result["local_state_mutation_permitted"] is False
-    assert result["error"]["code"] == "authenticated-registry-unavailable"
-    assert result["candidate_plan"]["owner_review_required"] is True
-    assert result["candidate_plan"]["executable"] is False
-    for forbidden in (
-        "private_estate_commitment",
-        "repo_created",
-        "files_written",
-        "next_step",
-    ):
-        assert forbidden not in result
+    assert result["repository_observation"]["status"] == "missing"
+    assert result["scaffold"]["schema"] == "rapp-private-estate/1.0"
+    assert {
+        row["path"] for row in result["scaffold"]["files"]
+    } == {
+        "meta.json",
+        "README.md",
+        "objects/.gitkeep",
+        "kinds/.gitkeep",
+    }
+    assert result["scaffold"]["opaque_path_audit"] == "pass"
+    assert result["algorithm"]["idempotent"] is True
+    assert "PUT every scaffold file" in result["algorithm"]["remote_order"]
+    assert not any(migration_dir.iterdir())
 
 
 def test_private_estate_invalid_owner_is_non_success_refusal():
@@ -171,38 +210,83 @@ def test_private_estate_invalid_owner_is_non_success_refusal():
     assert result["accepted"] is False
     assert result["status"] == "INVALID_REQUEST"
     assert result["apply_permitted"] is False
+    assert result["error"]["code"] == "invalid-owner"
 
 
-def test_private_estate_cli_never_writes_or_returns_success(migration_dir):
+def test_private_estate_apply_requires_artifact_and_authenticated_authority(
+    migration_dir, monkeypatch
+):
     sentinel = migration_dir / "must-survive"
     original = b"unchanged\n"
     sentinel.write_bytes(original)
+    monkeypatch.setattr(
+        private_estate_init,
+        "_load_operator_identity",
+        lambda _path, _owner: (RAPPID, "operator"),
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_repo_observation",
+        lambda slug: {
+            "status": "missing",
+            "source": "test",
+            "repository": slug,
+        },
+    )
+    monkeypatch.setattr(
+        private_estate_init,
+        "_gh_create_private",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("repository creation crossed the authority gate")
+        ),
+    )
 
-    assert private_estate_init.main(["--handle", "kody-w"]) == 1
+    assert private_estate_init.main(["--handle", "kody-w"]) == 0
     assert private_estate_init.main(
-        ["--handle", "kody-w", "--dry-run"]
-    ) == 1
-    assert private_estate_init.main(
-        ["--handle", "kody-w", "--verify-commitment"]
-    ) == 1
+        ["--handle", "kody-w", "--apply"]
+    ) == 2
+
+    approval = migration_dir / "approval.json"
+    approval.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-tool-owner-approval/1.0",
+                "operation": "private-estate-initialize",
+                "target": private_estate_init._approval_target("kody-w"),
+            }
+        )
+    )
+    result = private_estate_init.init_private_estate(
+        "kody-w",
+        apply=True,
+        owner_approval_path=str(approval),
+    )
+    assert result["ok"] is False
+    assert result["status"] == "OWNER_AUTHORITY_REQUIRED"
+    assert result["error"]["code"] == "authenticated-registry-unavailable"
+    assert result["write_gate"]["approval"]["structurally_matching"] is True
+    assert result["write_gate"]["permitted"] is False
     assert sentinel.read_bytes() == original
 
 
-def test_private_estate_source_has_no_live_mutation_implementation():
+def test_private_estate_retains_mutation_and_commitment_algorithms():
     source = (
         ROOT / "tools" / "private_estate_init.py"
     ).read_text(encoding="utf-8")
-    for forbidden in (
+    for retained in (
         "subprocess",
         "urllib.request",
         "secrets.token_bytes",
         "write_bytes(",
         "write_text(",
         ".mkdir(",
-        "repo\", \"create",
+        '"repo", "create"',
         "\"PUT\"",
+        "_normalized_state_hash",
+        "_gh_list_tree_checked",
+        "REMOTE_VERIFICATION_FAILED",
     ):
-        assert forbidden not in source
+        assert retained in source
 
 
 def test_network_sniff_is_unverified_publication_observation(monkeypatch):
@@ -241,9 +325,9 @@ def test_network_sniff_is_unverified_publication_observation(monkeypatch):
 
     result = sniff_network.sniff_via_raw()
 
-    assert result["ok"] is False
+    assert result["ok"] is True
     assert result["accepted"] is False
-    assert result["status"] == "UNVERIFIED"
+    assert result["status"] == "OBSERVED_UNVERIFIED"
     assert result["authority_state"] == "unverified-observation"
     assert result["rapp_protocol_authority"] is False
     assert result["observation_complete"] is True
@@ -256,6 +340,16 @@ def test_network_sniff_is_unverified_publication_observation(monkeypatch):
     assert observation["published_created_claim_count"] == 1
     assert observation["published_member_claim_count"] == 2
     assert observation["published_private_door_claim_count"] == 4
+    assert observation["observed"]["beacon"]["operator_rappid"] == RAPPID
+    assert observation["observed"]["estate"]["created"]
+    assert observation["provenance"]["beacon"]["url"].endswith(
+        ".well-known/rapp-network.json"
+    )
+    assert observation["provenance"]["estate"]["url"] == (
+        "https://example.invalid/estate.json"
+    )
+    assert result["observed_seed"]["operators"] == ["kody-w"]
+    assert result["seed_provenance"]["parsed_payload_sha256"]
     for inferred_field in (
         "compliance",
         "created_count",
@@ -265,16 +359,93 @@ def test_network_sniff_is_unverified_publication_observation(monkeypatch):
         assert inferred_field not in observation
 
 
-def test_network_sniff_apply_flag_refuses_default_state_write(
+def test_network_sniff_retains_breadth_first_federation_walk(monkeypatch):
+    peer_rappid = f"rappid:@peer/rapp-estate:{'b' * 64}"
+    beacons = {
+        "kody-w": {
+            "schema": "rapp-network-beacon/1.1",
+            "operator_rappid": RAPPID,
+            "discovery": {
+                "indexable": True,
+                "federation_hints": ["peer"],
+            },
+        },
+        "peer": {
+            "schema": "rapp-network-beacon/1.1",
+            "operator_rappid": peer_rappid,
+            "discovery": {
+                "indexable": True,
+                "federation_hints": [],
+            },
+        },
+    }
+    monkeypatch.setattr(
+        sniff_network,
+        "fetch_seed",
+        lambda _url: {
+            "schema": "rapp-network-seed/1.0",
+            "operators": ["kody-w"],
+        },
+    )
+
+    def fetch(url):
+        handle = "peer" if "/peer/" in url else "kody-w"
+        return beacons[handle]
+
+    monkeypatch.setattr(sniff_network, "fetch_beacon_at_url", fetch)
+
+    result = sniff_network.sniff_via_raw(fetch_estates=False)
+
+    assert result["observations_count"] == 2
+    assert [
+        (row["published_github"], row["hop"])
+        for row in result["observations"]
+    ] == [("kody-w", 0), ("peer", 1)]
+    assert result["observations"][1]["discovered_via"] == "hint:kody-w"
+    assert result["observations"][1]["observed"]["beacon"] == beacons["peer"]
+
+
+def test_network_sniff_write_requires_approval_and_still_refuses_authority(
     migration_dir, monkeypatch
 ):
     result = sniff_network._unverified_envelope("raw", [], [])
     monkeypatch.setattr(sniff_network, "sniff_via_raw", lambda **_kwargs: result)
-    monkeypatch.setenv("HOME", str(migration_dir))
+    output = migration_dir / "network-sniff.json"
 
-    assert sniff_network.main(["--via", "raw", "--apply", "--json"]) == 1
-    assert result["apply_refused"] is True
-    assert not (migration_dir / ".brainstem" / "network-sniff.json").exists()
+    assert sniff_network.main(
+        ["--via", "raw", "--out", str(output), "--json"]
+    ) == 2
+    assert result["write_gate"]["code"] == "owner-approval-artifact-required"
+    assert not output.exists()
+
+    approval = migration_dir / "sniff-approval.json"
+    approval.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-tool-owner-approval/1.0",
+                "operation": "network-sniff-write",
+                "target": sniff_network._write_target(str(output), "raw"),
+            }
+        )
+    )
+    result = sniff_network._unverified_envelope("raw", [], [])
+    monkeypatch.setattr(sniff_network, "sniff_via_raw", lambda **_kwargs: result)
+    assert sniff_network.main(
+        [
+            "--via",
+            "raw",
+            "--out",
+            str(output),
+            "--owner-approval",
+            str(approval),
+            "--json",
+        ]
+    ) == 2
+    assert result["write_gate"]["code"] == (
+        "authenticated-registry-unavailable"
+    )
+    assert result["write_gate"]["approval"]["structurally_matching"] is True
+    assert not output.exists()
 
 
 def test_network_sniff_source_has_no_acceptance_or_compliance_inference():
@@ -282,6 +453,16 @@ def test_network_sniff_source_has_no_acceptance_or_compliance_inference():
     assert '"accepted": True' not in source
     assert 'record["compliance"]' not in source
     assert '"compliance":' not in source
+    for retained in (
+        "deque",
+        "federation_hints",
+        "dns-sd",
+        '"search", "repos"',
+        "observed_browse_output",
+        "observed_search_results",
+        "parsed_payload_sha256",
+    ):
+        assert retained in source
 
 
 def test_ecosystem_cache_fallback_is_explicitly_stale(
@@ -307,6 +488,38 @@ def test_ecosystem_cache_fallback_is_explicitly_stale(
     assert evidence["freshness"] == "stale"
     assert "raw.githubusercontent.com" not in evidence["source"]
     assert evidence["cache_age_seconds"] >= 0
+
+
+def test_ecosystem_live_read_does_not_mutate_cache_by_default(
+    migration_dir, monkeypatch
+):
+    cache_dir = migration_dir / "audit-cache"
+    monkeypatch.setattr(ecosystem_audit, "CACHE_DIR", str(cache_dir))
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return b'{"live":true}'
+
+    monkeypatch.setattr(
+        ecosystem_audit.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: Response(),
+    )
+
+    body, evidence = ecosystem_audit._raw_fetch(
+        "https://raw.githubusercontent.com/example/repo/main/rappid.json"
+    )
+
+    assert body == b'{"live":true}'
+    assert evidence["freshness"] == "live"
+    assert evidence["cache_updated"] is False
+    assert not cache_dir.exists()
 
 
 def test_online_ecosystem_evidence_unavailable_is_incomplete_and_nonzero(
@@ -379,16 +592,63 @@ def test_ecosystem_guidance_is_owner_reviewed_and_non_executable():
     assert guidance["status"] == "owner-review-required"
     assert guidance["owner_review_required"] is True
     assert guidance["executable"] is False
+    assert guidance["auto_execute"] is False
+    assert guidance["apply_permitted"] is False
     assert "one_liner" not in guidance
     assert "agent_to_invoke" not in guidance
+    assert guidance["historical_strategy"]["historical_mechanism"] == "Launch"
+    assert guidance["historical_strategy"]["parameter_plan"]["dry_run"] is True
+    pull = ecosystem_audit._owner_review_guidance(
+        "offline-peer",
+        "kody-w/offline-peer",
+        "GLOBAL_TO_LOCAL",
+        "twin",
+    )
+    assert pull["historical_strategy"]["historical_mechanism"] == "RarLoader"
     source = (ROOT / "tools" / "ecosystem_audit.py").read_text(
         encoding="utf-8"
     )
-    for forbidden in ("dry_run=False", "Launch", "Graft", "RarLoader"):
-        assert forbidden not in source
+    assert "dry_run=False" not in source
+    for retained in ("Launch", "Graft", "RarLoader", "_diff_offspring"):
+        assert retained in source
 
 
-def test_retired_ecosystem_kinds_are_inert_historical_observations():
+def test_ecosystem_output_write_requires_authenticated_owner_authority(
+    migration_dir,
+):
+    out_dir = migration_dir / "audit-out"
+    target = {
+        "out_dir": str(out_dir.resolve()),
+        "artifacts": ["ecosystem-audit.json", "ecosystem-audit.md"],
+    }
+    approval = migration_dir / "audit-approval.json"
+    approval.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-tool-owner-approval/1.0",
+                "operation": "ecosystem-audit-write",
+                "target": target,
+            }
+        )
+    )
+
+    result = ecosystem_audit.audit_ecosystem(
+        mode="offline",
+        repo_filter="ant-farm",
+        out_dir=str(out_dir),
+        write_outputs=True,
+        owner_approval_path=str(approval),
+    )
+
+    assert result["output_write"]["code"] == (
+        "authenticated-registry-unavailable"
+    )
+    assert result["output_write"]["approval"]["structurally_matching"] is True
+    assert result["output_write"]["written"] is False
+    assert not out_dir.exists()
+
+
+def test_retired_ecosystem_kinds_keep_full_historical_comparisons():
     assert ecosystem_contract.HISTORICAL_KINDS == {
         "catalog",
         "installer",
@@ -397,28 +657,48 @@ def test_retired_ecosystem_kinds_are_inert_historical_observations():
     for kind in ecosystem_contract.HISTORICAL_KINDS:
         observation = ecosystem_contract.CONTRACTS[kind]
         assert observation["lifecycle"] == "historical-observation"
-        assert observation["required_files"] == []
+        assert observation["required_files"]
         assert observation["expected_product_schemas"] == {}
         assert observation["rappid_kind"] is None
         assert observation["identity_block_required"] is False
         assert observation["rar_required"] is False
         assert observation["kernel_base_check"] is False
-        assert observation["historical_shape"]
+        assert observation["historical_shape"]["required_files"] == (
+            observation["required_files"]
+        )
+
+        evidence = {}
+
+        def missing(path):
+            evidence[path] = {
+                "path": path,
+                "source": "fixture",
+                "status": "missing",
+                "freshness": "offline-fixture",
+            }
+            missing.evidence = evidence
+            return None, "missing"
+
+        missing.evidence = evidence
 
         result = ecosystem_audit._diff_offspring(
             kind,
             kind,
             observation,
-            lambda _path: (_ for _ in ()).throw(
-                AssertionError("historical observation must not fetch")
-            ),
+            missing,
             None,
         )
-        assert result["ok"] is True
+        assert result["ok"] is False
+        assert result["drift"]
+        assert {
+            drift["path"] for drift in result["drift"]
+            if drift["category"] == "missing_files"
+        } >= set(observation["required_files"])
         assert result["kind_lifecycle"] == "historical-observation"
+        assert ecosystem_audit._classify_drift(result, kind) == "HISTORICAL"
 
 
-def test_holo_generator_is_explicitly_nonconformant_tombstone():
+def test_holo_generator_retains_full_historical_profile_by_default():
     result = holo_card_generator.generate_holo_card(
         RAPPID,
         "neighborhood",
@@ -427,14 +707,14 @@ def test_holo_generator_is_explicitly_nonconformant_tombstone():
         "Offline Peer",
     )
 
-    assert result["schema"] == "rapp-holocard-historical-observation/1.0"
-    assert result["ok"] is False
+    assert result["schema"] == "rapp-holocard-historical-profile/1.0"
+    assert result["ok"] is True
     assert result["accepted"] is False
     assert result["conformant"] is False
-    assert result["status"] == "RETIRED_NONCONFORMANT"
-    assert result["output_permitted"] is False
-    assert result["owner_review_required"] is True
-    for conformant_member in (
+    assert result["status"] == "HISTORICAL_NON_ACCEPTED"
+    assert result["publication_permitted"] is False
+    profile = result["profile"]
+    for retained_member in (
         "id",
         "hp",
         "stats",
@@ -443,20 +723,55 @@ def test_holo_generator_is_explicitly_nonconformant_tombstone():
         "meta",
         "avatar_svg",
     ):
-        assert conformant_member not in result
+        assert retained_member in profile
+    assert profile["abilities"]
+    assert profile["meta"]["rappid"] == RAPPID
+    assert result["provenance"]["mnemonic_vocabulary"][
+        "registry_compatible"
+    ] is False
 
 
-def test_holo_generator_source_never_emits_claimed_registry_schema():
+def test_holo_generator_supports_exact_schema_pin_without_acceptance():
+    result = holo_card_generator.generate_holo_card(
+        RAPPID,
+        "neighborhood",
+        "kody-w",
+        "offline-peer",
+        "Offline Peer",
+        schema_pin=holo_card_generator.RAPPCARDS_V1_1_2_PIN,
+    )
+
+    assert result["schema"] == "rapp-holocard-pinned-profile/1.0"
+    assert result["ok"] is True
+    assert result["conformant"] is True
+    assert result["accepted"] is False
+    assert result["publication_permitted"] is False
+    assert result["selected_schema"]["commit"] == (
+        "5bfcea8d6aaa78e988827783b44e0d384ed3c14a"
+    )
+    assert result["selected_schema"]["sha256"] == (
+        "af5a9dda865430c720ed0409160eb6d61afb4960f7b5c740269d1002c87d41dc"
+    )
+    assert result["profile"]["schema"] == "rappcards/1.1.2"
+    assert "historical_incantation_preview" in result["profile"]["meta"]
+
+
+def test_holo_generator_source_retains_generation_algorithm():
     source = (ROOT / "tools" / "holo_card_generator.py").read_text(
         encoding="utf-8"
     )
-    assert '"schema":       "rappcards/1.1.2"' not in source
-    assert '"schema": "rappcards/1.1.2"' not in source
+    for retained in (
+        "_generate_profile",
+        "_derive_stats",
+        "abilities_template",
+        "generate_avatar_svg",
+        "generate_summon_qr_svg",
+        "SUPPORTED_SCHEMA_PINS",
+    ):
+        assert retained in source
     check = holo_card_generator._self_check()
-    assert check["ok"] is False
-    assert check["self_check_passed"] is True
+    assert check["ok"] is True
     assert check["accepted"] is False
-    assert check["conformant"] is False
 
 
 def test_mirror_drift_uses_exact_pin_and_never_overwrites(
@@ -469,7 +784,8 @@ def test_mirror_drift_uses_exact_pin_and_never_overwrites(
     assert "/main" not in source
     assert "Restore with:" not in source
     assert "\n    cp " not in source
-    assert "Do not overwrite immutable bytes" in source
+    assert "Do not overwrite or remove immutable bytes" in source
+    assert "Inspect the pinned Grail" in source
 
     pin = json.loads((ROOT / "KERNEL_PIN.json").read_text(encoding="utf-8"))
     frozen = pin["kernel"]["frozen"]
@@ -512,6 +828,10 @@ with open(os.path.join(os.environ["RAPP_TEST_ROOT"], path), "rb") as handle:
 
     assert completed.returncode == 0, completed.stderr or completed.stdout
     assert "rapp-installer@brainstem-v0.6.9" in completed.stdout
+    assert (
+        "https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9"
+        in completed.stdout
+    )
     assert {
         path: (ROOT / path).read_bytes()
         for path in frozen
@@ -709,27 +1029,174 @@ def test_rebuild_operator_owner_mismatch_is_invalid_refusal():
     assert "does not match requested" in result["error"]["detail"]
 
 
-def test_rebuild_is_non_success_plan_without_publication_discovery():
+def test_rebuild_created_discovery_retains_filtering_and_source_records(
+    monkeypatch,
+):
+    child = f"rappid:@kody-w/child:{'b' * 64}"
+    other = f"rappid:@kody-w/other:{'c' * 64}"
+    repos = [
+        {"name": "child", "fork": False, "owner": {"login": "kody-w"}},
+        {"name": "other", "fork": False, "owner": {"login": "kody-w"}},
+    ]
+    records = {
+        "child": {
+            "schema": "rapp/1",
+            "kind": "twin",
+            "rappid": child,
+            "parent_rappid": RAPPID,
+        },
+        "other": {
+            "schema": "rapp/1",
+            "kind": "twin",
+            "rappid": other,
+            "parent_rappid": f"rappid:@kody-w/unrelated:{'d' * 64}",
+        },
+    }
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_list_handle_repos",
+        lambda _handle: (repos, []),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_raw_fetch_json_checked",
+        lambda _owner, repo, _path: (records[repo], "ok", ""),
+    )
+
+    created, skipped, errors = rebuild_estate.discover_created(
+        "kody-w", RAPPID
+    )
+
+    assert errors == []
+    assert [row["rappid"] for row in created] == [child]
+    assert created[0]["_observation"]["identity_record"] == records["child"]
+    assert created[0]["_observation"]["accepted"] is False
+    assert skipped[0]["identity_record"] == records["other"]
+    assert "parent_rappid" in skipped[0]["reason"]
+
+
+def test_rebuild_membership_discovery_retains_exact_verification_records(
+    monkeypatch,
+):
+    gate = f"rappid:@peer/gate:{'e' * 64}"
+    hit = {
+        "repository": {"nameWithOwner": "peer/gate"},
+        "path": "members.json",
+    }
+    members = {
+        "schema": "rapp-neighborhood-members/1.0",
+        "members": [{"rappid": RAPPID, "role": "member"}],
+    }
+    identity = {
+        "schema": "rapp/1",
+        "kind": "neighborhood",
+        "rappid": gate,
+    }
+    monkeypatch.setattr(
+        rebuild_estate,
+        "_gh",
+        lambda _args: (0, json.dumps([hit]), ""),
+    )
+
+    def fetch(_owner, _repo, path):
+        return (
+            (members, "ok", "")
+            if path == "members.json"
+            else (identity, "ok", "")
+        )
+
+    monkeypatch.setattr(rebuild_estate, "_raw_fetch_json_checked", fetch)
+
+    member, skipped, errors = rebuild_estate.discover_memberships(RAPPID)
+
+    assert errors == []
+    assert skipped == []
+    assert [row["rappid"] for row in member] == [gate]
+    observation = member[0]["_observation"]
+    assert observation["members_record"] == members
+    assert observation["identity_record"] == identity
+    assert observation["search_hit"] == hit
+    assert observation["accepted"] is False
+
+
+def test_rebuild_retains_discovery_and_returns_unaccepted_candidate(
+    monkeypatch,
+):
+    created_rappid = f"rappid:@kody-w/created:{'b' * 64}"
+    member_rappid = f"rappid:@peer/member-gate:{'c' * 64}"
+    created = [
+        {
+            "rappid": created_rappid,
+            "added_at": UTC,
+            "via": "rebuild",
+            "_observation": {
+                "accepted": False,
+                "identity_record": {"rappid": created_rappid},
+            },
+        }
+    ]
+    member = [
+        {
+            "rappid": member_rappid,
+            "added_at": UTC,
+            "via": "rebuild",
+            "_observation": {
+                "accepted": False,
+                "members_record": {"members": [{"rappid": RAPPID}]},
+            },
+        }
+    ]
+    monkeypatch.setattr(
+        rebuild_estate,
+        "discover_created",
+        lambda *_args, **_kwargs: (created, [{"repo": "skipped"}], []),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "discover_memberships",
+        lambda *_args, **_kwargs: (member, [], []),
+    )
+
     result = rebuild_estate.rebuild("kody-w", RAPPID)
 
-    assert result["ok"] is False
+    assert result["ok"] is True
     assert result["accepted"] is False
-    assert result["status"] == "OWNER_AUTHORITY_REQUIRED"
-    assert result["mode"] == "plan-only"
+    assert result["status"] == "OBSERVED_UNVERIFIED"
+    assert result["mode"] == "inspect-plan"
     assert result["plan_only"] is True
     assert result["apply_permitted"] is False
     assert result["local_state_mutation_permitted"] is False
-    assert result["error"]["code"] == "authenticated-registry-unavailable"
-    assert result["candidate_plan"]["owner_review_required"] is True
-    assert result["candidate_plan"]["executable"] is False
-    assert "created" not in result
-    assert "member" not in result
+    assert result["candidate_estate"]["schema"] == "rapp-estate/1.1"
+    assert result["candidate_estate"]["created"] == [
+        {
+            "rappid": created_rappid,
+            "added_at": UTC,
+            "via": "rebuild",
+        }
+    ]
+    assert result["candidate_estate"]["member"][0]["rappid"] == member_rappid
+    assert result["observations"]["published_created_claims"] == created
+    assert result["observations"]["published_membership_claims"] == member
+    assert result["algorithm"]["operator_discovery_order"]
+    assert result["acceptance"]["accepted"] is False
 
 
-def test_rebuild_apply_and_out_flags_never_write(migration_dir):
+def test_rebuild_write_requires_artifact_and_still_refuses_authority(
+    migration_dir, monkeypatch
+):
     existing = migration_dir / "estate.json"
     original = b'{"existing":"estate must survive byte-for-byte"}\n'
     existing.write_bytes(original)
+    monkeypatch.setattr(
+        rebuild_estate,
+        "discover_created",
+        lambda *_args, **_kwargs: ([], [], []),
+    )
+    monkeypatch.setattr(
+        rebuild_estate,
+        "discover_memberships",
+        lambda *_args, **_kwargs: ([], [], []),
+    )
 
     assert rebuild_estate.main(
         [
@@ -737,23 +1204,51 @@ def test_rebuild_apply_and_out_flags_never_write(migration_dir):
             "kody-w",
             "--operator-rappid",
             RAPPID,
-            "--apply",
             "--out",
             str(existing),
         ],
-    ) == 1
+    ) == 2
+    assert existing.read_bytes() == original
+
+    approval = migration_dir / "rebuild-approval.json"
+    approval.write_bytes(
+        canonical_bytes(
+            {
+                "schema": "rapp-tool-owner-approval/1.0",
+                "operation": "estate-rebuild-adopt",
+                "target": rebuild_estate._write_target(
+                    "kody-w", str(existing), False
+                ),
+            }
+        )
+    )
+    result = rebuild_estate.rebuild(
+        "kody-w",
+        RAPPID,
+        requested_out=str(existing),
+        owner_approval_path=str(approval),
+    )
+    assert result["ok"] is False
+    assert result["status"] == "OWNER_AUTHORITY_REQUIRED"
+    assert result["write_gate"]["code"] == (
+        "authenticated-registry-unavailable"
+    )
+    assert result["write_gate"]["approval"]["structurally_matching"] is True
     assert existing.read_bytes() == original
 
 
-def test_rebuild_source_has_no_live_discovery_or_write_implementation():
+def test_rebuild_source_retains_discovery_and_write_algorithm():
     source = (ROOT / "tools" / "rebuild_estate.py").read_text(encoding="utf-8")
-    for forbidden in (
+    for retained in (
         "subprocess",
         "urllib.request",
-        "gh search",
-        "write_bytes(",
+        '"search", "code"',
+        "_raw_fetch_json_checked",
+        "discover_operator_rappid",
+        "discover_created",
+        "discover_memberships",
+        "members.json",
         "write_text(",
-        ".mkdir(",
         "os.makedirs",
     ):
-        assert forbidden not in source
+        assert retained in source
