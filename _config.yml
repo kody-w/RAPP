@@ -10,8 +10,8 @@ include:
   - pages/vault/index.html
   - pages/vault/icon-192.svg
   - pages/vault/icon-512.svg
-  - pages/vault/_manifest.json
-  - pages/vault/_wikilink_aliases.json
+  - pages/vault/manifest.json
+  - pages/vault/wikilink-aliases.json
   - pages/vault/vault.css
   - pages/vault/vault.js
   - pages/vault/sw.js

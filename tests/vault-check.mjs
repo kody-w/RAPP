@@ -51,12 +51,12 @@ console.log(`Found ${mdFiles.length} markdown files.\n`);
 
 // ── 1. Manifest matches filesystem ──────────────────────────────────────────
 
-const manifestPath = resolve(VAULT, '_manifest.json');
+const manifestPath = resolve(VAULT, 'manifest.json');
 let manifest;
 try {
   manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 } catch (e) {
-  fail(`could not parse _manifest.json: ${e.message}`);
+  fail(`could not parse manifest.json: ${e.message}`);
   process.exit(1);
 }
 
@@ -199,16 +199,16 @@ for (const [path, title] of titleByPath) {
   headingsByPath.set(path, headings);
 }
 
-const aliasesPath = resolve(VAULT, '_wikilink_aliases.json');
+const aliasesPath = resolve(VAULT, 'wikilink-aliases.json');
 let aliases;
 try {
   aliases = JSON.parse(readFileSync(aliasesPath, 'utf8'));
 } catch (e) {
-  fail(`could not parse _wikilink_aliases.json: ${e.message}`);
+  fail(`could not parse wikilink-aliases.json: ${e.message}`);
   process.exit(1);
 }
 if (aliases.schema !== 'vault-wikilink-aliases/1.0' || !Array.isArray(aliases.aliases)) {
-  fail('_wikilink_aliases.json has an invalid schema or aliases list');
+  fail('wikilink-aliases.json has an invalid schema or aliases list');
   process.exit(1);
 }
 const aliasToTarget = new Map();

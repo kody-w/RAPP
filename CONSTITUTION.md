@@ -1413,7 +1413,7 @@ was articulated. One directory, two faces — see
   root. The right home for that content is a vault note, with a
   hook line, frontmatter, and wikilinks.
 - ❌ Letting the viewer drift from the vault. If you rename or move
-  a note, update `_manifest.json` in the same change.
+  a note, update `manifest.json` in the same change.
 - ❌ Skipping the stub. If a topic deserves a post but the post
   isn't ready, ship the stub. The slot in the index is itself a
   forcing function.

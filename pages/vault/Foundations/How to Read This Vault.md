@@ -97,7 +97,7 @@ If you're adding a note:
 
 - Use the existing template — frontmatter, hook, body, related. Match the voice (third person, project voice, no PII).
 - Status starts at `stub`; promote to `published` only when the bar is met.
-- Update `_manifest.json` so the viewer surfaces the note.
+- Update `manifest.json` so the viewer surfaces the note.
 - Cross-link aggressively. Three to five wikilinks per published post is the floor.
 - See [[Vault Build-Out Plan]] for the full writing rules.
 
