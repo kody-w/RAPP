@@ -3,5 +3,25 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Retired historical Doorman harness; no runnable package scripts or dependencies remain."
+  "description": "Fixture-gated Playwright harness retaining the historical Doorman browser and CLI logic without credential discovery or default network access.",
+  "scripts": {
+    "chat": "node chat.js",
+    "smoke": "node smoke.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  },
+  "rappHistoricalSource": {
+    "commit": "6bd45f00981959a3fdfcc64fb32608533aae5021",
+    "blobs": {
+      "chat.js": "6562be9e8948d11fffbe2937897314f024e63038",
+      "smoke.js": "56e95e0cd380f7fad7f9d53aa59df5909ae621e5",
+      "package.json": "fae48ea89656dec37666ca61ce982e5d8fe4efa8"
+    }
+  },
+  "rappSafetyDefaults": {
+    "browserExecutionEnabled": false,
+    "credentialDiscovery": false,
+    "allowedOrigins": "loopback-or-explicit-fixture-allowlist"
+  }
 }
