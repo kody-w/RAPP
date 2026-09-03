@@ -2322,9 +2322,9 @@
         }
       },
       "restored": {
-        "commit": "6311704f519e40fa8d666d23f85e130193098559",
-        "sha256": "7ac817dfc9428b26ee92de3b3fe68468f2e89d6148e0fee3fccca6e815a62b83",
-        "bytes": 64225
+        "commit": "961e09a85c069ad80b637edae4b5dab4500f7005",
+        "sha256": "796d8184c0748e26fa22127dead8624cc54a281df3582d8ebc57d28deaa7c6c9",
+        "bytes": 65058
       },
       "preservation_check": {
         "type": "python-symbol-superset",
