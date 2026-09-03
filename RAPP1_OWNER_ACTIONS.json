@@ -57,8 +57,8 @@
       "4c2b999f8c890b76d057241d29ecda29e0239d79"
     ],
     "status_path": "RAPP1_STATUS.md",
-    "status_sha256": "7153ecdc6a855a9399625f441c0b99e543e4444ef792c5cb53173d3b0d65bd7f",
-    "status_state": "Owner-action ledger links, dated and current path counts, restored target-owned launch boundaries, the direct immutable brainstem.py limitation, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
+    "status_sha256": "bce9a915822cad10a7fe80c4e8c4965c2ce0dd8e292a633c8d41d7ec33c3cfd3",
+    "status_state": "Owner-action ledger links, dated and current path counts, restored target-owned launch boundaries, exact inert copies of removed runtimes, the direct immutable brainstem.py limitation, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
     "current_path_hashes": {
       "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
       "pages/tutorials/commons.egg": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",

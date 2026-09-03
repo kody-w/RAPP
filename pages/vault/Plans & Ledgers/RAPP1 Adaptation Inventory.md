@@ -75,7 +75,7 @@ are not accepted protocol objects.
 | NETWORK-001 | Network/audit tools | Offline/read-only by default | Add optional authenticated acceptance pass while retaining raw observations | Registry, root |
 | SWARM-001 | Tier 2, simulations, host tools | Full source with inspect/plan/sandbox defaults | Keep source receipts, local replay, exact loopback chat, and effect gates synchronized | Registry for release |
 | GENERATED-001 | Generated manifests and snapshots | Mixed generator contracts | Standardize pinned inputs, check mode, output hash, and provenance | None |
-| HISTORY-001 | Source/archive/test corpus | Preserved evidence | Index every source and port useful behavior into safe replay tests | None |
+| HISTORY-001 | Source/archive/test corpus | Preserved evidence plus exact inert copies of removed runtimes | Keep every source receipt and port useful behavior into safe replay tests | None |
 | TEST-001 | Canonical gate | Structural, preservation, mutation, and safety coverage | Maintain source-retention and pre-effect authorization tests as adapters evolve | Owner fixtures remain external |
 | MIRROR-001 | External mirrors | Historical observations | Require immutable provenance and byte identity for any republication | Optional owner publication |
 
@@ -97,9 +97,9 @@ visuals, copy, examples, and local interactions. Their shared safety target is:
 
 The source records are in
 [`HISTORICAL_SOURCE_LEDGER.json`](../../../HISTORICAL_SOURCE_LEDGER.json).
-That ledger currently verifies 117 restoration records: 50 page or partial
-artifacts, 59 executable/code artifacts, and 8 structured documents, templates,
-or historical records.
+That ledger currently verifies 125 restoration records: 50 page or partial
+artifacts, 59 executable/code artifacts, 8 structured documents or templates,
+and 8 exact non-executable copies of removed runtime sources.
 
 ## Executable adaptation examples
 
@@ -149,6 +149,12 @@ bounded local fixtures. RAPP chat routes solely through
 `http://127.0.0.1:7073/chat`; deployment, packaging, extraction, process,
 filesystem, model, credential, and repository effects stop before their
 executors unless every receipt and owner-evidence gate passes.
+
+Eight source files removed from active T2T, workspace, Swarm-server, chat,
+lifecycle, neighborhood-membership, and reserved-upgrade paths are retained
+byte-for-byte under `historical/source-archive/`. Their original runtime paths
+remain absent; the archive uses non-executable `.txt` files, is excluded from
+GitHub Pages, and is cross-linked from the source ledger.
 
 ### Metropolis
 

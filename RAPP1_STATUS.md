@@ -28,8 +28,8 @@ are dated evidence, not interchangeable snapshots:
   5 archives, 450 recursive members, and 2 JSON eggs.
 - **Integrated closure tree: 699/699 tracked paths (dated pre-restoration
   snapshot)** after removing the last live Cave installer agent.
-- **Current restoration inventory (2026-09-03): 722 tracked paths**, pinned by
-  path-set digest in `RAPP1_ADAPTATION_INVENTORY.json`, with 117 exact
+- **Current restoration inventory (2026-09-03): 731 tracked paths**, pinned by
+  path-set digest in `RAPP1_ADAPTATION_INVENTORY.json`, with 125 exact
   restoration records in `HISTORICAL_SOURCE_LEDGER.json`. The canonical gate
   derives current inventory from `git ls-files`; it does not treat an older
   count as current.

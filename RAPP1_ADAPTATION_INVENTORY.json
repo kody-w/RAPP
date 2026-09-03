@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-03",
-    "tracked_path_count": 722,
-    "tracked_path_set_sha256": "99763d11906cc21cdd6d62e568cf6c6b2e5b62f7eddbefd39058c065f9e5076e",
+    "tracked_path_count": 731,
+    "tracked_path_set_sha256": "3f088647ac4e7c192fb31f7bda02c29c34ffcb605289352fc8a423977ef72cb2",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,17 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 722,
-      "path_set_sha256": "99763d11906cc21cdd6d62e568cf6c6b2e5b62f7eddbefd39058c065f9e5076e"
+      "expected_count": 731,
+      "path_set_sha256": "3f088647ac4e7c192fb31f7bda02c29c34ffcb605289352fc8a423977ef72cb2"
+    },
+    {
+      "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
+      "selector": {
+        "type": "git-prefix",
+        "prefix": "historical/source-archive/"
+      },
+      "expected_count": 9,
+      "path_set_sha256": "af218be9d2dfd273cd67b4ee8db68c171ee01c6d4723b705193a0e175e330f41"
     },
     {
       "id": "PS-CORE",
@@ -489,6 +498,7 @@
           "prefixes": [
             "rapp_kernel/",
             "responsible-ai/",
+            "historical/source-archive/",
             "tools/"
           ]
         }
@@ -1473,9 +1483,12 @@
       "protocol_sections": [],
       "observed_state": "historical",
       "desired_state": "historical-preserved",
-      "path_set_refs": [],
+      "path_set_refs": [
+        "PS-HISTORICAL-SOURCE-ARCHIVE"
+      ],
       "paths": [
         "HISTORICAL_SOURCE_LEDGER.json",
+        "historical/source-archive/manifest.json",
         "tools/build_historical_source_ledger.py",
         "tests/fixtures/rapp1-retired-test-inventory.json",
         "tests/fixtures/legacy-conformance/README.md",
@@ -1491,9 +1504,9 @@
         "eggs": "Legacy archives and eggs remain exact and unaccepted.",
         "registry_trust_freshness": "Historical results cannot become current authority.",
         "grail_installer_pin": "The v0.6.0 latest alias remains archive history, not the v0.6.9 pin.",
-        "side_effects": "Historical fixtures are never executed directly."
+        "side_effects": "Historical fixtures and removed runtime sources are retained as non-executable, non-importable bytes and never published as active Pages content."
       },
-      "next_local_adaptation": "Index every restored source commit/blob/hash/byte count and port useful predecessor behavior into safe negative or local replay tests without altering original fixtures.",
+      "next_local_adaptation": "Keep every removed or adapted source pinned by commit/blob/hash/byte count and port useful predecessor behavior into safe negative or local replay tests without altering archived bytes.",
       "data_exhaust": {
         "preserve": true,
         "fidelity": "exact-bytes"
@@ -1502,6 +1515,7 @@
       "acceptance_tests": [
         "Every historical selector resolves and hashes match.",
         "All archive and retired-test bytes remain exact.",
+        "Removed runtime sources remain present under non-executable Pages-excluded archive paths.",
         "Historical fixtures cannot be returned as current authority or executed as live tests."
       ],
       "blocks_full_conformance": false
