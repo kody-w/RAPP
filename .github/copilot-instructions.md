@@ -11,7 +11,15 @@
 
 - Treat this checkout as experimental source, not a shipped three-tier
   platform. Azure, Copilot Studio, browser UI, installer, catalog, Shortcut,
-  planting, and legacy egg/hatch paths are retired or pre-acceptance.
+  planting, and legacy egg/hatch paths are historical or pre-acceptance.
+- Adapt, do not kill: restore the fullest artifact before changing it and
+  preserve substantive source, interfaces, schemas, examples, algorithms, and
+  observations as data exhaust. Disable only the exact unsafe side-effect
+  edge; do not replace useful artifacts with blank refusals or semantic
+  tombstones.
+- Preserve installer context as read-only evidence through `KERNEL_PIN.json`
+  and `kody-w/rapp-installer@brainstem-v0.6.9`. Never reactivate a moving
+  installer or infer installation authority from the historical interface.
 - RAPP is designed primarily for AI runtimes. Humans remain the sovereign
   owners, safety authorities, and beneficiaries. Prefer machine-verifiable
   contracts, explicit adoption receipts, portable context, and fail-closed

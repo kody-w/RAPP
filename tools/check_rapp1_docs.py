@@ -862,8 +862,10 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
             "status": "retired-template",
         },
         "cave/cubbies/index.json": {
-            "status": "retired",
-            "cubbies": [],
+            "status": "historical-observation",
+            "accepted": False,
+            "active_distribution": False,
+            "streamable": False,
         },
         "cave/cubbies/kody-w/cubby.json": {
             "status": "retired",
@@ -990,8 +992,20 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         ),
         {},
     )
-    if rar_agent:
-        errors.append("cave/rar/index.json: retired installer agent is still indexed")
+    if (
+        not rar_agent
+        or rar_agent.get("status") != "historical-observation"
+        or rar_agent.get("accepted") is not False
+        or rar_agent.get("active_distribution") is not False
+        or rar_agent.get("streamable") is not False
+        or rar_agent.get("source", {}).get("present") is not False
+        or rar_agent.get("kernel_pin", {}).get("record") != "KERNEL_PIN.json"
+        or rar_agent.get("kernel_pin", {}).get("tag") != "brainstem-v0.6.9"
+    ):
+        errors.append(
+            "cave/rar/index.json: historical installer-agent observation is "
+            "missing or executable"
+        )
     if (
         rar_rapp.get("status") != "retired"
         or rar_rapp.get("active_distribution") is not False
@@ -1006,10 +1020,31 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
     }
     super_agent = super_entries.get(("agent", "rapp_installer_agent.py"), {})
     super_egg = super_entries.get(("egg", "cubby-rapp-installer.egg"), {})
-    if super_agent:
-        errors.append("cave/super-rar/index.json: retired installer agent is still indexed")
-    if super_egg.get("streamable") is not False:
-        errors.append("cave/super-rar/index.json: installer egg remains streamable")
+    if (
+        not super_agent
+        or super_agent.get("status") != "historical-observation"
+        or super_agent.get("accepted") is not False
+        or super_agent.get("active_distribution") is not False
+        or super_agent.get("streamable") is not False
+        or super_agent.get("source", {}).get("present") is not False
+        or super_agent.get("kernel_pin", {}).get("record") != "KERNEL_PIN.json"
+        or super_agent.get("kernel_pin", {}).get("tag") != "brainstem-v0.6.9"
+    ):
+        errors.append(
+            "cave/super-rar/index.json: historical installer-agent observation "
+            "is missing or executable"
+        )
+    if (
+        not super_egg
+        or super_egg.get("accepted") is not False
+        or super_egg.get("active_distribution") is not False
+        or super_egg.get("streamable") is not False
+        or super_egg.get("distribution", {}).get("execute") is not False
+    ):
+        errors.append(
+            "cave/super-rar/index.json: installer egg observation is missing "
+            "or executable"
+        )
 
     canon_rule = rules["canon_closure"]
     for path in target_checks["canon_closure"]["paths"]:

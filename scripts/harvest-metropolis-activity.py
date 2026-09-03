@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Runtime containment note (2026-09-03): collection and writes are disabled.
-The fullest historical collector source is intentionally retained in place
-below unconditional refusal boundaries as provenance and learning corpus.
+Runtime adaptation note (2026-09-03): local snapshot inspection is the safe
+default. The fullest historical collector source is intentionally retained in
+place below the authenticated-apply boundary as provenance and learning
+corpus.
 
 Static Data Covenant harvester (RAR CONSTITUTION.md Article XXIV).
 
@@ -20,6 +21,7 @@ Usage:
 Env:
     GITHUB_TOKEN   optional; if set, used for higher API rate limits.
 """
+import argparse
 import json
 import os
 import sys
@@ -32,15 +34,19 @@ INDEX_PATH = os.path.join(ROOT, "pages", "metropolis", "index.json")
 SNAPSHOT_PATH = os.path.join(ROOT, "pages", "metropolis", "activity-snapshot.json")
 WINDOW_MINUTES = 15
 
-COMPATIBILITY_RESULT = {
-    "status": "gone",
-    "code": "metropolis-activity-harvester-retired",
+ONLINE_REFUSAL = {
+    "status": "refused",
+    "code": "authenticated-collection-binding-required",
     "accepted": False,
     "network_used": False,
     "write_performed": False,
     "historical_source_commit": "1d4141f32a0b90c8de24be136478cc583bed6474",
     "historical_source_blob": "1629e896160200a6ce7b08dc1c188908df236060",
-    "message": "Collection is disabled; the explorer reads frozen local snapshots.",
+    "message": (
+        "Online collection and snapshot writes require a reviewed transport, "
+        "an exact destination, and authenticated owner approval. The explorer "
+        "continues to use frozen local snapshots."
+    ),
 }
 
 
@@ -112,6 +118,7 @@ def validate_local_snapshots():
 
     events = snapshot.get("activity") or {}
     return {
+        "schema": "rapp-metropolis-local-snapshot-check/1.0",
         "status": "frozen-snapshots-valid",
         "accepted": False,
         "network_used": False,
@@ -124,16 +131,60 @@ def validate_local_snapshots():
     }
 
 
-def main():
-    if sys.argv[1:] == ["--check"]:
-        print(json.dumps(validate_local_snapshots(), sort_keys=True))
+def build_collection_plan():
+    with open(INDEX_PATH, encoding="utf-8") as f:
+        index = json.load(f)
+    targets = []
+    for entry in index.get("entries", []):
+        visibility = entry.get("visibility") or ""
+        slug = slug_from_gate_repo(entry.get("gate_repo"))
+        if slug and not visibility.startswith("private"):
+            targets.append(slug)
+    return {
+        "schema": "rapp-metropolis-collection-plan/1.0",
+        "status": "plan-only",
+        "accepted": False,
+        "network_default": False,
+        "write_default": False,
+        "source_commit": ONLINE_REFUSAL["historical_source_commit"],
+        "source_blob": ONLINE_REFUSAL["historical_source_blob"],
+        "targets": targets,
+        "destination": "pages/metropolis/activity-snapshot.json",
+    }
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Inspect frozen Metropolis snapshots or plan a reviewed collection."
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true")
+    mode.add_argument("--plan", action="store_true")
+    mode.add_argument("--online", action="store_true")
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="request a snapshot write; currently refused before any side effect",
+    )
+    args = parser.parse_args(argv)
+
+    if args.online or args.write:
+        result = {
+            **ONLINE_REFUSAL,
+            "online_requested": args.online,
+            "write_requested": args.write,
+        }
+        print(json.dumps(result, sort_keys=True))
+        return 78
+    if args.plan:
+        print(json.dumps(build_collection_plan(), sort_keys=True))
         return 0
 
-    print(json.dumps(COMPATIBILITY_RESULT, sort_keys=True))
-    return 78
+    print(json.dumps(validate_local_snapshots(), sort_keys=True))
+    return 0
 
     # BEGIN INERT HISTORICAL SOURCE — original scheduled-writer body retained
-    # verbatim after the unconditional refusal above.
+    # verbatim after the authenticated-apply refusal above.
     with open(INDEX_PATH) as f:
         index = json.load(f)
 

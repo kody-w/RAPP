@@ -205,20 +205,20 @@
     {
       "path": "tests/scenarios/16-metropolis-tracker.sh",
       "disposition": "canonical-direct",
-      "reason": "Checks retired Metropolis data, documentation, schedule, and harvester containment.",
-      "gate": "metropolis-retirement"
+      "reason": "Checks restored Metropolis data, documentation, local snapshots, and safe harvester modes.",
+      "gate": "metropolis-adaptation"
     },
     {
       "path": "tests/scenarios/20-cross-tracker-federation.sh",
       "disposition": "canonical-direct",
       "reason": "Checks that retained federation fixtures are historical and non-authoritative.",
-      "gate": "metropolis-federation-retirement"
+      "gate": "metropolis-federation-history"
     },
     {
       "path": "tests/scenarios/_lib.sh",
       "disposition": "canonical-helper",
-      "reason": "Sourced by both canonical offline Metropolis retirement scenarios.",
-      "gate": "metropolis-retirement"
+      "reason": "Sourced by both canonical offline Metropolis history/adaptation scenarios.",
+      "gate": "metropolis-adaptation"
     },
     {
       "path": "tests/test-t2t-removal.sh",

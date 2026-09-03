@@ -55,9 +55,6 @@ exclude:
   - cave/tools
   - pages/_lib
   - pages/metropolis/README.md
-  - pages/metropolis/activity-snapshot.json
-  - pages/metropolis/federated-demo.json
-  - pages/metropolis/index.json
   - pages/tutorials/commons.egg
   - pages/tutorials/egg_hatcher_agent.py
   - pages/tutorials/sample-session.egg

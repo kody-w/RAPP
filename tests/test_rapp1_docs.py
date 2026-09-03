@@ -465,33 +465,54 @@ class Rapp1DocumentationTests(unittest.TestCase):
             errors,
         )
 
-    def test_cave_installer_agent_remains_absent_from_live_indexes(self) -> None:
+    def test_cave_installer_agent_remains_historical_and_unreachable(self) -> None:
         path = ROOT / "cave/cubbies/kody-w/agents/rapp_installer_agent.py"
         self.assertFalse(path.exists())
         rar = json.loads((ROOT / "cave/rar/index.json").read_text())
-        self.assertFalse(
-            any(
-                entry.get("name") == "@kody-w/rapp_installer"
-                for entry in rar.get("agents", [])
-            )
+        rar_entry = next(
+            entry
+            for entry in rar.get("agents", [])
+            if entry.get("name") == "@kody-w/rapp_installer"
         )
+        self.assertEqual(rar_entry["status"], "historical-observation")
+        self.assertFalse(rar_entry["source"]["present"])
+        self.assertFalse(rar_entry["accepted"])
+        self.assertFalse(rar_entry["active_distribution"])
+        self.assertFalse(rar_entry["streamable"])
+        self.assertEqual(rar_entry["kernel_pin"]["record"], "KERNEL_PIN.json")
+        self.assertEqual(rar_entry["kernel_pin"]["tag"], "brainstem-v0.6.9")
         super_rar = json.loads(
             (ROOT / "cave/super-rar/index.json").read_text()
         )
-        self.assertFalse(
-            any(
-                entry.get("name") == "rapp_installer_agent.py"
-                for entry in super_rar.get("entries", [])
-            )
+        super_entry = next(
+            entry
+            for entry in super_rar.get("entries", [])
+            if entry.get("kind") == "agent"
+            and entry.get("name") == "rapp_installer_agent.py"
         )
+        self.assertEqual(super_entry["status"], "historical-observation")
+        self.assertFalse(super_entry["source"]["present"])
+        self.assertFalse(super_entry["accepted"])
+        self.assertFalse(super_entry["active_distribution"])
+        self.assertFalse(super_entry["streamable"])
 
     def test_cave_index_streamability_mutation_is_rejected(self) -> None:
         path = "cave/super-rar/index.json"
         value = json.loads((ROOT / path).read_text(encoding="utf-8"))
-        value["entries"][0]["streamable"] = True
+        entry = next(
+            item
+            for item in value["entries"]
+            if item.get("kind") == "egg"
+            and item.get("name") == "cubby-rapp-installer.egg"
+        )
+        entry["streamable"] = True
         errors = self._category_mutation_errors(path, json.dumps(value))
         self.assertTrue(
-            any(path in error and "remains streamable" in error for error in errors),
+            any(
+                path in error
+                and "installer egg observation is missing or executable" in error
+                for error in errors
+            ),
             errors,
         )
 

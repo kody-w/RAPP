@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# Scenario 20 — retired cross-tracker federation containment.
+# Scenario 20 — preserved cross-tracker federation history.
 
 source "$(dirname "$0")/_lib.sh"
 scenario_parse_args "$@"
 
-heading "Scenario 20 — Historical federation containment"
-note "Retains the old merge fixture without authorizing network federation"
+heading "Scenario 20 — Historical federation replay"
+note "Retains the local merge fixture without authorizing network federation"
 
 CANONICAL="$REPO_ROOT/pages/metropolis/index.json"
 PEER="$REPO_ROOT/pages/metropolis/federated-demo.json"
 
-heading "Step 1 — Both tracker records are historical refusals"
+heading "Step 1 — Both tracker records are historical and unaccepted"
 python3 - "$CANONICAL" "$PEER" <<'PY' \
   && step_pass "both records reject current protocol acceptance" \
-  || step_fail "tracker records are not retired consistently"
+  || step_fail "tracker records are not bounded consistently"
 import json
 import sys
 
@@ -60,9 +60,9 @@ PY
 
 heading "Why this matters"
 cat <<'EOF'
-  Audit and migration tools can still reproduce the legacy federation shape,
-  while current clients receive an explicit refusal instead of a discoverable
-  or mergeable network.
+  The restored browser and migration tools can reproduce the legacy federation
+  shape from local snapshots, while no network discovery, current membership,
+  or trust authority is implied.
 EOF
 
 scenario_summary
