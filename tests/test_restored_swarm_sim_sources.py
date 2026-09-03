@@ -6,8 +6,10 @@ import importlib.util
 import io
 import json
 import os
+import re
 import subprocess
 import sys
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -15,6 +17,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 PROVENANCE = {
+    "rapp_swarm/index.html": (
+        "da6cb94985c9525b681bc20c2926656bdfdad565",
+        "c2a34b63b697653a60612ad218a7e0f4caf11672",
+        "cc4e23ce16003f911ec1ae5d6fd7ba210fbf9d08d560f11013b1ce9c48779aa5",
+        9004,
+    ),
     "rapp_swarm/build.sh": (
         "7bcc3d24ab3759605630625225fd190612c3d594",
         "ddcdf06751f7100511d53ba1e6a84c8ac6b803f9",
@@ -56,6 +64,12 @@ PROVENANCE = {
         "9675cfc201e1aedffb6a3bf118bace07a8381897",
         "399f3d1e7227787846e347232ba35456e8c73ac5a685acdbcc59df9f830130e5",
         7441,
+    ),
+    "pages/tutorials/egg_hatcher_agent.py": (
+        "f715eb3e6d4b473bbc34c472d3ad60cf6a2e144f",
+        "be409f4f5c7d821e6573d182a34a663442177961",
+        "bdd2b796aeac17d01a8c675acf8dfcf717aaa29601451aefccf7feffe6b8cf04",
+        14962,
     ),
     "tools/front_door_specs.py": (
         "2efdc1f230ec939f0a1041caeb2813e5c4f59a1f",
@@ -110,6 +124,7 @@ PROVENANCE = {
 PYTHON_SOURCES = {
     "rapp_swarm/function_app.py",
     "tools/test_brainstem_server.py",
+    "pages/tutorials/egg_hatcher_agent.py",
     "tools/front_door_specs.py",
     "tools/sim/observe.py",
     "tools/sim/plant_two_brainstems.py",
@@ -117,7 +132,18 @@ PYTHON_SOURCES = {
     "cave/agents/cave_agent.py",
 }
 
+LINE_COVERAGE_MINIMUM = {
+    "rapp_swarm/index.html": 0.85,
+}
+
 REQUIRED_MARKERS = {
+    "rapp_swarm/index.html": (
+        "Azure Functions · Python 3.11",
+        "Application Insights",
+        "data-historical-href",
+        "connect-src 'none'",
+        "http://127.0.0.1:7073/chat",
+    ),
     "rapp_swarm/build.sh": ("rm -rf \"$DEST\"", "rsync -a", "services/*_service.py"),
     "rapp_swarm/provision-twin.sh": (
         "az deployment group create",
@@ -149,6 +175,13 @@ REQUIRED_MARKERS = {
         "class _ThreadingServer",
         "def _build_handler",
         "http://127.0.0.1:7073/chat",
+    ),
+    "pages/tutorials/egg_hatcher_agent.py": (
+        "def _historical_read_bytes",
+        "def _historical_route_organism",
+        "def _historical_route_rapplication",
+        "def _historical_route_neighborhood",
+        "def apply_hatch",
     ),
     "tools/front_door_specs.py": (
         "def _agent_spec",
@@ -205,6 +238,7 @@ SHELL_DEFAULTS = {
 PYTHON_DEFAULTS = (
     "rapp_swarm/function_app.py",
     "tools/test_brainstem_server.py",
+    "pages/tutorials/egg_hatcher_agent.py",
     "tools/front_door_specs.py",
     "tools/sim/observe.py",
     "tools/sim/plant_two_brainstems.py",
@@ -318,7 +352,9 @@ def test_exact_provenance_and_historical_implementation_retention():
         if relative in PYTHON_SOURCES:
             assert _symbols(source) <= _symbols(current), relative
         else:
-            assert _line_coverage(source, current) >= 0.985, relative
+            assert _line_coverage(source, current) >= LINE_COVERAGE_MINIMUM.get(
+                relative, 0.985
+            ), relative
 
 
 def test_shell_defaults_and_rejected_modes_invoke_no_external_effect(tmp_path):
@@ -1119,6 +1155,190 @@ def test_read_only_algorithms_remain_usable(tmp_path):
     assert replay["validation"] == {"ok": True, "message": "ok"}
     assert replay["result"]["applied"] is False
     assert replay["result"]["at"] == "2000-01-01T00:00:00Z"
+
+
+def test_swarm_index_is_a_complete_inert_deployment_plan():
+    source = (ROOT / "rapp_swarm/index.html").read_text(encoding="utf-8")
+    assert "<script" not in source.lower()
+    assert "<form" not in source.lower()
+    assert "onclick=" not in source.lower()
+    assert not re.search(
+        r'(?:^|\s)href=["\']https?://', source, re.IGNORECASE
+    )
+    assert "default-src 'none'" in source
+    assert "connect-src 'none'" in source
+    assert "form-action 'none'" in source
+    assert "data-historical-href=\"https://portal.azure.com/" in source
+    assert "data-historical-href=\"https://github.com/kody-w/CommunityRAPP\"" in source
+    assert "http://127.0.0.1:7073/chat" in source
+    assert "Deployment disabled" in source
+
+
+def test_egg_hatcher_inspects_locally_and_gates_network_and_apply(
+    tmp_path, monkeypatch
+):
+    module = _load_module("pages/tutorials/egg_hatcher_agent.py")
+    session_egg = tmp_path / "session.egg"
+    session_egg.write_text(
+        json.dumps(
+            {
+                "schema": "brainstem-egg/2.3-session",
+                "type": "session",
+                "name": "test-session",
+                "title": "Test Session",
+                "runtime": {"type": "html", "sha256": "a" * 64, "payload": ""},
+                "transcript": [],
+                "participants": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    agent = module.EggHatcherAgent()
+    inspected = json.loads(agent.perform(egg_path=str(session_egg)))
+    assert inspected["ok"] is True
+    assert inspected["mode"] == "inspect"
+    assert inspected["route"] == "session"
+    assert inspected["effects"] == []
+    assert inspected["manifest"]["schema"] == "brainstem-egg/2.3-session"
+    assert "Session cartridges run in a console" in inspected["plan"]
+
+    zip_egg = tmp_path / "organism.egg"
+    manifest = {
+        "schema": "brainstem-egg/2.2-organism",
+        "type": "organism",
+        "rappid": "legacy-test-organism",
+    }
+    with zipfile.ZipFile(zip_egg, "w") as archive:
+        archive.writestr("manifest.json", json.dumps(manifest))
+    blob = zip_egg.read_bytes()
+    info = module._introspect(blob)
+    assert info["container"] == "zip"
+    assert module._route_kind(info["manifest"]) == "organism"
+
+    network_calls: list[str] = []
+
+    def forbidden_urlopen(*_args, **_kwargs):
+        network_calls.append("urlopen")
+        raise AssertionError("default inspection must not access the network")
+
+    monkeypatch.setattr(module.urllib.request, "urlopen", forbidden_urlopen)
+    network_result = json.loads(
+        agent.perform(egg_path="https://example.invalid/test.egg")
+    )
+    assert network_result["read"] is False
+    assert network_result["effects_started"] is False
+    assert network_result["error"]["code"] == (
+        "reviewed-dependency-injection-required"
+    )
+    assert network_calls == []
+
+    destination = {"path": str(tmp_path / "hatched"), "kind": "organism"}
+    target = module.hatch_target(info, blob, destination)
+    events: list[str] = []
+    dependencies = _gate_dependencies(events, "hatch_executor")
+    apply_result = json.loads(
+        agent.perform(
+            egg_path=str(zip_egg),
+            mode="apply",
+            destination=destination,
+            _dependencies=dependencies,
+            _target_receipt=module.exact_target_receipt(
+                "legacy-egg-hatch", target
+            ),
+            _authority_evidence={"schema": "candidate-only"},
+        )
+    )
+    assert apply_result["applied"] is False
+    assert apply_result["effects_started"] is False
+    assert apply_result["error"]["code"] == "authenticated-registry-unavailable"
+    assert events == ["review", "authority"]
+    assert not (tmp_path / "hatched").exists()
+
+    executor_events: list[object] = []
+
+    def review(_dependencies, _operation, _target):
+        executor_events.append("review")
+        return True
+
+    def authenticate(_evidence, _operation, _target):
+        executor_events.append("authority")
+        return {
+            "authenticated": True,
+            "fresh": True,
+            "owner_anchor_verified": True,
+        }
+
+    def executor(route, bound_manifest, bound_blob, bound_target):
+        executor_events.append(
+            {
+                "route": route,
+                "manifest": bound_manifest,
+                "blob": bound_blob,
+                "target": bound_target,
+            }
+        )
+        return {"ok": True, "applied": False, "test_only": True}
+
+    fake_dependencies = {
+        "review": review,
+        "authenticate_section13": authenticate,
+        "hatch_executor": executor,
+    }
+    fake_result = module.apply_hatch(
+        info,
+        blob,
+        destination=destination,
+        dependencies=fake_dependencies,
+        target_receipt=module.exact_target_receipt(
+            "legacy-egg-hatch", target
+        ),
+        authority_evidence={"schema": "test-only"},
+    )
+    assert fake_result == {"ok": True, "applied": False, "test_only": True}
+    assert executor_events[:2] == ["review", "authority"]
+    bound = executor_events[2]
+    assert bound["route"] == "organism"
+    assert not callable(bound["route"])
+    assert isinstance(bound["manifest"], bytes)
+    assert isinstance(bound["target"], bytes)
+    bound_target = json.loads(bound["target"])
+    bound_manifest = json.loads(bound["manifest"])
+    assert bound_target["destination"] == {
+        "kind": "organism",
+        "path": str((tmp_path / "hatched").resolve()),
+    }
+    assert bound_manifest == manifest
+    assert bound["blob"] == blob
+
+    malformed = tmp_path / "malformed-session.egg"
+    malformed.write_text(
+        json.dumps(
+            {
+                "schema": "brainstem-egg/2.3-session",
+                "type": "session",
+                "runtime": "not-an-object",
+            }
+        ),
+        encoding="utf-8",
+    )
+    malformed_result = json.loads(agent.perform(egg_path=str(malformed)))
+    assert malformed_result["ok"] is False
+    assert malformed_result["error"]["code"] == "egg-introspection-failed"
+
+    duplicate = tmp_path / "duplicate-members.egg"
+    duplicate.write_text(
+        '{"schema":"brainstem-egg/2.3-session","schema":"other"}',
+        encoding="utf-8",
+    )
+    duplicate_result = json.loads(agent.perform(egg_path=str(duplicate)))
+    assert duplicate_result["ok"] is False
+    assert duplicate_result["error"]["code"] == "egg-introspection-failed"
+
+    symlink = tmp_path / "linked.egg"
+    symlink.symlink_to(session_egg)
+    symlink_result = json.loads(agent.perform(egg_path=str(symlink)))
+    assert symlink_result["read"] is False
+    assert symlink_result["error"]["code"] == "egg-read-failed"
 
 
 def test_vendored_evidence_and_immutable_grail_are_unchanged():
