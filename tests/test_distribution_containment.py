@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_INVENTORY = ROOT / "tests/rapp1-live-surface-inventory.json"
 
-RETIRED_SHELL_ENTRYPOINTS = (
+RESTORED_SHELL_ENTRYPOINTS = (
     "install.sh",
     "install.command",
     "docs/install.sh",
@@ -27,14 +27,14 @@ RETIRED_SHELL_ENTRYPOINTS = (
     "installer/integration_plant.sh",
     "rapp_brainstem/start.sh",
 )
-RETIRED_POWERSHELL_ENTRYPOINTS = (
+RESTORED_POWERSHELL_ENTRYPOINTS = (
     "install.ps1",
     "community_rapp/install.ps1",
     "deploy.ps1",
     "installer/install.ps1",
     "rapp_brainstem/start.ps1",
 )
-RETIRED_CMD_ENTRYPOINTS = (
+RESTORED_CMD_ENTRYPOINTS = (
     "install.cmd",
     "docs/install.cmd",
     "installer/install.cmd",
@@ -68,24 +68,39 @@ def test_live_surface_inventory_uses_dynamic_counts_and_required_categories():
             assert (ROOT / relative).is_file(), f"stale {category} path: {relative}"
 
 
-def test_unix_installer_fails_closed_without_an_incomplete_lock_path():
-    source = (ROOT / "installer/install.sh").read_text(encoding="utf-8")
-    assert "410 Gone" in source
-    assert "No complete target-owned lock" in source
-    assert "exit 78" in source
-    for marker in (
-        "git ",
-        "pip ",
-        "venv",
-        "requirements.txt",
-        "KERNEL_TAG",
-        "sha256",
-        "curl ",
-    ):
-        assert marker not in source
+def test_restored_shell_entrypoints_preserve_source_and_default_safe():
+    for relative in RESTORED_SHELL_ENTRYPOINTS:
+        path = ROOT / relative
+        source = path.read_text(encoding="utf-8")
+        assert path.stat().st_mode & stat.S_IXUSR
+        assert "RAPP_RESTORED_SOURCE_COMMIT=" in source
+        assert "RAPP_RESTORED_SOURCE_BLOB=" in source
+        assert "RAPP_RESTORED_GATE_BEGIN" in source
+        assert "RAPP_RESTORED_GATE_END" in source
+        assert "RAPP_RESTORED_HISTORICAL_SOURCE_BEGIN" in source
+        assert "kody-w/rapp-installer@brainstem-v0.6.9" in source
+
+        result = subprocess.run(
+            ("bash", relative),
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if relative == "rapp_brainstem/start.sh":
+            assert result.returncode == 78
+            assert '"mode":"inspect"' in result.stderr
+            assert "410 Gone" in result.stderr
+            continue
+        assert result.returncode == 0, (relative, result.stderr)
+        plan = json.loads(result.stdout)
+        assert plan["target"] == relative
+        assert plan["mode"] == "plan"
+        assert plan["apply_permitted"] is False
+        assert plan["kernel"] == "kody-w/rapp-installer@brainstem-v0.6.9"
 
 
-def test_installer_rejects_moved_tag_changed_agent_and_requirements():
+def test_installer_apply_refuses_before_external_tools():
     scratch = ROOT / f"tests/.rapp1-installer-attacks-{os.getpid()}"
     shutil.rmtree(scratch, ignore_errors=True)
     try:
@@ -111,186 +126,103 @@ def test_installer_rejects_moved_tag_changed_agent_and_requirements():
             )
             fake_tool.chmod(0o755)
 
-        frozen = json.loads(
-            (ROOT / "KERNEL_PIN.json").read_text(encoding="utf-8")
-        )["kernel"]["frozen"]
-        for attack in ("moved-tag", "changed-agent", "changed-requirements"):
-            remote = scratch / attack
-            for relative in frozen:
-                destination = remote / relative
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_bytes((ROOT / relative).read_bytes())
-            (remote / "rapp_brainstem/requirements.txt").write_text(
-                "flask==3.1.0\n",
-                encoding="utf-8",
-            )
-            if attack == "moved-tag":
-                (remote / ".simulated-tag-target").write_text(
-                    "attacker-controlled-commit\n",
-                    encoding="utf-8",
-                )
-                (remote / "rapp_brainstem/agents/tag_payload_agent.py").write_text(
-                    "raise RuntimeError('moved tag payload executed')\n",
-                    encoding="utf-8",
-                )
-            elif attack == "changed-agent":
-                (remote / "rapp_brainstem/agents/unlocked_agent.py").write_text(
-                    "raise RuntimeError('unlocked agent executed')\n",
-                    encoding="utf-8",
-                )
-            else:
-                (remote / "rapp_brainstem/requirements.txt").write_text(
-                    "unlocked-package @ https://example.invalid/moved.whl\n",
-                    encoding="utf-8",
-                )
-            for relative, digest in frozen.items():
-                assert _sha256(remote / relative) == digest
-
-            home = scratch / f"home-{attack}"
-            if attack != "moved-tag":
-                shutil.copytree(remote, home / "src")
-            before = {
-                path.relative_to(remote): path.read_bytes()
-                for path in remote.rglob("*")
-                if path.is_file()
+        sentinel = scratch / "tool-was-invoked"
+        evidence = scratch / "evidence"
+        evidence.mkdir()
+        dependency = evidence / "dependency.json"
+        approval = evidence / "approval.json"
+        section13 = evidence / "section13.json"
+        for path in (dependency, approval, section13):
+            path.write_text("{}\n", encoding="utf-8")
+        home = scratch / "home"
+        home.mkdir()
+        before = tuple(home.iterdir())
+        environment = os.environ.copy()
+        environment.update(
+            {
+                "BRAINSTEM_HOME": os.fspath(home),
+                "HOME": os.fspath(home),
+                "PATH": os.pathsep.join(
+                    (os.fspath(fake_bin), environment.get("PATH", ""))
+                ),
+                "RAPP_TEST_SENTINEL": os.fspath(sentinel),
             }
-            installed_before = {
-                path.relative_to(home): path.read_bytes()
-                for path in home.rglob("*")
-                if path.is_file()
-            }
-            sentinel = scratch / f"{attack}-tool-was-invoked"
-            environment = os.environ.copy()
-            environment.update(
-                {
-                    "BRAINSTEM_HOME": os.fspath(home),
-                    "PATH": os.pathsep.join(
-                        (os.fspath(fake_bin), environment.get("PATH", ""))
-                    ),
-                    "RAPP_TEST_REMOTE_TREE": os.fspath(remote),
-                    "RAPP_TEST_SENTINEL": os.fspath(sentinel),
-                }
-            )
-            result = subprocess.run(
-                ("bash", "installer/install.sh"),
-                cwd=ROOT,
-                env=environment,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-            assert result.returncode == 78, attack
-            assert "410 Gone" in result.stderr, attack
-            assert not sentinel.exists(), f"{attack}: installer invoked a tool"
-            if attack == "moved-tag":
-                assert not home.exists(), attack
-            assert before == {
-                path.relative_to(remote): path.read_bytes()
-                for path in remote.rglob("*")
-                if path.is_file()
-            }, f"{attack}: simulated source bytes changed"
-            assert installed_before == {
-                path.relative_to(home): path.read_bytes()
-                for path in home.rglob("*")
-                if path.is_file()
-            }, f"{attack}: installed source bytes changed"
-    finally:
-        shutil.rmtree(scratch, ignore_errors=True)
-
-
-def test_retired_shell_entrypoints_are_side_effect_free_410s():
-    forbidden = (
-        "curl ",
-        "git clone",
-        "git fetch",
-        "git push",
-        "mktemp",
-        "/tmp/",
-        "function_app.py",
-    )
-    for relative in RETIRED_SHELL_ENTRYPOINTS:
-        path = ROOT / relative
-        assert path.stat().st_mode & stat.S_IXUSR
-        source = path.read_text(encoding="utf-8")
-        for marker in forbidden:
-            assert marker not in source, f"{relative} retains side effect: {marker}"
-        assert not re.search(
-            r"(?m)^\s*(?:curl|gh|az|func|npm|pip)\b",
-            source,
-        ), f"{relative} retains an executable side-effect command"
+        )
         result = subprocess.run(
-            ("bash", relative),
+            (
+                "bash",
+                "installer/install.sh",
+                "--apply",
+                "--allow-active-effects",
+                "--target",
+                "installer/install.sh",
+                "--kernel-pin",
+                "KERNEL_PIN.json",
+                "--reviewed-dependency-injection",
+                os.fspath(dependency),
+                "--owner-approval",
+                os.fspath(approval),
+                "--section13-evidence",
+                os.fspath(section13),
+            ),
             cwd=ROOT,
+            env=environment,
             text=True,
             capture_output=True,
             check=False,
         )
         assert result.returncode == 78
-        assert "410 Gone" in result.stderr
+        assert "authenticated fresh section-13 evidence is unavailable" in result.stderr
+        assert not sentinel.exists()
+        assert tuple(home.iterdir()) == before
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
-def test_windows_installers_fail_closed_without_mutable_fetch_or_newline_escape():
-    forbidden = (
-        "Invoke-WebRequest",
-        "Invoke-RestMethod",
-        "raw.githubusercontent.com",
-        "/main/",
-        "git clone",
-        "Start-Process",
-        "function_app.py",
-    )
-    for relative in RETIRED_POWERSHELL_ENTRYPOINTS:
+def test_windows_installers_preserve_source_behind_static_gates():
+    for relative in RESTORED_POWERSHELL_ENTRYPOINTS:
         data = (ROOT / relative).read_bytes()
         source = data.decode("utf-8")
+        gate, historical = source.split("# RAPP_RESTORED_GATE_END", 1)
+        assert "RAPP_RESTORED_GATE_BEGIN" in gate
+        assert "apply_permitted" in gate
+        if relative == "rapp_brainstem/start.ps1":
+            assert '"mode":"inspect"' in gate
+            assert "unconditional launcher " in gate
+            assert '"tombstone;' in gate
+        else:
+            assert "authenticated fresh section-13 evidence is unavailable" in gate
         assert "410 Gone" in source
-        assert "exit 78" in source
         assert b"\\n" not in data
         assert b"\r" not in data
-        for marker in forbidden:
-            assert marker not in source, f"{relative} retains {marker}"
-    for relative in RETIRED_CMD_ENTRYPOINTS:
+        assert len(historical) > 1_000
+    for relative in RESTORED_CMD_ENTRYPOINTS:
         source = (ROOT / relative).read_text(encoding="utf-8")
-        assert "410 Gone" in source
-        assert "exit /b 78" in source
-        assert "powershell" not in source.lower()
-        assert "http" not in source.lower()
+        gate, historical = source.split(
+            "REM RAPP_RESTORED_HISTORICAL_SOURCE_BEGIN",
+            1,
+        )
+        assert "exit /b 0" in gate
+        assert "exit /b 78" in gate
+        assert "powershell" not in gate.lower()
+        assert "http" not in gate.lower()
+        assert len(historical) > 100
 
 
-def test_tier2_deployment_descriptors_and_callers_create_nothing():
+def test_deployment_descriptors_preserve_full_inert_templates():
     for relative in ("azuredeploy.json", "installer/azuredeploy.json"):
         descriptor = json.loads((ROOT / relative).read_text(encoding="utf-8"))
-        assert descriptor == {
-            "schema": "rapp-retired-deployment/1.0",
-            "status": "410 Gone",
-            "retired": True,
-            "provisioning_allowed": False,
-            "resources": [],
-            "guidance": (
-                "RAPP1_STATUS.md"
-                if relative == "azuredeploy.json"
-                else "../RAPP1_STATUS.md"
-            ),
-        }
-    inventory = json.loads(LIVE_INVENTORY.read_text(encoding="utf-8"))
-    callers = set(inventory["categories"]["installer"])
-    callers.update(inventory["categories"]["containment"])
-    for relative in callers:
-        path = ROOT / relative
-        if relative == "tests/test-t2t-removal.sh":
-            source = path.read_text(encoding="utf-8")
-            assert 'function_app.py refuses execution" "78"' in source
-            assert "function_app.py reports 410 Gone" in source
-            assert not re.search(r"(?m)^\s*(?:az|func)\b", source)
-            continue
-        if relative == "rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json":
-            guard = json.loads(path.read_text(encoding="utf-8"))
-            assert guard["status"] == "retired"
-            assert guard["rapp1_packaging_allowed"] is False
-            continue
-        if path.suffix.lower() in {".sh", ".ps1", ".cmd", ".json"}:
-            assert "function_app.py" not in path.read_text(
-                encoding="utf-8"
-            ), f"legacy function remains reachable from {relative}"
+        assert descriptor["$schema"].endswith("/deploymentTemplate.json#")
+        assert descriptor["contentVersion"] == "1.0.0.0"
+        assert len(descriptor["parameters"]) == 14
+        assert len(descriptor["variables"]) == 14
+        assert len(descriptor["resources"]) == 16
+        assert len(descriptor["outputs"]) == 15
+    for relative in ("deploy.sh", "deploy.ps1"):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        gate, historical = source.split("RAPP_RESTORED_GATE_END", 1)
+        assert "authenticated fresh section-13 evidence is unavailable" in gate
+        assert "azuredeploy.json" in historical
 
 
 def test_retired_archive_manifest_pins_bytes_without_active_publication():

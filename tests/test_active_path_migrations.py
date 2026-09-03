@@ -2102,26 +2102,24 @@ def test_self_contained_lineage_location_parser_is_github_bound():
             lineage_check._git_remote_owner_repo(".")
 
 
-def test_boot_launcher_is_an_unconditional_410_tombstone(capfd):
+def test_boot_launcher_public_entrypoint_refuses_with_history_preserved(capfd):
     assert not hasattr(boot, "_guard")
+    assert callable(boot._rapp_restored_historical_main)
     with pytest.raises(SystemExit) as refusal:
         boot.main()
     assert refusal.value.code == 78
     assert "410 Gone" in capfd.readouterr().err
 
 
-def test_boot_launcher_has_no_import_or_execution_path():
+def test_boot_launcher_retains_history_behind_an_unreachable_boundary():
     source = Path(boot.__file__).read_text(encoding="utf-8")
-    for marker in (
-        "import ",
-        "lineage_check",
-        "brainstem.py",
-        "subprocess",
-        "os.",
-        "sys.",
-        "exec",
-    ):
-        assert marker not in source
+    gate, historical = source.split("# RAPP_RESTORED_GATE_END", 1)
+    assert "RAPP_RESTORED_SOURCE_COMMIT=" in gate
+    assert "RAPP_RESTORED_SOURCE_BLOB=" in gate
+    assert "410 Gone" in gate
+    assert "runpy.run_path" in historical
+    assert "brainstem.py" in historical
+    assert "lineage_check" in historical
 
 
 def test_rebuild_operator_owner_mismatch_is_invalid_refusal():
