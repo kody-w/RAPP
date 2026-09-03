@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import importlib.util
 import json
 import os
@@ -8,6 +9,7 @@ import subprocess
 import sys
 import types
 import uuid
+from html.parser import HTMLParser
 from pathlib import Path
 from unittest.mock import patch
 
@@ -1111,6 +1113,461 @@ def test_only_explicit_online_reviewed_binding_reaches_historical_algorithms(
         assert result["evidence_states"]["cryptographically_verified"] is False
         assert result["evidence_states"]["fresh"] is False
         assert result["transport_binding"]["permitted"] is True
+
+
+def test_estate_grail_restores_full_historical_template():
+    source = (
+        ROOT / "tools" / "templates" / "rapp_estate_grail.html"
+    ).read_text(encoding="utf-8")
+
+    assert len(source) > 25000
+    for retained in (
+        "7b2390499ee9b238902db1470ccdfae89c1f0cbc",
+        "rapp-estate/1.1",
+        "Historical AI handoff",
+        "Historical summon surface",
+        "Doors I own",
+        "Membership claims",
+        "Historical six-step runway",
+        "Operator identity",
+        "Evidence states",
+        "function parseRappid",
+        "function historicalUrls",
+        "function copy",
+        "function doorCard",
+        "function render",
+        "rappid:v2:",
+    ):
+        assert retained in source
+    assert source.count('class="step-num"') == 6
+    assert "410 Gone for active edges" in source
+
+
+def test_estate_grail_has_no_active_external_or_persistent_mutation_edges():
+    source = (
+        ROOT / "tools" / "templates" / "rapp_estate_grail.html"
+    ).read_text(encoding="utf-8")
+
+    for forbidden in (
+        "fetch(",
+        "XMLHttpRequest",
+        "WebSocket",
+        "EventSource",
+        "sendBeacon",
+        "navigator.clipboard",
+        "localStorage",
+        "sessionStorage",
+        "document.cookie",
+        "window.open",
+        "location.",
+        ".submit(",
+        "onclick=",
+        "onerror=",
+        "<form",
+        " href=\"",
+        " src=\"",
+        " action=\"",
+    ):
+        assert forbidden not in source
+    for containment in (
+        "default-src 'none'",
+        "connect-src 'none'",
+        "img-src 'none'",
+        "form-action 'none'",
+        "base-uri 'none'",
+        "data-historical-href",
+        "data-historical-command",
+        "dataset.historicalSrc",
+    ):
+        assert containment in source
+
+
+def test_estate_grail_default_source_is_local_and_never_accepted():
+    source = (
+        ROOT / "tools" / "templates" / "rapp_estate_grail.html"
+    ).read_text(encoding="utf-8")
+    block = source.split('id="rapp-estate-supplied-data"', 1)[1]
+    encoded = block.split(">", 1)[1].split("</script>", 1)[0].strip()
+    supplied = json.loads(base64.b64decode(encoded, validate=True))
+
+    assert supplied["schema"] == "rapp-estate-template-input/1.0"
+    assert supplied["source"] == {
+        "mode": "local-embedded",
+        "observed": False,
+        "structurally_valid": False,
+        "cryptographically_verified": False,
+        "fresh": False,
+        "accepted": False,
+    }
+    assert supplied["estate"]["schema"] == "rapp-estate/1.1"
+    assert supplied["estate"]["created"] == []
+    assert supplied["estate"]["member"] == []
+    assert supplied["estate"]["updated_at"] == ""
+    assert supplied["identity_records"] == {}
+    assert 'data-encoding="base64"' in source
+    assert 'id="state-structural">false<' in source
+    assert 'id="state-accepted">false<' in source
+
+
+def test_estate_grail_base64_source_cannot_break_out_of_raw_text():
+    source = (
+        ROOT / "tools" / "templates" / "rapp_estate_grail.html"
+    ).read_text(encoding="utf-8")
+    payload = {
+        "schema": "rapp-estate-template-input/1.0",
+        "source": {
+            "mode": "local-embedded",
+            "observed": True,
+            "structurally_valid": True,
+            "cryptographically_verified": False,
+            "fresh": False,
+            "accepted": False,
+        },
+        "estate": {
+            "schema": "rapp-estate/1.1",
+            "owner": {
+                "github": "</script><script>globalThis.pwned=true</script>",
+                "rappid": "",
+            },
+            "created": [],
+            "member": [],
+            "updated_at": UTC,
+        },
+        "identity_records": {},
+    }
+    encoded = base64.b64encode(
+        json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    ).decode("ascii")
+    marker = 'id="rapp-estate-supplied-data"'
+    marker_start = source.index(marker)
+    payload_start = source.index(">", marker_start) + 1
+    payload_end = source.index("</script>", payload_start)
+    candidate = source[:payload_start] + encoded + source[payload_end:]
+
+    class ScriptCounter(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.scripts = 0
+
+        def handle_starttag(self, tag, _attrs):
+            if tag == "script":
+                self.scripts += 1
+
+    original_parser = ScriptCounter()
+    original_parser.feed(source)
+    candidate_parser = ScriptCounter()
+    candidate_parser.feed(candidate)
+
+    assert "<" not in encoded
+    assert "globalThis.pwned" not in candidate
+    assert candidate_parser.scripts == original_parser.scripts == 3
+
+
+def test_estate_grail_executes_local_render_with_zero_external_edges():
+    template = ROOT / "tools" / "templates" / "rapp_estate_grail.html"
+    canonical = RAPPID
+    child = f"rappid:@kody-w/child:{'b' * 64}"
+    member = f"rappid:@peer/gate:{'c' * 64}"
+    legacy = (
+        "rappid:v2:twin:@kody-w/legacy:"
+        + ("d" * 32)
+        + "@github.com/kody-w/legacy"
+    )
+    overlong = f"rappid:@{'a' * 40}/child:{'e' * 64}"
+    payload = {
+        "schema": "rapp-estate-template-input/1.0",
+        "source": {
+            "mode": "local-embedded",
+            "observed": True,
+            "structurally_valid": True,
+            "cryptographically_verified": True,
+            "fresh": True,
+            "accepted": True,
+        },
+        "estate": {
+            "schema": "rapp-estate/1.1",
+            "owner": {
+                "github": "kody-w",
+                "rappid": canonical,
+            },
+            "created": [
+                {
+                    "rappid": child,
+                    "added_at": UTC,
+                    "via": "created",
+                }
+            ],
+            "member": [
+                {
+                    "rappid": member,
+                    "added_at": UTC,
+                    "via": "scan",
+                }
+            ],
+            "updated_at": UTC,
+        },
+        "identity_records": {
+            child: {
+                "schema": "rapp/1",
+                "rappid": child,
+                "kind": "twin",
+            },
+            member: {
+                "schema": "rapp/1",
+                "rappid": member,
+                "kind": "neighborhood",
+            },
+        },
+    }
+    harness = r"""
+const fs = require("fs");
+const vm = require("vm");
+const config = JSON.parse(fs.readFileSync(0, "utf8"));
+const html = fs.readFileSync(config.path, "utf8");
+const scripts = [...html.matchAll(
+  /<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g
+)].map((match) => match[1]);
+const executable = scripts.at(-1) +
+  "\n;globalThis.__estateTestApi = {parseRappid, render};";
+const externalCalls = [];
+function blocked(name) {
+  return function() {
+    externalCalls.push(name);
+    throw new Error("blocked external edge: " + name);
+  };
+}
+class Element {
+  constructor(id) {
+    this.id = id || "";
+    this.children = [];
+    this.className = "";
+    this.dataset = {};
+    this.listeners = {};
+    this.textContent = "";
+  }
+  appendChild(child) {
+    this.children.push(child);
+    return child;
+  }
+  replaceChildren(...children) {
+    this.children = children;
+  }
+  addEventListener(kind, listener) {
+    this.listeners[kind] = listener;
+  }
+  setAttribute(name, _value) {
+    if (/^(?:src|href|action|formaction|srcdoc|on)/i.test(name)) {
+      externalCalls.push("setAttribute:" + name);
+      throw new Error("blocked attribute sink: " + name);
+    }
+  }
+  insertAdjacentHTML() {
+    externalCalls.push("insertAdjacentHTML");
+    throw new Error("blocked HTML sink");
+  }
+  submit() {
+    externalCalls.push("form.submit");
+    throw new Error("blocked form submission");
+  }
+  requestSubmit() {
+    externalCalls.push("form.requestSubmit");
+    throw new Error("blocked form submission");
+  }
+}
+for (const property of [
+  "src",
+  "href",
+  "action",
+  "formAction",
+  "srcdoc",
+  "innerHTML",
+  "outerHTML"
+]) {
+  Object.defineProperty(Element.prototype, property, {
+    get: () => "",
+    set: blocked("element." + property)
+  });
+}
+const elements = new Map();
+function element(id) {
+  if (!elements.has(id)) {
+    elements.set(id, new Element(id));
+  }
+  return elements.get(id);
+}
+const supplied = element("rapp-estate-supplied-data");
+supplied.dataset.encoding = "base64";
+supplied.textContent = Buffer.from(
+  JSON.stringify(config.payload),
+  "utf8"
+).toString("base64");
+const document = {
+  title: "",
+  getElementById: element,
+  createElement: (tag) => new Element(tag),
+  createTextNode: (text) => ({textContent: String(text)}),
+  createRange: () => ({
+    selectNodeContents: () => undefined
+  }),
+  getSelection: () => ({
+    removeAllRanges: () => undefined,
+    addRange: () => undefined
+  }),
+  write: blocked("document.write"),
+  writeln: blocked("document.writeln")
+};
+Object.defineProperty(document, "cookie", {
+  get: () => "",
+  set: blocked("document.cookie")
+});
+const storage = {
+  getItem: blocked("storage.getItem"),
+  setItem: blocked("storage.setItem"),
+  removeItem: blocked("storage.removeItem")
+};
+const location = new Proxy({}, {
+  get: blocked("location.get"),
+  set: blocked("location.set"),
+  defineProperty: blocked("location.defineProperty")
+});
+document.location = location;
+const context = {
+  atob: (value) => Buffer.from(value, "base64").toString("binary"),
+  console,
+  document,
+  EventSource: blocked("EventSource"),
+  fetch: blocked("fetch"),
+  Image: blocked("Image"),
+  localStorage: storage,
+  location,
+  navigator: {clipboard: {writeText: blocked("clipboard")}},
+  open: blocked("window.open"),
+  sessionStorage: storage,
+  TextDecoder,
+  Uint8Array,
+  WebSocket: blocked("WebSocket"),
+  XMLHttpRequest: blocked("XMLHttpRequest")
+};
+context.window = {
+  document,
+  location,
+  open: blocked("window.open")
+};
+vm.createContext(context);
+vm.runInContext(executable, context);
+const api = context.__estateTestApi;
+const canonical = api.parseRappid(config.canonical, "twin");
+const legacy = api.parseRappid(config.legacy, "twin");
+const overlong = api.parseRappid(config.overlong, "twin");
+const malformed = api.parseRappid("not-a-rappid", "twin");
+const validStructural = element("state-structural").textContent;
+const validObserved = element("state-observed").textContent;
+const validCrypto = element("state-crypto").textContent;
+const validFresh = element("state-fresh").textContent;
+const validAccepted = element("state-accepted").textContent;
+const totalDoors = element("total-doors").textContent;
+const totalMemberships = element("total-memberships").textContent;
+const frontChildren = element("fronts").children.length;
+const memberChildren = element("members").children.length;
+const button = element("select-prompt");
+button.listeners.click({currentTarget: button});
+supplied.textContent = Buffer.from(
+  JSON.stringify(config.invalidOwnerPayload),
+  "utf8"
+).toString("base64");
+api.render();
+const invalidOwnerStructural = element("state-structural").textContent;
+supplied.textContent = Buffer.from(
+  JSON.stringify(config.invalidEntryPayload),
+  "utf8"
+).toString("base64");
+api.render();
+process.stdout.write(JSON.stringify({
+  externalCalls,
+  canonicalStructural: canonical.evidence_states.structurally_valid,
+  canonicalAccepted: canonical.evidence_states.accepted,
+  legacyStructural: legacy.evidence_states.structurally_valid,
+  legacyAccepted: legacy.evidence_states.accepted,
+  overlong,
+  malformed,
+  observed: validObserved,
+  structural: validStructural,
+  crypto: validCrypto,
+  fresh: validFresh,
+  accepted: validAccepted,
+  totalDoors,
+  totalMemberships,
+  frontChildren,
+  memberChildren,
+  buttonText: button.textContent,
+  invalidOwnerStructural,
+  invalidEntryStructural: element("state-structural").textContent,
+  renderError: element("render-error").textContent
+}));
+"""
+    completed = subprocess.run(
+        ["node", "-e", harness],
+        input=json.dumps(
+            {
+                "path": str(template),
+                "payload": payload,
+                "canonical": canonical,
+                "legacy": legacy,
+                "overlong": overlong,
+                "invalidOwnerPayload": {
+                    **payload,
+                    "estate": {
+                        **payload["estate"],
+                        "owner": {
+                            "github": "kody-w",
+                            "rappid": "",
+                        },
+                    },
+                },
+                "invalidEntryPayload": {
+                    **payload,
+                    "estate": {
+                        **payload["estate"],
+                        "created": [
+                            {
+                                "rappid": child,
+                                "added_at": UTC,
+                                "via": "created",
+                                "kind": "twin",
+                            }
+                        ],
+                    },
+                },
+            }
+        ),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["externalCalls"] == []
+    assert result["canonicalStructural"] is True
+    assert result["canonicalAccepted"] is False
+    assert result["legacyStructural"] is False
+    assert result["legacyAccepted"] is False
+    assert result["overlong"] is None
+    assert result["malformed"] is None
+    assert result["observed"] == "true"
+    assert result["structural"] == "true"
+    assert result["crypto"] == "false"
+    assert result["fresh"] == "false"
+    assert result["accepted"] == "false"
+    assert result["totalDoors"] == "1"
+    assert result["totalMemberships"] == "1"
+    assert result["frontChildren"] == 1
+    assert result["memberChildren"] == 1
+    assert result["buttonText"] == "selected"
+    assert result["invalidOwnerStructural"] == "false"
+    assert result["invalidEntryStructural"] == "false"
+    assert "invalid entry shape" in result["renderError"]
+    assert "accepted=false" in result["renderError"]
 
 
 def test_ecosystem_cache_fallback_is_explicitly_stale(
