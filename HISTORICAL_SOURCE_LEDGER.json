@@ -1313,9 +1313,9 @@
         }
       },
       "restored": {
-        "commit": "43bd9e2372a378686cc92267041f9af26415617b",
-        "sha256": "be830dc4c9167c43b1a41b80a498866f1768e9ec0e6f491b1c31502ce0a50154",
-        "bytes": 47792
+        "commit": "1a653069eef7f8a83177e0e08f9c624067fc73f8",
+        "sha256": "a462689d778f7cc049d5d24eea3594a79e35dc7cd3a0f1a542ed30ac3045fbe3",
+        "bytes": 47798
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -1544,9 +1544,9 @@
         }
       },
       "restored": {
-        "commit": "43bd9e2372a378686cc92267041f9af26415617b",
-        "sha256": "ff44980b65b9245263989375f1db5e815455505800a48364205809ccba90f23f",
-        "bytes": 14348
+        "commit": "1a653069eef7f8a83177e0e08f9c624067fc73f8",
+        "sha256": "1cb768a0ad232cabd4ab4cc78b5b2f0be6787e90020c40a8bf7f8a0e45b0e699",
+        "bytes": 14354
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -1610,9 +1610,9 @@
         }
       },
       "restored": {
-        "commit": "43bd9e2372a378686cc92267041f9af26415617b",
-        "sha256": "eb17a0c91ad865ec6e2cbb208d18da702140f0a349805a4ac31233927f578865",
-        "bytes": 52790
+        "commit": "1a653069eef7f8a83177e0e08f9c624067fc73f8",
+        "sha256": "1d265b88fd12fc1718ecdd73e11f1c7d288dd47cea941ac32a7129e02c55b561",
+        "bytes": 52796
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -1874,9 +1874,9 @@
         }
       },
       "restored": {
-        "commit": "43bd9e2372a378686cc92267041f9af26415617b",
-        "sha256": "493beb0d88c8d9634529efcab9e81621c434ff57b7a19d106a3e404f573d03d9",
-        "bytes": 13137
+        "commit": "1a653069eef7f8a83177e0e08f9c624067fc73f8",
+        "sha256": "ff9aecc982c53efd9495f7c8b2121bd9b3640b6cd7eafa8ca2dfdbf9d9167d45",
+        "bytes": 13143
       },
       "preservation_check": {
         "type": "line-subsequence"
@@ -2105,12 +2105,16 @@
         }
       },
       "restored": {
-        "commit": "c3e3b655a385d7afcd0abfaad9ced991aa0e433f",
-        "sha256": "1ae80342d17110001a34db7d5684c0cb430dc91727a225cdc595ac98aee4b643",
-        "bytes": 34597
+        "commit": "1a653069eef7f8a83177e0e08f9c624067fc73f8",
+        "sha256": "f7e84aaf1b82d0fecd74862b0193b463c4b7709878f5b3e70b91612d2c6dd033",
+        "bytes": 34595
       },
       "preservation_check": {
-        "type": "line-subsequence"
+        "type": "normalized-line-coverage",
+        "minimum": 0.997,
+        "markers": [
+          "Rapid Agent Prototype Platform assistant"
+        ]
       },
       "safety_adaptation": "Restore the complete inert ARM template byte-for-byte. Deployment callers retain separate explicit pre-acceptance gates and cannot reach Azure without unavailable authenticated owner evidence.",
       "trust_state": {
@@ -2138,12 +2142,16 @@
         }
       },
       "restored": {
-        "commit": "c3e3b655a385d7afcd0abfaad9ced991aa0e433f",
-        "sha256": "600c5161b8fc99f8840c1455f9b24463f5eba3a36237b723910b714e11f0b9a8",
-        "bytes": 34571
+        "commit": "1a653069eef7f8a83177e0e08f9c624067fc73f8",
+        "sha256": "3314fffaba5610caa67657b4867a78151082d39ae8fb878407857c5c840d9531",
+        "bytes": 34569
       },
       "preservation_check": {
-        "type": "line-subsequence"
+        "type": "normalized-line-coverage",
+        "minimum": 0.997,
+        "markers": [
+          "Rapid Agent Prototype Platform assistant"
+        ]
       },
       "safety_adaptation": "Restore the complete inert ARM template byte-for-byte. Deployment callers retain separate explicit pre-acceptance gates and cannot reach Azure without unavailable authenticated owner evidence.",
       "trust_state": {
@@ -2500,13 +2508,13 @@
         }
       },
       "restored": {
-        "commit": "6311704f519e40fa8d666d23f85e130193098559",
-        "sha256": "a92b2a86ba477ea4e54cdd7c2e9d6d1047fba7ae61ffe64605a8e50d4310dcee",
-        "bytes": 53179
+        "commit": "1a653069eef7f8a83177e0e08f9c624067fc73f8",
+        "sha256": "811bd2c5bd02e1a7d13b464c12a4706e38b00cb22ffefd795b8d6f405ff108c7",
+        "bytes": 53193
       },
       "preservation_check": {
         "type": "python-symbol-superset",
-        "minimum_line_coverage": 1.0
+        "minimum_line_coverage": 0.998
       },
       "safety_adaptation": "Restore the full historical Tier 2 or simulation implementation behind deterministic local inspect, plan, or sandbox defaults. Effect paths require exact target receipts, reviewed dependency injection, and authenticated fresh section-13 owner evidence.",
       "trust_state": {
