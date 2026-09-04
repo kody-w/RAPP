@@ -47,6 +47,12 @@ or Shortcut is currently offered.
 > [authority pin](./RAPP1_AUTHORITY.json). Other hubs, trees, and vault paths
 > are historical context, not current operational navigation.
 
+## Where this is going
+
+As of 2026-09-04 the direction is one file a person owns that makes any AI theirs, with RAPP
+underneath and invisible. The charter and dated record: [rapp-mission](https://github.com/kody-w/rapp-mission).
+Get your own file: [vbrainstem](https://github.com/kody-w/vbrainstem).
+
 ## What an "agent" is here
 
 ```python
