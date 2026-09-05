@@ -52,6 +52,9 @@ or Shortcut is currently offered.
 As of 2026-09-04 the direction is one file a person owns that makes any AI theirs, with RAPP
 underneath and invisible. The charter and dated record: [rapp-mission](https://github.com/kody-w/rapp-mission).
 Get your own file: [vbrainstem](https://github.com/kody-w/vbrainstem).
+Any AI can run that file as a whole Brainstem in its own mind, nothing installed, and plant a
+real one on a device without losing a line: the
+[virtual-brainstem skill](https://raw.githubusercontent.com/kody-w/vbrainstem/main/virtual-brainstem/SKILL.md).
 
 ## What an "agent" is here
 
