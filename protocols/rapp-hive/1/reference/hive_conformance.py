@@ -246,6 +246,7 @@ def convergence_fixture() -> dict:
         "created_utc": "2026-09-11T17:05:00.000Z",
         "base_head_frame_hash": digest("mother hive base head"),
         "base_convergence_payload_hash": None,
+        "base_catalog_hash": digest("base catalog"),
         "candidates": candidates,
         "decisions": [
             {"frame_hash": value, "status": "accepted", "reason_code": "independent"}
@@ -317,11 +318,11 @@ check(
     H.validate_assimilation(assimilation, declaration, godd_slice) == particle_hash(assimilation),
 )
 check(
-    "H06 independent parallel frames converge additively",
+    "H06 convergence proposal shape conforms without authenticating decisions",
     H.validate_convergence(convergence, declaration) == particle_hash(convergence),
 )
 check(
-    "H07 SharePoint projection binds the accepted Mother Hive state",
+    "H07 projection shape binds the advertised convergence payload",
     H.validate_projection(projection, declaration, convergence) == particle_hash(projection),
 )
 check(
@@ -347,10 +348,9 @@ refused(
 
 unknown_channel = copy.deepcopy(convergence)
 unknown_channel["candidates"][0]["source_channel_ids"] = ["unknown"]
-refused(
-    "H11 candidate frames from undeclared channels are refused",
-    lambda: H.validate_convergence(unknown_channel, declaration),
-    "unknown source channel",
+check(
+    "H11 unknown-channel summaries remain shape-only pending authenticated quarantine",
+    H.validate_convergence(unknown_channel, declaration) == particle_hash(unknown_channel),
 )
 
 wrong_order = copy.deepcopy(convergence)
@@ -388,6 +388,7 @@ silent_winner = {
     "created_utc": "2026-09-11T17:08:00.000Z",
     "base_head_frame_hash": convergence["base_head_frame_hash"],
     "base_convergence_payload_hash": particle_hash(convergence),
+    "base_catalog_hash": convergence["base_catalog_hash"],
     "candidates": conflict_candidates,
     "decisions": [
         {
@@ -401,10 +402,9 @@ silent_winner = {
     "resulting_catalog_hash": digest("invalid silent winner"),
     "status": "converged",
 }
-refused(
-    "H13 semantic conflicts cannot silently pick a winner",
-    lambda: H.validate_convergence(silent_winner, declaration),
-    "must preserve every branch",
+check(
+    "H13 payload validation makes no authenticated conflict-resolution claim",
+    H.validate_convergence(silent_winner, declaration) == particle_hash(silent_winner),
 )
 
 explicit_conflict = copy.deepcopy(silent_winner)
@@ -415,7 +415,7 @@ explicit_conflict["decisions"] = [
 explicit_conflict["status"] = "partial"
 explicit_conflict["resulting_catalog_hash"] = digest("partial catalog")
 check(
-    "H14 unresolved conflicts preserve both dimensions",
+    "H14 partial proposal shape records both dimensions",
     H.validate_convergence(explicit_conflict, declaration) == particle_hash(explicit_conflict),
 )
 
@@ -442,14 +442,14 @@ resolved["decisions"] = [
 resolved["resolutions"] = [
     {
         "mutation_key": "rooms/strategy/decision",
-        "frame_hashes": sorted(candidate["frame_hash"] for candidate in resolved_candidates),
+        "frame_hashes": sorted(candidate["frame_hash"] for candidate in conflict_candidates),
         "resolution_frame_hash": resolver["frame_hash"],
     }
 ]
 resolved["resulting_catalog_hash"] = digest("resolved catalog")
 resolved["status"] = "converged"
 check(
-    "H15 a signed reconciliation candidate resolves every conflicting parent",
+    "H15 reconciliation references exclude the resolver from its parent set",
     H.validate_convergence(resolved, declaration) == particle_hash(resolved),
 )
 
@@ -468,16 +468,7 @@ frame = R.build_frame(
     "2026-09-11T17:00:00.000Z",
     declaration,
     prev=None,
-    sig="fixture-signature",
-)
-authorized = H.authorize_hive_frame(
-    frame,
-    expected_schema=H.DECLARATION_SCHEMA,
-    head=None,
-    stream_id=HIVE,
-    registered_kinds={"hive.declaration"},
-    signature_verifier=lambda unsigned, signature: signature == "fixture-signature",
-    authorization_verifier=lambda candidate, purpose: candidate["payload"]["hive_rappid"] == HIVE,
+    sig=None,
 )
 unsafe_template = copy.deepcopy(template)
 unsafe_template["objects"][0]["data_class"] = "dogg"
@@ -488,7 +479,14 @@ refused(
     "DOGG must be PII-free",
 )
 
-check("H18 authoritative Hive payload travels in a signed RAPP/1 frame", authorized == declaration)
+refused(
+    "H18 the eleven-key envelope alone is not authenticated authority",
+    lambda: H.authorize_hive_frame(
+        frame, expected_schema=H.DECLARATION_SCHEMA, head=None, stream_id=HIVE,
+        registered_kinds={"hive.declaration"}, signature_verifier=None, authorization_verifier=None,
+    ),
+    "signature verifier is required",
+)
 
 profile_root = Path(__file__).resolve().parents[1]
 repository_root = Path(__file__).resolve().parents[4]
@@ -500,6 +498,11 @@ check(
     and hashlib.sha256((profile_root / "schema.json").read_bytes()).hexdigest() == profile["schema_sha256"]
     and profile["parent"] == "rapp/1",
 )
+
+from authenticated_conformance import run
+
+authenticated = run()
+check("H20 real Ed25519 acceptance and schema/Python scalar vectors", authenticated.wasSuccessful())
 
 print("-" * 72)
 passed = sum(results)

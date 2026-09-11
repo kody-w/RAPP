@@ -30,7 +30,20 @@ def exact_keys(value: object, keys: set[str], where: str) -> dict:
 
 def canonical_object(value: object, where: str) -> dict:
     require(isinstance(value, dict), f"{where}: expected object")
-    R.canonical(value)
+    stack = [(value, 1)]
+    while stack:
+        current, depth = stack.pop()
+        require(depth <= 64, f"{where}: I-JSON nesting depth exceeds 64")
+        if isinstance(current, dict):
+            require(all(isinstance(key, str) for key in current), f"{where}: object keys must be strings")
+            stack.extend((item, depth + 1) for item in current.values())
+            stack.extend((key, depth + 1) for key in current)
+        elif isinstance(current, list):
+            stack.extend((item, depth + 1) for item in current)
+        elif isinstance(current, str):
+            require(unicodedata.normalize("NFC", current) == current, f"{where}: strings must be NFC")
+    require(len(R.canonical(value).encode("utf-8")) <= R.MAX_CANONICAL_BYTES,
+            f"{where}: canonical object exceeds 1 MiB")
     return value
 
 
@@ -100,6 +113,8 @@ def https_uri(value: object, where: str) -> str:
 def relative_path(value: object, where: str) -> str:
     value = text(value, where, maximum=1024)
     require("\\" not in value, f"{where}: expected POSIX path")
+    require(all(part not in ("", ".", "..") for part in value.split("/")), f"{where}: unsafe path component")
+    require(R._path_valid(value) and "\x7f" not in value, f"{where}: unsafe portable path")
     path = PurePosixPath(value)
     require(not path.is_absolute(), f"{where}: absolute path forbidden")
     require(all(part not in ("", ".", "..") for part in path.parts), f"{where}: unsafe path component")
@@ -156,7 +171,7 @@ def authoritative_frame_payload(
     require(ok, f"{purpose}: RAPP frame refusal at step {step}: {why}")
     payload = canonical_object(frame["payload"], f"{purpose}.payload")
     require(payload.get("schema") == expected_schema, f"{purpose}: unexpected payload schema")
-    require(bool(authorization_verifier(frame, purpose)), f"{purpose}: signer is not authorized")
+    require(authorization_verifier(frame, purpose) is True, f"{purpose}: signer is not authorized")
     return payload
 
 

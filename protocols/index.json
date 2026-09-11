@@ -1,16 +1,26 @@
 {
   "schema": "rapp-estate-protocol-index/1",
-  "generated_utc": "2026-09-11T17:50:42.000Z",
+  "generated_utc": "2026-09-11T21:08:49.000Z",
   "profiles": [
     {
       "name": "rapp-hive/1",
       "human_name": "RAPP Private Hive",
       "parent": "rapp/1",
       "spec_path": "protocols/rapp-hive/1/SPEC.md",
-      "spec_sha256": "59dd1ee138f692092e29186c04635d98662689782887adfd4360a520ec388f24",
+      "spec_sha256": "79aeef7bc5000f4a7b09483844b035c66adf817475540e583138f2e6b432c822",
       "schema_path": "protocols/rapp-hive/1/schema.json",
-      "schema_sha256": "a30759b171ba21efa3390690013482ba27c67c8d229d9d6ca292217ee68c0ce6",
+      "schema_sha256": "698365da4d6e4a2b76f75c0c53ad9e61f21a8eb62b2838399c4f355168a1a5cc",
       "conformance": "protocols/rapp-hive/1/reference/hive_conformance.py"
+    },
+    {
+      "name": "rapp-federation/1",
+      "human_name": "RAPP Federation",
+      "parent": "rapp/1",
+      "spec_path": "protocols/rapp-federation/1/SPEC.md",
+      "spec_sha256": "ec5560a639a2283213c71ded658920008024d2e705b010c0c4b8fdd74736bcd3",
+      "schema_path": "protocols/rapp-federation/1/schema.json",
+      "schema_sha256": "d5ae3a3af3030632171db9cbb139d05e589116fb0e6a3a585e86d0c83e4f155a",
+      "conformance": "protocols/rapp-federation/1/reference/conformance.py"
     }
   ]
 }

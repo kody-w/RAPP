@@ -39,11 +39,33 @@ An implementation:
 8. **MUST** refuse in favor of RAPP/1 whenever this profile conflicts with the
    parent specification.
 
-An adopting estate registers seven kinds, normally bound to the `body` family:
-`hive.declaration`, `hive.object`, `hive.godd-slice`,
-`hive.assimilation`, `hive.convergence`, `hive.projection`, and
-`hive.template`. The profile requires signatures even when the selected RAPP/1
-family would otherwise permit `sig:null`.
+An adopting estate registers these **eight exact kinds**, bound to the `body`
+family, and pins this specification's exact SHA-256 in its signed section 13
+`protocol` entry:
+
+| Kind | Only permitted payload schema |
+| --- | --- |
+| `hive.declaration` | `rapp-hive/1-declaration` |
+| `hive.object` | `rapp-hive/1-object` |
+| `hive.godd-slice` | `rapp-hive/1-godd-slice` |
+| `hive.assimilation` | `rapp-hive/1-assimilation` |
+| `hive.convergence` | `rapp-hive/1-convergence` |
+| `hive.reconciliation` | `rapp-hive/1-reconciliation` |
+| `hive.projection` | `rapp-hive/1-projection` |
+| `hive.template` | `rapp-hive/1-template` |
+
+Being a registered kind does not authorize carrying another kind's schema.
+The profile requires signatures even where RAPP/1 would otherwise permit
+`sig:null`. These are subordinate registered payload extensions, **not** a new
+envelope, wire API, signature format, identity namespace, or registry-entry
+type. The two derived catalog/manifest schemas below are particle commitments,
+not additional frame kinds.
+
+The hardening closes pre-adoption draft payloads. A draft lacking the base
+catalog commitment or carrying an unsigned reconciliation is not accepted
+through a legacy lane. Any estate that adopted incompatible prior bytes must
+perform the parent specification's migration/retirement procedure before
+adopting these bytes; it must not silently treat an old schema as this one.
 
 ## 2. The three boundaries
 
@@ -212,29 +234,172 @@ remain semantic authority.
 
 ## 8. Dream Catcher convergence
 
-`rapp-hive/1-convergence` records a deterministic merge attempt:
+### 8.1 Shape is not acceptance
 
-1. Gather candidate frames from authorized dimensions and channels.
-2. Verify each frame independently under RAPP/1 sections 7, 10, and 13.
-3. Sort candidates by RAPP/1 section 7.4: `(utc, frame_hash)`.
-4. Deduplicate identical `frame_hash` values.
-5. Accept causally compatible frames additively.
-6. Detect semantic conflicts through declared `mutation_keys`.
-7. Preserve every conflicting branch; never use silent last-write-wins.
-8. Resolve a conflict only with a signed reconciliation frame that names every
-   conflicting frame.
-9. Append one signed convergence frame to the Mother Hive stream.
-10. Project that accepted head to every configured channel.
+`rapp-hive/1-convergence` is a **proposal** until its signed Mother Hive frame
+passes authenticated evaluation. `validate_convergence`, JSON Schema, the
+payload CLI, a particle hash, and a candidate's asserted `accepted` decision
+prove no acceptance. Structural validation deliberately does not infer
+conflicts from unverified summaries or pretend a hex string is a signature.
+The CLI reports `authenticated:false`.
 
-Decisions are `accepted`, `duplicate`, `conflict`, `quarantined`, or
-`superseded`. Invalid, unauthorized, malformed, tampered, cross-world, or
-lineage-breaking frames are quarantined. Quarantine of one frame **MUST NOT**
-block independent valid frames.
+Authenticated acceptance requires all of:
 
-`status:"partial"` is required while unresolved conflicts remain;
-`status:"converged"` is permitted only when none remain. Convergence is
-idempotent: repeating the same candidate set against the same base cannot
-produce a different accepted set or catalog hash.
+1. A verified, fresh section 13 registry anchored out of band, with persisted
+   sequence/hash protection against rollback and same-sequence forks.
+2. The owner-signed declaration at the Mother's registered creation genesis.
+   In the direct-owner profile, the declaration owner is the anchored estate
+   owner. Mother Hive `stream_id` is exactly `hive_rappid`.
+3. The locally accepted Mother frame head, last convergence particle hash (or
+   null immediately after the declaration), and derived catalog commitment.
+   A bare caller-supplied catalog or accepted-frame list is not a checkpoint.
+   Recovery replays signed Mother history and verifies all its dependencies.
+4. Candidate bytes and complete authenticated ancestry, not only the
+   `candidates` array's summaries.
+5. A signed `hive.convergence` frame that is the **single next** Mother frame.
+   Its `base_head_frame_hash`, `base_convergence_payload_hash`, and required
+   `base_catalog_hash` must equal the locally accepted state. A competing
+   successor prepared against the same old base is refused after the first
+   commits, even if it is validly owner-signed.
+
+The compare-and-swap is the linearization point. Validate first; commit the
+head, signed decisions, derived catalog, replay ledger, and conflict backlog
+atomically. Failure must leave the accepted state unchanged. Implementations
+sharing storage need a storage-level transaction/lock; a per-process lock alone
+does not coordinate other writers.
+
+### 8.2 Candidate verification and authorization
+
+Candidates are `hive.object`, `hive.godd-slice`, or `hive.reconciliation`
+catalog mutations. Assimilation, declaration, template, convergence, and
+projection receipts are not disguised catalog candidates.
+
+For each candidate independently:
+
+- Resolve its complete sequence of immutable frame bytes from the sole active
+  registered genesis through the named wave. Refuse absent ancestors,
+  noncontiguous `seq`, wrong `prev` particle, wrong registered genesis,
+  timestamp regression, invalid signature, or a cross-stream chain. Verify
+  the parent RAPP/1 `prev_wave` rule unchanged; this body's off-swarm value
+  remains null. Do not synthesize a missing parent from summary fields.
+- Check every eleven-key envelope, particle hash, wave hash, detached JWS,
+  registry SPKI/RAPPID binding, and time-scoped revocation.
+- Bind `dimension_rappid == stream_id == actual frame.stream_id`, with a
+  registered body-stream RAPPID distinct from the Mother. Every summary
+  `seq`, `utc`, `payload_hash`, `frame_hash`, and `mutation_keys` must match
+  the signed bytes. Channel observations must name declared channels.
+- Bind payload Hive/world to the authenticated declaration and payload time
+  to envelope time. Object/slice JWS `kid` must equal `producer_rappid`, whose
+  current role is owner/member (not viewer) and whose identity is in the
+  selected room. Object targets must be below the producer's member area or
+  selected room area; the owner may also target another declared member area.
+- Resolve signed `source_frames` and reconciliation parents recursively;
+  verify their summaries, signatures, Hive/world, and time ordering. Hash
+  references alone are not causal proof. Only registered Hive mutation
+  frames establish causal edges in this reference gate. External local
+  source material needs upstream verification and a signed Hive
+  representation; unknown kinds are not inferred as trusted provenance.
+- Require every previously unsettled ancestor to be offered as a candidate.
+  A verified chain cannot silently add unoffered mutations to the catalog.
+  A new descendant must extend the exact previously settled dimension head.
+  Competing same-stream positions are quarantined, even with disjoint mutation
+  keys; a RAPP stream fork cannot be repaired with an ordinary Hive merge.
+
+An invalid candidate is `quarantined`. Exclude it **and dependent candidates
+that cannot stand without it** before constructing mutation conflict sets.
+Repeat dependency pruning after rejecting a reconciliation. Malformed
+summaries cannot inject keys that block an independent authenticated update.
+A structurally malformed convergence envelope is still refused as a whole.
+
+### 8.3 Causality, conflicts, and signed reconciliation
+
+Sort candidate descriptors by `(utc, frame_hash)` and require one descriptor
+per wave; aggregate duplicate channel observations in its sorted channel list.
+This is presentation order, not last-write-wins or proof of causal order.
+Verify the whole graph before classifying it, including equal-UTC updates whose
+hash order places a child before its parent.
+
+Two changes of a mutation key are sequential when one is a verified causal
+ancestor of the other. Their differing payload hashes do **not** make them a
+conflict. Two incomparable frames changing the same key are concurrent.
+Equal payload hashes on different waves are not a replay exemption.
+
+Build connected components by shared mutation keys over new verified ordinary
+mutations and active previously accepted frames. If a component has a
+concurrent pair, preserve the **entire atomic component**: all participating
+frames and all their mutation keys, including causally intermediate parents
+and the other effects of multi-key frames. Previously accepted history is
+never removed. A component consisting only of causal updates is additive.
+
+The closed `rapp-hive/1-reconciliation` payload has exactly:
+
+| Member | Meaning |
+| --- | --- |
+| `schema` | `rapp-hive/1-reconciliation` |
+| `hive_rappid`, `world_id` | The authenticated declaration's ownership boundary |
+| `resolver_rappid` | The authorized owner JWS signer |
+| `created_utc` | The reconciliation envelope's timestamp |
+| `base_head_frame_hash` | Exact Mother head being reconciled |
+| `parents` | Sorted, unique wave hashes of **every** frame in one conflicting component |
+| `mutation_keys` | Sorted union of **all** those parents' mutation keys |
+| `result` | Closed `{space, hash}` typed address of the reconciled artifact |
+
+It travels only in a signed `hive.reconciliation` frame. An unsigned frame,
+ordinary object wearing a resolution summary, non-owner resolver, stale base,
+omitted/extra parent, or incomplete mutation set is quarantined. The resolver
+does not name itself as a parent. Two competing resolvers for one component
+are both quarantined; timestamp/hash sorting cannot choose an owner decision.
+Independent components may be resolved independently.
+
+The convergence's `resolutions` array is derived from accepted reconciliation
+bytes, not independent authority. For each resolved mutation key shared by at
+least two component parents it records exactly that sorted parent subset and
+the accepted resolver wave. Single-parent side effects are still covered by
+the reconciliation's signed complete mutation set.
+
+Decisions are mechanically checked:
+
+- `accepted`: a new compatible ordinary mutation or complete authorized
+  reconciliation, contributing its frame to the catalog.
+- `duplicate`: an exact previously settled frame, including a previously
+  accepted frame later superseded or an already recorded superseded parent.
+  **It must not be marked accepted again** or reopen an old conflict.
+- `conflict`: a new member of an unresolved authenticated component.
+- `quarantined`: invalid evidence or an unsatisfied dependency; no catalog
+  contribution and no conflict-blocking authority.
+- `superseded`: a new component parent replaced by its accepted reconciliation.
+  This does not remove any previously accepted catalog frame.
+
+Every candidate gets one decision in `frame_hash` order. `reason_code` is
+descriptive metadata, not permission to override the derived status.
+Every previous unresolved candidate must reappear in the next proposal until
+settled; simply omitting an old conflict is not reconciliation.
+`status:"partial"` is required iff authenticated unresolved conflicts remain.
+`converged` does not mean quarantined inputs were accepted.
+
+### 8.4 Deterministic catalog commitment
+
+The catalog is an append-only **accepted-frame index**, not an arbitrary
+channel directory digest. Its closed particle has exactly:
+
+- `schema:"rapp-hive/1-catalog"`;
+- `hive_rappid` and `world_id` from the authenticated declaration; and
+- `frames`: unique `{frame_hash, payload_hash}` pairs, sorted by `frame_hash`,
+  taken from actual accepted frames.
+
+The genesis catalog has an empty `frames` array. To evaluate a successor,
+union the previous accepted-frame set with **only** new `accepted` decisions,
+derive the pairs from verified bytes, and compute
+`H("rapp/1:particle", catalog)`. `resulting_catalog_hash` must equal that value.
+`duplicate`, `conflict`, `quarantined`, and newly `superseded` frames do not
+add entries. Previously accepted entries are immutable even when a later
+reconciliation replaces their current effect.
+
+Replaying the same verified candidate set against the same accepted base
+cannot change the accepted set or catalog hash. A repeated candidate in a
+new successor is a duplicate; replaying the old Mother frame is refused.
+Materialized views follow accepted causality/reconciliation, not an invented
+last-write-wins ordering of ciphertext or object paths.
 
 ## 9. Multi-channel projection
 
@@ -252,6 +417,45 @@ All current channels **MUST** expose the same verified identities and hashes.
 A stale, partial, divergent, or tampered projection is surfaced and cannot
 overwrite authority. A read-only mirror, cache, backup, or temporarily newer
 local dimension never becomes authority by availability or timestamp.
+
+### 9.1 Current receipt acceptance
+
+`validate_projection` validates shape and optional advertised payload links.
+Only authenticated current-receipt acceptance establishes currency. The
+receipt is owner-signed on a separately registered body stream, not appended
+to the Mother as an alternative convergence. That stream is bound to one
+declared channel; accepted receipts are protected against replay/rollback/fork.
+Its creation genesis may be an owner-signed `stale` or `failed` receipt with
+unavailable hashes. It establishes stream identity **only**, never currency,
+and avoids a circular registry → genesis → current-registry commitment.
+
+A `current` receipt must match, simultaneously:
+
+1. the authenticated registry's actual `registry_seq`, not any positive number;
+2. the latest accepted convergence's particle hash;
+3. the actual current Mother **frame** hash, not the convergence particle;
+4. the derived catalog hash; and
+5. the deterministically derived artifact-manifest particle hash.
+
+The closed `rapp-hive/1-artifact-manifest` contains `schema`, `hive_rappid`,
+`world_id`, `registry_seq`, `registry_hash`, `frame_head`, `catalog_hash`, and
+`artifacts`. `registry_hash` is the particle hash of the authenticated registry
+without `sig`, the same commitment persisted beside its monotonic sequence.
+`artifacts` is a unique list of `{space, hash}` addresses sorted by
+`(space, hash)`. It covers the signed registry particle **including** its
+signature, every retained Mother/candidate/ancestor frame, every derived
+catalog checkpoint, and all object/slice/reconciliation artifact addresses.
+Authenticated conflict and superseded branches are retained; unavailable or
+unauthenticated quarantine bytes cannot inject manifest entries. The manifest
+does not include itself or its receipt, which would create a hash cycle.
+
+The channel must supply the actual manifest and every listed artifact's
+bytes. Verify particle addresses, exact signed frames and their ancestry, and
+signed RAPP/1 egg addresses and viability. GODD metadata additionally binds
+the sealed variant and, for slices, `artifact_rappid`. A re-signed receipt with
+an omitted artifact, recomputed counterfeit manifest, stale head, fabricated
+catalog, or tampered artifact is still refused. Shape validation or checking
+only that these fields contain 64 hex characters is insufficient.
 
 ## 10. Storage portability
 
@@ -340,17 +544,69 @@ to source GODD.
 
 An implementation claiming `rapp-hive/1` conformance must:
 
-1. validate all seven closed payload schemas;
+1. validate all eight closed authoritative payload schemas and both derived
+   commitment schemas;
 2. reproduce every RAPP particle hash;
 3. verify authoritative signed frames and signer authorization;
 4. use sealed RAPP/1 eggs for Hive-shared GODD bytes;
 5. preserve explicit member audience and world boundaries;
 6. order candidate frames by `(utc, frame_hash)`;
-7. preserve conflicts and require reconciliation frames;
+7. distinguish causal updates from concurrent conflicts, isolate quarantine,
+   and require signed complete-parent reconciliation;
 8. maintain one Mother Hive head across all dimensions;
 9. verify every current channel against the same accepted hashes;
 10. pass
     `python3 protocols/rapp-hive/1/reference/hive_conformance.py`.
 
-JSON Schema validation alone proves only shape. The Python validator enforces
-cross-document membership, audience, convergence, and channel invariants.
+### 14.1 Scalar domain and parity
+
+Both schema and Python validation operate inside the parent's shared RAPP
+I-JSON/canonical domain: bounded document size/depth, NFC strings, no duplicate
+members or lone surrogates, and the reference implementation's exact-integer
+domain. A bare JSON Schema library does not enforce this domain; apply it
+first and enable `date-time` format checking. An integral Python float is not
+an exact-integer reference input merely because JSON Schema calls it integer.
+
+- Sequence numbers and record counts are integers in `0..2^53-1`, excluding
+  booleans. Sealed plaintext byte count is `0..2^30`, inclusive.
+- RAPPID owner length is `1..39`, slug length `1..100`; both use the parent's
+  lowercase single-hyphen-separated grammar. Consecutive hyphens, uppercase,
+  overlength components, and trailing newlines are invalid.
+- Paths are NFC, `1..1024` characters, already canonical relative POSIX paths
+  with no empty/`.`/`..` component, backslash, colon, control/DEL character,
+  trailing dot/space component, or Windows reserved device name.
+- Mutation keys are opaque NFC text, `1..512` characters, without control/DEL
+  characters. They are **not** filesystem paths: punctuation and `/` have no
+  implicit path authority. Arrays are sorted and duplicate-free. The same
+  bounds apply to objects, slices, candidates, reconciliation, and summaries.
+
+### 14.2 Reference gate and limits
+
+`reference/rapp_hive.py` provides structural and local cross-document checks.
+`reference/hive_acceptance.py` supplies `RegistryAuthority` and
+`HiveAcceptance`; the latter resolves frame bytes, authenticates their graph,
+derives proposals, and serializes `accept_convergence` / `accept_projection`.
+`preview_convergence` produces a signing proposal, never an accepted head.
+`checkpoint()` exposes the state to persist atomically; `restore()` reconstructs
+it by re-verifying signed history, not by trusting a serialized frame list.
+
+The direct-owner registry reference checks real detached JWS/SPKI binding,
+the exact profile pin, kinds, active genesis, sequence floor/same-sequence
+commitment, and signed tombstones. It fails closed on owner succession
+records requiring a full time-scoped section 13 tenure verifier. A production
+adapter must supply fresh registry retrieval, persistent high-water marks,
+distributed storage CAS, retention, and the full parent verifier where those
+features are needed. These are trust prerequisites, not Boolean payload
+flags. No result here certifies key release, plaintext consent, global DOGG
+publication, or full estate-wide RAPP/1 conformance.
+
+Run the profile gate from the repository root:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 protocols/rapp-hive/1/reference/hive_conformance.py
+```
+
+It runs the payload vectors, exact specification/schema index pins, real
+Ed25519 positive/negative vectors, and Draft 2020-12/Python scalar parity
+checks. The signed vectors require `cryptography` and `jsonschema`; missing
+verification dependencies fail the suite rather than skipping authentication.
