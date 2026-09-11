@@ -1,0 +1,11 @@
+# RAPP skills
+
+| Skill | Purpose |
+|---|---|
+| [`rapp-private-hive`](rapp-private-hive/SKILL.md) | Prepare an existing local RAPP workspace for additive, no-data-loss Private Hive deployment under `rapp-hive/1`. |
+
+Skills are application tooling, not protocol authority. RAPP/1 remains
+authoritative for identity, frames, canonicalization, eggs, signatures, and
+registry adoption. The normative Private Hive profile lives at
+[`kody-w/rapp-1/protocols/rapp-hive/1`](https://github.com/kody-w/rapp-1/tree/main/protocols/rapp-hive/1).
+

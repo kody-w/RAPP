@@ -1,0 +1,29 @@
+{
+  "schema": "rapp-skill-lock/1",
+  "name": "rapp-private-hive",
+  "version": "2.0.0",
+  "protocol": {
+    "name": "rapp-hive/1",
+    "repository": "https://github.com/kody-w/rapp-1",
+    "path": "protocols/rapp-hive/1/SPEC.md",
+    "spec_sha256": "97ce01397cf5d3ef5efd710b019af926750de3602f837c499406a68d08bec1be"
+  },
+  "files": [
+    {
+      "path": "SKILL.md",
+      "sha256": "68bb80ac65524a96e725be974f85d80476deb93185e41724c0449c8bf6a2f988"
+    },
+    {
+      "path": "scripts/prepare_workspace.py",
+      "sha256": "bb0f42a860a07cb00d11b2f37cf76ec16203961d2589c8b3994b82e80d84b9fd"
+    },
+    {
+      "path": "tests/test_prepare_workspace.py",
+      "sha256": "79fc537dda539657b048454f851b99896c985bdc9ec0df9915fcf215abd39a08"
+    },
+    {
+      "path": "vendor/rapp.py",
+      "sha256": "1a04362b02f14c1e37b70c6b4f72d79e92df1cc9c2b5b394e8e1b141fc0b6050"
+    }
+  ]
+}
