@@ -34,10 +34,17 @@ CONTROL_SCHEMAS = {
 }
 MANAGED_SKILL_FILES = {
     "SKILL.md",
-    "scripts/prepare_workspace.py",
-    "tests/test_prepare_workspace.py",
-    "vendor/rapp.py",
+    "DEPLOYMENT.md",
+    "requirements.txt",
+    "requirements-test.txt",
 }
+for _directory in ("scripts", "lib", "schemas", "tests", "vendor"):
+    MANAGED_SKILL_FILES.update(
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / _directory).rglob("*")
+        if path.is_file() and "__pycache__" not in path.parts
+        and path.suffix in {".py", ".json", ".md", ".txt"}
+    )
 
 
 def _load_rapp():
