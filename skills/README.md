@@ -7,5 +7,5 @@
 Skills are application tooling, not protocol authority. RAPP/1 remains
 authoritative for identity, frames, canonicalization, eggs, signatures, and
 registry adoption. The normative Private Hive profile lives at
-[`kody-w/rapp-1/protocols/rapp-hive/1`](https://github.com/kody-w/rapp-1/tree/main/protocols/rapp-hive/1).
-
+[`protocols/rapp-hive/1`](../protocols/rapp-hive/1/SPEC.md), which is subordinate
+to the canonical [`kody-w/rapp-1`](https://github.com/kody-w/rapp-1) protocol.
