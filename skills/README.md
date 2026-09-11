@@ -1,5 +1,8 @@
 # RAPP skills
 
+These skills operate the [RAPP Work](../docs/rapp-work.md) layer while keeping
+RAPP/1 identity, frame, egg, signature, and registry invariants intact.
+
 | Skill | Purpose |
 |---|---|
 | [`rapp-private-hive`](rapp-private-hive/SKILL.md) | Prepare an existing local RAPP workspace for additive, no-data-loss Private Hive deployment under `rapp-hive/1`. |
