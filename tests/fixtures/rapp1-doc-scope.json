@@ -10,8 +10,8 @@
     "integrated_tracked_bytes": 7938989,
     "mutable_generated_paths": [],
     "current_inventory": {
-      "tracked_paths": 731,
-      "stable_tracked_bytes": 13820653
+      "tracked_paths": 792,
+      "stable_tracked_bytes": 15129706
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -527,20 +527,23 @@
       ".md",
       ".html"
     ],
-    "expected_tracked_document_count": 288,
+    "expected_tracked_document_count": 298,
     "excluded_prefixes": {
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
       "pages/vault/Blog Drafts/": "explicitly unpublished draft archive",
       "pages/vault/Decisions/": "dated decision records preserved as history",
       "pages/vault/Fixtures/": "documentation fixtures, not current guidance",
       "pages/vault/Removals/": "explicit removal history",
+      "protocols/": "current subordinate operational profiles governed by their own conformance suites",
       "responsible-ai/": "responsible-AI governance documentation outside the protocol audit",
+      "skills/": "operational skill documentation governed by its deployment and checksum-lock suites",
       "tests/": "test documentation and fixtures validated by their owning suites",
       "tools/": "developer-tool documentation and templates outside the published protocol scope"
     },
     "excluded_paths": {
       "404.html": "static not-found shell",
       "COMMERCIAL.md": "commercial terms, not protocol guidance",
+      "docs/rapp-work.md": "current subordinate business-profile documentation governed by the RAPP Work profile",
       "RIGHTS-NOTICE.md": "rights and repository-scope notice, not protocol guidance",
       "RAPP1_OWNER_ACTIONS.md": "owner-action ledger validated by its dedicated gate",
       "RESPONSIBLE_AI.md": "responsible-AI governance index outside the protocol audit",

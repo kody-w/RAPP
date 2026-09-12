@@ -130,7 +130,9 @@ def _validate_derived_document_scope(
         "pages/vault/Decisions/",
         "pages/vault/Fixtures/",
         "pages/vault/Removals/",
+        "protocols/",
         "responsible-ai/",
+        "skills/",
         "tests/",
         "tools/",
     }

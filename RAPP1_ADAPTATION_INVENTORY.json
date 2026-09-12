@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-03",
-    "tracked_path_count": 731,
-    "tracked_path_set_sha256": "3f088647ac4e7c192fb31f7bda02c29c34ffcb605289352fc8a423977ef72cb2",
+    "tracked_path_count": 792,
+    "tracked_path_set_sha256": "121cf5e4d0e56342cf45c9c84d8be84db9f11fa3986bfd96d15b82032bcdac61",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 731,
-      "path_set_sha256": "3f088647ac4e7c192fb31f7bda02c29c34ffcb605289352fc8a423977ef72cb2"
+      "expected_count": 792,
+      "path_set_sha256": "121cf5e4d0e56342cf45c9c84d8be84db9f11fa3986bfd96d15b82032bcdac61"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
@@ -303,7 +303,8 @@
         "selector": {
           "type": "prefix",
           "prefixes": [
-            "rapp1_core/"
+            "rapp1_core/",
+            "protocols/"
           ]
         }
       },
@@ -482,7 +483,8 @@
           ],
           "prefixes": [
             "installer/",
-            "community_rapp/"
+            "community_rapp/",
+            "skills/"
           ]
         }
       },
