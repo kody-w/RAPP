@@ -1,7 +1,7 @@
 {
   "schema": "rapp-skill-lock/1",
   "name": "rapp-private-hive",
-  "version": "3.0.1",
+  "version": "3.1.1",
   "protocol": {
     "name": "rapp-hive/1",
     "repository": "https://github.com/kody-w/RAPP",
@@ -11,11 +11,11 @@
   "files": [
     {
       "path": "DEPLOYMENT.md",
-      "sha256": "53cd5ebf41208e3e2fe91416c84940311179b316956d3cb3d838d69d03f3182c"
+      "sha256": "bd08dfe6267f514426496b020c9a2ce8604ed1b9098fc09456f07b04e4198bee"
     },
     {
       "path": "SKILL.md",
-      "sha256": "809112c0dd31457f052d5131dc4d2f52ee64f6a41223cdb48c6a228822e5f92c"
+      "sha256": "be66b7c13ef916c4ca3f698b051ac7fd2b1239ed78372cff521105e382a55124"
     },
     {
       "path": "lib/private_hive/__init__.py",
@@ -79,7 +79,7 @@
     },
     {
       "path": "scripts/prepare_workspace.py",
-      "sha256": "20e7d90f513a7a5436bb31a8f5301f2cb814d3e4eed532442f81efa8ae24fb65"
+      "sha256": "07f8a34c8853a5e7a6335d0433d7a0052d4195abb8e245e5fbbfa51e63849e9d"
     },
     {
       "path": "tests/_deployment_fixtures.py",
@@ -111,7 +111,7 @@
     },
     {
       "path": "tests/test_prepare_workspace.py",
-      "sha256": "2c48e680c4d65d171e3ff2a28552bb802b1ef6d3184dbede5389916f3d066039"
+      "sha256": "458ede96b4c6b98bab29f2c6a5827e89b4bf3a3b06a7920b26943ac421ecc74c"
     },
     {
       "path": "vendor/hive/SPEC.md",
@@ -119,11 +119,11 @@
     },
     {
       "path": "vendor/hive/reference/authenticated_conformance.py",
-      "sha256": "c394bddd40baf1d30ce30b134e15692ea4ab9677d834c16dd00fd93645ea9178"
+      "sha256": "216051f24ac7dd419770ac474ca568da9a5b31de47945cc0b33287507f3da4c8"
     },
     {
       "path": "vendor/hive/reference/hive_acceptance.py",
-      "sha256": "087d550d9893c9b042c29d93927a731476a3e33a1e5a6d42f17b1b846f15e329"
+      "sha256": "88184a7e74f475b87dfe55069942f55b82efb1ac36469ca47ea7507fa78119f7"
     },
     {
       "path": "vendor/hive/reference/rapp.py",
@@ -139,7 +139,7 @@
     },
     {
       "path": "vendor/hive/schema.json",
-      "sha256": "698365da4d6e4a2b76f75c0c53ad9e61f21a8eb62b2838399c4f355168a1a5cc"
+      "sha256": "9b383535d6a2ad379e8c70b1a1cb3ab6ed3f9ca71114c37695e24fd8560415e0"
     },
     {
       "path": "vendor/rapp.py",

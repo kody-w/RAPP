@@ -531,6 +531,187 @@ class AuthenticatedVectors(unittest.TestCase):
         self.assertEqual(decision_map(payload)[right["frame_hash"]], "quarantined")
         self.assertEqual(decision_map(payload)[estate.b["frame_hash"]], "accepted")
 
+    def test_known_fork_branches_and_descendants_stay_quarantined_on_retry(self):
+        estate = Estate()
+        left = estate.object("alice", 20, ["left/key"], previous=estate.a)
+        right = estate.object("alice", 21, ["right/key"], previous=estate.a)
+        descendants = [
+            estate.object("alice", 30, ["left/child"], previous=left),
+            estate.object("alice", 31, ["right/child"], previous=right),
+            estate.object("carol", 32, ["sourced/key"], sources=[left]),
+        ]
+        gate = estate.gate()
+        estate.commit(gate, estate.proposal(gate, estate.a))
+        estate.commit(gate, estate.proposal(gate, left, right, estate.b, seconds=101))
+        catalog = gate.catalog
+        for index, candidate in enumerate([left, right, *descendants]):
+            with self.subTest(candidate=candidate["frame_hash"]):
+                proposal = estate.proposal(gate, candidate, seconds=102 + index)
+                self.assertEqual(decision_map(proposal), {candidate["frame_hash"]: "quarantined"})
+                self.assertEqual(proposal["decisions"][0]["reason_code"],
+                                 "stream-fork" if candidate["stream_id"] == left["stream_id"] else "fork-ancestor")
+                estate.commit(gate, proposal)
+                self.assertEqual(gate.catalog, catalog)
+
+    def test_later_batch_fork_invalidates_original_branch_and_transitive_dependents(self):
+        estate = Estate()
+        left = estate.object("alice", 20, ["left/key"], previous=estate.a)
+        right = estate.object("alice", 21, ["right/key"], previous=estate.a)
+        sourced = estate.object("bob", 30, ["sourced/key"], previous=estate.b, sources=[left])
+        descendant = estate.object("bob", 40, ["later/key"], previous=sourced)
+        independent = estate.object("carol", 41, ["independent/key"])
+        gate = estate.gate()
+        estate.commit(gate, estate.proposal(gate, estate.a, estate.b, left, sourced))
+        history = gate.catalog["frames"]
+        proposal = estate.proposal(gate, right, independent, seconds=101)
+        self.assertEqual(decision_map(proposal), {
+            right["frame_hash"]: "quarantined", independent["frame_hash"]: "accepted",
+        })
+        estate.commit(gate, proposal)
+        self.assertTrue(set(item["frame_hash"] for item in history) <=
+                        set(item["frame_hash"] for item in gate.catalog["frames"]))
+        self.assertNotIn(left["frame_hash"], gate._active())
+        self.assertNotIn(sourced["frame_hash"], gate._active())
+        restored = estate.gate()
+        restored.restore(gate.head["frame_hash"])
+        gate = restored
+        for index, candidate in enumerate((left, sourced, descendant)):
+            proposal = estate.proposal(gate, candidate, seconds=102 + index)
+            self.assertEqual(decision_map(proposal)[candidate["frame_hash"]], "quarantined")
+            estate.commit(gate, proposal)
+
+    def test_fork_frontier_restores_from_retained_mother_history(self):
+        estate = Estate()
+        left = estate.object("alice", 20, ["left/key"], previous=estate.a)
+        right = estate.object("alice", 21, ["right/key"], previous=estate.a)
+        gate = estate.gate()
+        estate.commit(gate, estate.proposal(gate, estate.a))
+        estate.commit(gate, estate.proposal(gate, left, right, seconds=101))
+        head = estate.commit(gate, estate.proposal(gate, estate.b, seconds=102))
+        manifest = gate.artifact_manifest()
+        addresses = {item["hash"] for item in manifest["artifacts"] if item["space"] == "rapp/1:wave"}
+        self.assertTrue({left["frame_hash"], right["frame_hash"]} <= addresses)
+        retained = {value: estate.chains[value] for value in addresses}
+        restored = HiveAcceptance(estate.authority(), estate.hive, lambda value: retained[value])
+        self.assertEqual(restored.restore(head["frame_hash"]), gate.checkpoint())
+        self.assertEqual(restored.artifact_manifest(), manifest)
+        self.assertEqual(restored._forks, gate._forks)
+        for candidate in (left, right):
+            proposal = estate.proposal(restored, candidate, seconds=103)
+            self.assertEqual(decision_map(proposal)[candidate["frame_hash"]], "quarantined")
+        receipt, manifest = estate.receipt(restored)
+        retained[receipt["frame_hash"]] = estate.chains[receipt["frame_hash"]]
+        artifacts = estate.projection_artifacts(restored)
+        self.assertEqual(restored.accept_projection(
+            receipt["frame_hash"], manifest_bytes=octets(manifest),
+            artifact_resolver=lambda space, value: artifacts[(space, value)],
+        )["status"], "current")
+
+    def test_missing_recorded_fork_evidence_cannot_restore_a_clean_frontier(self):
+        estate = Estate()
+        left = estate.object("alice", 20, ["left/key"], previous=estate.a)
+        right = estate.object("alice", 21, ["right/key"], previous=estate.a)
+        gate = estate.gate()
+        estate.commit(gate, estate.proposal(gate, estate.a))
+        head = estate.commit(gate, estate.proposal(gate, left, right, seconds=101))
+        del estate.chains[left["frame_hash"]]
+        del estate.chains[right["frame_hash"]]
+        restored = estate.gate()
+        with self.assertRaisesRegex(ValueError, "fork evidence"):
+            restored.restore(head["frame_hash"])
+        with self.assertRaisesRegex(ValueError, "failed history recovery"):
+            estate.proposal(restored, estate.b, seconds=102)
+        with self.assertRaisesRegex(ValueError, "failed history recovery"):
+            restored.checkpoint()
+
+    def test_preview_and_rejected_convergence_do_not_latch_forks(self):
+        estate = Estate()
+        left = estate.object("alice", 20, ["left/key"], previous=estate.a)
+        right = estate.object("alice", 21, ["right/key"], previous=estate.a)
+        gate = estate.gate()
+        estate.commit(gate, estate.proposal(gate, estate.a))
+        proposal = estate.proposal(gate, left, right, seconds=101)
+        self.assertEqual(gate._forks, {})
+        wrong = copy.deepcopy(proposal)
+        wrong["resulting_catalog_hash"] = "e" * 64
+        with self.assertRaisesRegex(ValueError, "catalog hash"):
+            gate.accept_convergence(estate.convergence(gate, wrong)["frame_hash"])
+        self.assertEqual(gate._forks, {})
+        self.assertNotIn(left["frame_hash"], gate._retained)
+        self.assertEqual(decision_map(estate.proposal(gate, left, seconds=102))[left["frame_hash"]], "accepted")
+
+    def test_unauthenticated_fork_or_false_summary_cannot_latch(self):
+        for forged_summary in (False, True):
+            with self.subTest(forged_summary=forged_summary):
+                estate = Estate()
+                left = estate.object("alice", 20, ["left/key"], previous=estate.a)
+                wrong = estate.object("alice", 21, ["right/key"], previous=estate.a, signer="bob")
+                successor = estate.object("alice", 30, ["child/key"], previous=left)
+                gate = estate.gate()
+                estate.commit(gate, estate.proposal(gate, estate.a))
+                candidates = estate.candidates(left, estate.b if forged_summary else wrong)
+                if forged_summary:
+                    summary = next(item for item in candidates if item["frame_hash"] == estate.b["frame_hash"])
+                    summary.update(stream_id=left["stream_id"], dimension_rappid=left["stream_id"], seq=left["seq"])
+                proposal = gate.preview_convergence(candidates, stamp(101))
+                estate.commit(gate, proposal)
+                self.assertEqual(gate._forks, {})
+                restored = estate.gate()
+                restored.restore(gate.head["frame_hash"])
+                self.assertEqual(restored._forks, {})
+                self.assertEqual(decision_map(estate.proposal(restored, successor, seconds=102)),
+                                 {successor["frame_hash"]: "accepted"})
+
+    def test_fork_evidence_diagnostics_cannot_be_erased_or_invented(self):
+        estate = Estate()
+        left = estate.object("alice", 20, ["left/key"], previous=estate.a)
+        right = estate.object("alice", 21, ["right/key"], previous=estate.a)
+        gate = estate.gate()
+        proposal = estate.proposal(gate, estate.a)
+        proposal["decisions"][0]["reason_code"] = "local-audit-description"
+        estate.commit(gate, proposal)
+        proposal = estate.proposal(gate, left, right, seconds=101)
+        for item in proposal["decisions"]:
+            item["reason_code"] = "invalid-candidate"
+        with self.assertRaisesRegex(ValueError, "fork evidence"):
+            gate.accept_convergence(estate.convergence(gate, proposal)["frame_hash"])
+        proposal = estate.proposal(gate, estate.b, seconds=102)
+        proposal["decisions"][0]["reason_code"] = "stream-fork"
+        with self.assertRaisesRegex(ValueError, "fork evidence"):
+            gate.accept_convergence(estate.convergence(gate, proposal)["frame_hash"])
+        self.assertEqual(gate._forks, {})
+
+    def test_fork_in_signed_source_ancestry_is_persistent_without_direct_candidates(self):
+        estate = Estate()
+        left = estate.object("alice", 20, ["left/key"], previous=estate.a)
+        right = estate.object("alice", 21, ["right/key"], previous=estate.a)
+        first = estate.object("bob", 30, ["first/key"], previous=estate.b, sources=[left])
+        second = estate.object("carol", 31, ["second/key"], sources=[right])
+        gate = estate.gate()
+        estate.commit(gate, estate.proposal(gate, estate.a, estate.b))
+        proposal = estate.proposal(gate, first, second, seconds=101)
+        self.assertEqual(set(decision_map(proposal).values()), {"quarantined"})
+        self.assertEqual({item["reason_code"] for item in proposal["decisions"]}, {"fork-ancestor"})
+        estate.commit(gate, proposal)
+        restored = estate.gate()
+        restored.restore(gate.head["frame_hash"])
+        for candidate in (left, right):
+            self.assertEqual(decision_map(estate.proposal(restored, candidate, seconds=102)),
+                             {candidate["frame_hash"]: "quarantined"})
+
+    def test_owner_reconciliation_cannot_clear_a_stream_fork(self):
+        estate = Estate()
+        left = estate.object("alice", 20, ["shared/key"], previous=estate.a)
+        right = estate.object("alice", 21, ["shared/key"], previous=estate.a)
+        resolver = estate.reconcile([left, right])
+        gate = estate.gate()
+        proposal = estate.proposal(gate, estate.a, left, right, resolver)
+        self.assertEqual(decision_map(proposal)[resolver["frame_hash"]], "quarantined")
+        self.assertEqual(proposal["resolutions"], [])
+        estate.commit(gate, proposal)
+        self.assertEqual(decision_map(estate.proposal(gate, left, seconds=101)),
+                         {left["frame_hash"]: "quarantined"})
+
     def test_concurrent_conflicts_preserve_every_parent(self):
         estate = Estate(conflict=True)
         gate = estate.gate()

@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import shutil
 import stat
+import subprocess
+import sys
 import tempfile
 import types
 import unittest
@@ -528,6 +530,17 @@ class WorkspacePreparationTests(unittest.TestCase):
         self.assertTrue(first["identity_preserved"])
         self.assertTrue(first["original_bytes_unchanged"])
         self.assertEqual(first["source_workspace_spec"], "legacy-unversioned")
+        self.assertEqual(first["project_skill"]["status"], "embedded")
+        project_skill = self.workspace / ".github" / "skills" / "rapp-private-hive"
+        self.assertTrue((project_skill / "SKILL.md").is_file())
+        preflight = subprocess.run(
+            [sys.executable, str(project_skill / "scripts" / "deploy_hive.py"), "--preflight"],
+            cwd=project_skill,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        self.assertEqual(preflight.returncode, 0, preflight.stderr)
         self.assert_original_bytes_unchanged()
 
     def test_migration_refuses_workspace_changes_after_prior_preparation(self):
@@ -568,6 +581,39 @@ class WorkspacePreparationTests(unittest.TestCase):
         self.assertEqual(link.readlink().as_posix(), "private.md")
         report = MODULE.command_verify(self.args(workspace=str(self.workspace)))
         self.assertEqual(report["status"], "verified")
+
+    def test_migration_refuses_symlinked_project_skill_or_parent(self):
+        external = self.temporary / "external-skill"
+        shutil.copytree(MODULE.ROOT, external)
+        project = self.workspace / ".github"
+        project.mkdir()
+        skills = project / "skills"
+        skills.mkdir()
+        (skills / "rapp-private-hive").symlink_to(external, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symlink"):
+            MODULE.command_migrate(
+                self.args(
+                    workspace=str(self.workspace),
+                    member_rappid=self.member,
+                    hive_name="alice-private-hive",
+                    world_id="alice-world",
+                )
+            )
+        shutil.rmtree(self.workspace / ".rapp-hive")
+        shutil.rmtree(project)
+        outside = self.temporary / "outside-skills"
+        outside.mkdir()
+        project.mkdir()
+        (project / "skills").symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symlink"):
+            MODULE.command_migrate(
+                self.args(
+                    workspace=str(self.workspace),
+                    member_rappid=self.member,
+                    hive_name="alice-private-hive",
+                    world_id="alice-world",
+                )
+            )
 
 
 if __name__ == "__main__":

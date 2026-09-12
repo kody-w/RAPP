@@ -33,6 +33,7 @@ SORTED_FIELDS = frozenset({
     "controls", "capabilities", "missing",
 })
 OWNER_KINDS = frozenset({"peer", "policy", "grant", "control"})
+FORK_CODES = frozenset({"stream-fork", "sovereign-fork"})
 TRANSITIONS = {
     None: {"received"},
     "received": {"validated", "rejected"},
@@ -248,6 +249,10 @@ class Federation:
             CREATE TABLE IF NOT EXISTS quarantine (hash TEXT PRIMARY KEY, raw BLOB NOT NULL, code TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS authority_faults (
                 hive TEXT PRIMARY KEY, evidence TEXT NOT NULL, code TEXT NOT NULL, raw BLOB NOT NULL);
+            CREATE TABLE IF NOT EXISTS stream_faults (
+                stream TEXT NOT NULL, sequence INTEGER NOT NULL, hive TEXT NOT NULL,
+                original TEXT NOT NULL, evidence TEXT NOT NULL, raw BLOB NOT NULL,
+                PRIMARY KEY(stream, sequence, evidence));
             CREATE TABLE IF NOT EXISTS dogg_approvals (
                 content_hash TEXT NOT NULL, evidence_hash TEXT NOT NULL, PRIMARY KEY(content_hash, evidence_hash));
         """)
@@ -282,6 +287,7 @@ class Federation:
     def _check_recovery_state(self):
         """Detect missing/contradictory consumption state; never reconstruct fresh rights."""
         with self.transaction():
+            self._recover_stream_faults()
             request_frames, receipt_frames = {}, {}
             for row in self.db.execute("SELECT raw FROM frames WHERE kind IN ('federation.request', 'federation.receipt')"):
                 frame = loads(row[0])
@@ -355,6 +361,78 @@ class Federation:
         with self.transaction():
             self.db.execute("INSERT OR IGNORE INTO authority_faults VALUES (?, ?, ?, ?)",
                             (hive, evidence, code, raw))
+
+    def _record_stream_fork(self, frame, original, code):
+        hive, actor = self.issuer(frame["payload"])
+        raw = canonical(frame)
+        self.db.execute("INSERT OR IGNORE INTO stream_faults VALUES (?, ?, ?, ?, ?, ?)",
+                        (frame["stream_id"], frame["seq"], hive, original["frame_hash"], frame["frame_hash"], raw))
+        if actor == self.anchors[hive].owner_rappid:
+            self.db.execute("INSERT OR IGNORE INTO authority_faults VALUES (?, ?, ?, ?)",
+                            (hive, frame["frame_hash"], code, raw))
+        self.db.execute("INSERT OR IGNORE INTO quarantine VALUES (?, ?, ?)", (frame["frame_hash"], raw, code))
+        self.db.execute("DELETE FROM pending WHERE hash=?", (frame["frame_hash"],))
+
+    def _verify_stream_fork(self, frame, original):
+        validate(frame)
+        validate(original)
+        hive, actor = self.issuer(frame["payload"])
+        registry = self.registry(hive)
+        require(memory_owner(frame["stream_id"]) == actor, "stream-key-binding")
+        require(frame["stream_id"] == original["stream_id"] and frame["seq"] == original["seq"]
+                and frame["frame_hash"] != original["frame_hash"], "stream-fork-evidence")
+        require(frame["stream_id"] in registry.genesis, "stream-unregistered")
+        if actor not in registry.active:
+            # Revocation or key removal cannot erase a previously authenticated fork.
+            genesis = registry.genesis[frame["stream_id"]]
+            for row in self.db.execute("SELECT raw FROM registry_history WHERE hive=?", (hive,)):
+                historical = Registry(row[0], self.anchors[hive])
+                if actor in historical.active and historical.genesis.get(frame["stream_id"]) == genesis:
+                    registry = historical
+                    break
+        require(actor in registry.active, "actor-inactive")
+        for item in (original, frame):
+            require(self.issuer(item["payload"]) == (hive, actor), "stream-issuer")
+            require(verify_frame(item, registry.keys) == actor, "issuer-signature")
+            require(item["stream_id"] in registry.genesis, "stream-unregistered")
+            self._bind_stream(item, registry)
+        return hive
+
+    def _recover_stream_faults(self):
+        proofs = []
+        for row in self.db.execute("SELECT * FROM stream_faults"):
+            try:
+                frame = loads(row["raw"])
+                original = self.frame(row["original"])
+                hive = self._verify_stream_fork(frame, original)
+                require(row["raw"] == canonical(frame) and row["stream"] == frame["stream_id"]
+                        and row["sequence"] == frame["seq"] and row["hive"] == hive
+                        and row["original"] == original["frame_hash"]
+                        and row["evidence"] == frame["frame_hash"], "stream-fork-evidence")
+                proofs.append((frame, original))
+            except Refusal as error:
+                raise Refusal("recovery-quarantine", "invalid retained stream fork proof") from error
+        # Old stores may retain a signed fork only in quarantine or the owner-fault latch.
+        evidence = list(self.db.execute("SELECT raw, code FROM quarantine"))
+        evidence += list(self.db.execute("SELECT raw, code FROM authority_faults"))
+        for row in evidence:
+            if row["code"] not in FORK_CODES | {"stream-equivocation"}:
+                continue
+            try:
+                frame = validate(loads(row["raw"]))
+                require(row["raw"] == canonical(frame), "frame-noncanonical")
+                original = self.db.execute("SELECT raw FROM frames WHERE stream=? AND seq=?",
+                                           (frame["stream_id"], frame["seq"])).fetchone()
+                require(original is not None, "dependency-missing")
+                original = loads(original[0])
+                self._verify_stream_fork(frame, original)
+            except Refusal:
+                continue
+            proofs.append((frame, original))
+        for frame, original in proofs:
+            hive, _ = self.issuer(frame["payload"])
+            code = "sovereign-fork" if frame["stream_id"] == self.anchors[hive].authority_stream else "stream-fork"
+            self._record_stream_fork(frame, original, code)
 
     def install_registry(self, hive: str, raw: bytes):
         try:
@@ -444,11 +522,62 @@ class Federation:
         for value in declared:
             self.frame(value)
 
+    def _require_unforked(self, frame, *, dependencies=True):
+        frontiers = dict(self.db.execute("SELECT stream, MIN(sequence) FROM stream_faults GROUP BY stream"))
+        if not frontiers:
+            return
+
+        def check(item):
+            require(item["stream_id"] not in frontiers or item["seq"] < frontiers[item["stream_id"]],
+                    "stream-equivocation")
+
+        check(frame)
+        if not dependencies:
+            return
+        references = set(frame["payload"].get("depends_on", []))
+        if frame["seq"] > 0:
+            previous = self.db.execute("SELECT hash FROM frames WHERE stream=? AND seq=?",
+                                       (frame["stream_id"], frame["seq"] - 1)).fetchone()
+            require(previous is not None, "dependency-missing")
+            references.add(previous[0])
+        closure = set()
+        for value in references:
+            closure.update(self._closure(value))
+        for value in closure:
+            check(self.frame(value))
+
+    def _bind_stream(self, frame, registry):
+        payload = frame["payload"]
+        hive, actor = self.issuer(payload)
+        kind = frame["kind"].split(".", 1)[1]
+        require(payload["schema"] == PROFILE + "-" + kind, "payload-kind")
+        if "issuer" in payload:
+            require(payload["issuer"]["world_id"] == self.anchors[hive].world_id, "wrong-world")
+            require(actor in registry.active, "actor-inactive")
+        if frame["seq"] == 0:
+            require(kind == "checkpoint" and payload["phase"] == "genesis", "stream-bootstrap")
+            self._genesis(frame)
+            return
+        root = self.frame(registry.genesis[frame["stream_id"]], "checkpoint")
+        require(root["stream_id"] == frame["stream_id"] and root["payload"]["phase"] == "genesis"
+                and root["payload"]["hive_rappid"] == hive and root["payload"]["actor_rappid"] == actor,
+                "stream-issuer")
+        role = root["payload"]["stream_role"]
+        if kind == "checkpoint":
+            require(role == "authority" and payload["phase"] == "authority", "authority-stream")
+        elif kind == "discovery":
+            require(role == "discovery", "discovery-private-stream")
+        else:
+            require(role in {"actor", "relay"}, "foreign-dimension")
+            require(role != "relay" or kind in {"custody", "observation"}, "relay-not-authority")
+            if kind in OWNER_KINDS:
+                require(actor == self.anchors[hive].owner_rappid, "owner-required")
+
     def accept(self, raw: bytes):
         try:
             return self._accept(raw)
         except Refusal as error:
-            if error.code in {"sovereign-fork", "competing-sovereign-heads"}:
+            if error.code == "competing-sovereign-heads":
                 frame = loads(raw)
                 hive, actor = self.issuer(frame["payload"])
                 anchor = self.anchors[hive]
@@ -462,57 +591,51 @@ class Federation:
         require(raw == canonical(frame), "frame-noncanonical")
         payload = frame["payload"]
         hive, actor = self.issuer(payload)
+        kind = frame["kind"].split(".", 1)[1]
+        historical = kind == "receipt" and payload["phase"] not in {"accepted", "executing"}
+        fault = None
         with self.transaction():
             registry = self.registry(hive)
             signer = verify_frame(frame, registry.keys)
             require(signer == actor, "issuer-signature")
+            self._require_unforked(frame, dependencies=False)
             existing = self.db.execute("SELECT raw FROM frames WHERE hash=?", (frame["frame_hash"],)).fetchone()
             if existing is not None:
                 require(existing[0] == canonical(frame), "frame-substitution")
+                self._require_unforked(frame, dependencies=not historical)
                 self.db.execute("DELETE FROM pending WHERE hash=?", (frame["frame_hash"],))
                 return {"status": "duplicate", "frame_hash": frame["frame_hash"]}
             require(actor in registry.active, "actor-inactive")
             require(frame["stream_id"] in registry.genesis, "stream-unregistered")
             if frame["stream_id"] == self.anchors[hive].authority_stream:
                 require(actor == self.anchors[hive].owner_rappid, "owner-required")
-            rival = self.db.execute("SELECT hash FROM frames WHERE stream=? AND seq=?",
+            self._bind_stream(frame, registry)
+            rival = self.db.execute("SELECT raw FROM frames WHERE stream=? AND seq=?",
                                     (frame["stream_id"], frame["seq"])).fetchone()
-            require(rival is None, "sovereign-fork" if frame["stream_id"] ==
-                    self.anchors[hive].authority_stream else "stream-fork")
-            head = self.db.execute("SELECT raw FROM frames WHERE stream=? ORDER BY seq DESC LIMIT 1",
-                                   (frame["stream_id"],)).fetchone()
-            verify_chain(frame, loads(head[0]) if head else None, registry.genesis[frame["stream_id"]])
-            kind = frame["kind"].split(".", 1)[1]
-            require(payload["schema"] == PROFILE + "-" + kind, "payload-kind")
-            if frame["seq"] == 0:
-                require(kind == "checkpoint" and payload["phase"] == "genesis", "stream-bootstrap")
-                self._genesis(frame)
-                status = "recorded"
+            if rival is not None:
+                code = "sovereign-fork" if frame["stream_id"] == self.anchors[hive].authority_stream else "stream-fork"
+                require(memory_owner(frame["stream_id"]) == actor, "stream-key-binding")
+                self._record_stream_fork(frame, loads(rival[0]), code)
+                fault = Refusal(code)
             else:
-                root = self.payload(registry.genesis[frame["stream_id"]], "checkpoint")
-                require(root["phase"] == "genesis" and root["hive_rappid"] == hive
-                        and root["actor_rappid"] == actor, "stream-issuer")
-                role = root["stream_role"]
-                if kind == "checkpoint":
-                    require(role == "authority" and payload["phase"] == "authority", "authority-stream")
-                elif kind == "discovery":
-                    require(role == "discovery", "discovery-private-stream")
+                head = self.db.execute("SELECT raw FROM frames WHERE stream=? ORDER BY seq DESC LIMIT 1",
+                                       (frame["stream_id"],)).fetchone()
+                verify_chain(frame, loads(head[0]) if head else None, registry.genesis[frame["stream_id"]])
+                self._require_unforked(frame, dependencies=not historical)
+                if frame["seq"] == 0:
+                    status = "recorded"
                 else:
-                    require(role in {"actor", "relay"}, "foreign-dimension")
-                    require(role != "relay" or kind in {"custody", "observation"}, "relay-not-authority")
-                    self._context(
-                        payload,
-                        allow_historical=kind == "receipt"
-                        and payload.get("phase") in {"completed", "failed"},
-                    )
-                    if kind in OWNER_KINDS:
-                        require(actor == self.anchors[hive].owner_rappid, "owner-required")
-                status = getattr(self, "_" + kind)(frame) or "recorded"
-            self.db.execute("INSERT INTO frames VALUES (?, ?, ?, ?, ?, ?)",
-                            (frame["frame_hash"], frame["stream_id"], frame["seq"], frame["kind"],
-                             hive, canonical(frame)))
-            self.db.execute("DELETE FROM pending WHERE hash=?", (frame["frame_hash"],))
-            return {"status": status, "frame_hash": frame["frame_hash"]}
+                    if kind not in {"checkpoint", "discovery"}:
+                        self._context(payload, allow_historical=kind == "receipt"
+                                      and payload.get("phase") in {"completed", "failed"})
+                    status = getattr(self, "_" + kind)(frame) or "recorded"
+                self.db.execute("INSERT INTO frames VALUES (?, ?, ?, ?, ?, ?)",
+                                (frame["frame_hash"], frame["stream_id"], frame["seq"], frame["kind"],
+                                 hive, canonical(frame)))
+                self.db.execute("DELETE FROM pending WHERE hash=?", (frame["frame_hash"],))
+        if fault is not None:
+            raise fault
+        return {"status": status, "frame_hash": frame["frame_hash"]}
 
     def _genesis(self, frame):
         payload = frame["payload"]
@@ -783,6 +906,10 @@ class Federation:
         require(not self.db.execute("SELECT 1 FROM authority_faults WHERE hive IN (?, ?)",
                                     (terms["source"]["hive_rappid"], terms["destination"]["hive_rappid"])).fetchone(),
                 "authority-equivocation")
+        self._require_unforked(request)
+        row = self._request_row(request)
+        if row["receipt"] is not None:
+            self._require_unforked(self.frame(row["receipt"], "receipt"))
         self._not_revoked(request)
         grant, source_policy, destination_policy = self._terms(terms)
         source_checkpoint = self._context(payload)

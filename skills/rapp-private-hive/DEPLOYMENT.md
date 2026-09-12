@@ -437,13 +437,13 @@ stores retain history and may grow substantially.
 Install test requirements explicitly, then run from the repository root:
 
 ```bash
-python3 -m pip install -r skills/rapp-private-hive/requirements-test.txt
+python3 -m pip install -r .github/skills/rapp-private-hive/requirements-test.txt
 mkdir -p .hive-test-work
 chmod 700 .hive-test-work
 TMPDIR="$PWD/.hive-test-work" PYTHONDONTWRITEBYTECODE=1 \
-  python3 -m unittest discover -s skills/rapp-private-hive/tests -p 'test_*.py' -v
+  python3 -m unittest discover -s .github/skills/rapp-private-hive/tests -p 'test_*.py' -v
 PYTHONDONTWRITEBYTECODE=1 \
-  python3 skills/rapp-private-hive/vendor/hive/reference/authenticated_conformance.py
+  python3 .github/skills/rapp-private-hive/vendor/hive/reference/authenticated_conformance.py
 ```
 
 The suite includes the existing 22 preparation tests; deployment key custody,

@@ -353,6 +353,272 @@ class ShapeAndCrypto(Vectors):
         self.reject("dogg-unapproved", gate.accept, canonical(changed))
 
 
+class StreamForks(Vectors):
+    def policy_fork(self, world, gate, cell="source"):
+        original = world.policies[cell]
+        rival = self.modified(world, original,
+                              lambda item: item["payload"].update(max_clock_uncertainty_ms=999))
+        self.reject("stream-fork", gate.accept, canonical(rival))
+        return original, rival
+
+    def test_owner_policy_fork_retains_exact_evidence_and_refuses_both_branches(self):
+        world, gate = self.fresh(through="request")
+        history = gate.history()
+        original, rival = self.policy_fork(world, gate)
+        row = gate.db.execute("SELECT * FROM stream_faults").fetchone()
+        self.assertEqual((row["stream"], row["sequence"], row["hive"], row["original"], row["evidence"], row["raw"]),
+                         (original["stream_id"], original["seq"], world.hives["source"],
+                          original["frame_hash"], rival["frame_hash"], canonical(rival)))
+        self.assertEqual(gate.history(), history)
+        self.assertEqual(gate.latest("policies", world.hives["source"]), original["frame_hash"])
+        for frame in (original, rival):
+            self.reject("stream-equivocation", gate.accept, canonical(frame))
+        self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM stream_faults").fetchone()[0], 1)
+        self.assertEqual(gate.accept(canonical(world.policies["destination"]))["status"], "duplicate")
+
+    def test_original_successors_and_cross_stream_dependents_fail_across_restart(self):
+        world, gate = self.fresh(through="request")
+        original, _ = self.policy_fork(world, gate)
+        payload = copy.deepcopy(original["payload"])
+        payload.update(policy_seq=2, previous_policy=original["frame_hash"],
+                       depends_on=sorted(payload["depends_on"] + [original["frame_hash"]]))
+        successor = world.emit("next-policy", "policy", "source-owner", "source-governance", 30, payload)
+        dependent = world.make_request(name="next-request", seconds=31, request_id=digest("post-fork"))
+        for _ in range(2):
+            for frame in (successor, dependent, world.request, world.agreement):
+                self.reject("stream-equivocation", gate.accept, canonical(frame))
+            gate = self.restart(world, gate)
+        self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM requests").fetchone()[0], 1)
+
+    def test_new_receipt_authorization_and_key_release_stop_after_policy_fork(self):
+        for phase in ("validated", "executing"):
+            with self.subTest(phase=phase):
+                world, gate = self.fresh(through="request")
+                phases = ("received", "validated") if phase == "validated" else (
+                    "received", "validated", "accepted", "executing")
+                world.advance(gate, phases)
+                request_hash = world.request["frame_hash"]
+                before = gate.status(request_hash)
+                self.policy_fork(world, gate)
+                receipt = world.receipt("accepted") if phase == "validated" else None
+                for _ in range(2):
+                    if receipt is not None:
+                        self.reject("stream-equivocation", gate.accept, canonical(receipt))
+                    else:
+                        self.reject("authority-equivocation", gate.open_request, request_hash,
+                                    world.egg, world.key_service)
+                    self.assertEqual(gate.status(request_hash), before)
+                    self.assertEqual(world.key_calls, 0)
+                    gate = self.restart(world, gate)
+
+    def test_registry_refresh_cannot_clear_owner_stream_fault(self):
+        world, gate = self.fresh(through="request")
+        original, _ = self.policy_fork(world, gate)
+        world.registries["source"] = world.registry_document("source", sequence=8)
+        gate.install_registry(world.hives["source"], canonical(world.registries["source"]))
+        gate = self.restart(world, gate)
+        self.reject("stream-equivocation", gate.accept, canonical(original))
+        self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM stream_faults").fetchone()[0], 1)
+        self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM authority_faults").fetchone()[0], 1)
+
+    def test_inflight_outcome_can_be_recorded_without_reauthorizing_faulted_policy(self):
+        world, gate = self.fresh(through="request")
+        world.advance(gate)
+        request_hash = world.request["frame_hash"]
+        self.assertIn(b"synthetic private input", gate.open_request(request_hash, world.egg, world.key_service))
+        self.policy_fork(world, gate)
+        gate = self.restart(world, gate)
+        self.assertEqual(gate.accept(canonical(world.receipt("completed")))["status"], "business-completed")
+        gate = self.restart(world, gate)
+        self.assertEqual(gate.status(request_hash)["phase"], "completed")
+        self.assertEqual(world.key_calls, 1)
+
+    def test_forged_or_wrong_stream_owner_forks_cannot_latch(self):
+        for variant in ("invalid-signature", "wrong-signer", "wrong-issuer", "owner-on-worker-stream"):
+            with self.subTest(variant=variant):
+                world, gate = self.fresh(through="request")
+                rival = self.modified(world, world.policies["source"],
+                                      lambda item: item["payload"].update(max_clock_uncertainty_ms=999))
+                if variant == "invalid-signature":
+                    _, _, signature = signature_header(rival["sig"])
+                    header = rival["sig"].split(".")[0]
+                    rival["sig"] = header + ".." + b64(bytes([signature[0] ^ 1]) + signature[1:])
+                    code = "signature-invalid"
+                elif variant == "wrong-signer":
+                    rival["sig"] = world.signature(unsigned(rival), "source-requester")
+                    code = "issuer-signature"
+                elif variant == "wrong-issuer":
+                    rival["payload"]["issuer"] = world.party("source", "source-requester")
+                    rival = resign(rival, "source-requester", world)
+                    code = "stream-issuer"
+                else:
+                    rival["stream_id"] = world.streams["source-work"]
+                    rival = resign(rival, "source-owner", world)
+                    code = "stream-issuer"
+                self.reject(code, gate.accept, canonical(rival))
+                gate = self.restart(world, gate)
+                self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM stream_faults").fetchone()[0], 0)
+                self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM authority_faults").fetchone()[0], 0)
+                world.advance(gate)
+                self.assertIn(b"synthetic private input", gate.open_request(
+                    world.request["frame_hash"], world.egg, world.key_service))
+
+    def test_nonowner_stream_fork_latches_only_its_stream_across_restart(self):
+        for ingestion in ("direct", "staged"):
+            with self.subTest(ingestion=ingestion):
+                world, gate = self.fresh(through="request")
+                original = world.request
+                rival = self.modified(world, original,
+                                      lambda item: item["payload"].update(request_id=digest("worker-rival")))
+                dependent = world.make_request_approval()
+                successor = world.make_request(name="worker-successor", seconds=30,
+                                                request_id=digest("worker-successor"))
+                rival_successor = world.emit("rival-successor", "request", "source-requester", "source-work", 31,
+                                             copy.deepcopy(successor["payload"]), previous=rival)
+                history = gate.history()
+                if ingestion == "direct":
+                    self.reject("stream-fork", gate.accept, canonical(rival))
+                else:
+                    gate.stage(canonical(rival))
+                    result = gate.drain()
+                    self.assertEqual(result["quarantined"],
+                                     [{"frame_hash": rival["frame_hash"], "refusal": "stream-fork"}])
+                for _ in range(2):
+                    row = gate.db.execute("SELECT * FROM stream_faults").fetchone()
+                    self.assertIsNotNone(row)
+                    self.assertEqual((row["stream"], row["sequence"], row["original"], row["raw"]),
+                                     (original["stream_id"], original["seq"], original["frame_hash"], canonical(rival)))
+                    self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM authority_faults").fetchone()[0], 0)
+                    for frame in (original, rival, successor, rival_successor, dependent):
+                        self.reject("stream-equivocation", gate.accept, canonical(frame))
+                    self.assertEqual(gate.accept(canonical(world.agreement))["status"], "duplicate")
+                    self.assertEqual(gate.accept(canonical(world.policies["destination"]))["status"], "duplicate")
+                    self.assertEqual(gate.history(), history)
+                    gate = self.restart(world, gate)
+
+    def test_nonowner_request_or_receipt_fork_blocks_pending_key_release(self):
+        for subject in ("request", "receipt"):
+            with self.subTest(subject=subject):
+                world, gate = self.fresh(through="request")
+                world.advance(gate)
+                request_hash = world.request["frame_hash"]
+                before = gate.status(request_hash)
+                original = world.request if subject == "request" else world.receipts[-1]
+                rival = self.modified(world, original, lambda item: item.update(utc=stamp(21)))
+                self.reject("stream-fork", gate.accept, canonical(rival))
+                for _ in range(2):
+                    self.reject("stream-equivocation", gate.open_request, request_hash, world.egg, world.key_service)
+                    self.assertEqual(gate.status(request_hash), before)
+                    self.assertEqual(world.key_calls, 0)
+                    self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM authority_faults").fetchone()[0], 0)
+                    gate = self.restart(world, gate)
+
+    def test_nonowner_fork_does_not_suspend_unaffected_prefix_authorization(self):
+        world, gate = self.fresh(through="request")
+        original = world.request
+        later = world.make_request(name="later-request", seconds=30, request_id=digest("later-request"))
+        gate.accept(canonical(later))
+        rival = self.modified(world, later, lambda item: item.update(utc=stamp(31)))
+        self.reject("stream-fork", gate.accept, canonical(rival))
+        gate = self.restart(world, gate)
+        self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM stream_faults").fetchone()[0], 1)
+        self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM authority_faults").fetchone()[0], 0)
+        world.request = original
+        world.advance(gate)
+        self.assertIn(b"synthetic private input", gate.open_request(
+            original["frame_hash"], world.egg, world.key_service))
+        self.assertEqual(world.key_calls, 1)
+        self.reject("stream-equivocation", gate.accept, canonical(later))
+
+    def test_nonowner_fork_proof_survives_revocation_and_index_recovery(self):
+        for recovery in ("retained-index", "rebuilt-index", "removed-key"):
+            with self.subTest(recovery=recovery):
+                world, gate = self.fresh(through="request")
+                original = world.request
+                rival = self.modified(world, original, lambda item: item.update(utc=stamp(21)))
+                self.reject("stream-fork", gate.accept, canonical(rival))
+                if recovery == "rebuilt-index":
+                    gate.db.execute("DELETE FROM stream_faults")
+                registry = world.registry_document("source", sequence=8)
+                actor = world.ids["source-requester"]
+                tombstone = {"type": "tombstone", "rappid": actor, "revoked_utc": stamp(40)}
+                tombstone["sig"] = world.signature(tombstone, "source-owner")
+                registry["entries"].append(tombstone)
+                if recovery == "removed-key":
+                    registry["entries"] = [entry for entry in registry["entries"]
+                                           if not (entry["type"] == "spki" and entry["rappid"] == actor)]
+                registry["sig"] = world.signature(unsigned(registry), "source-owner")
+                world.registries["source"] = registry
+                gate.install_registry(world.hives["source"], canonical(registry))
+                gate = self.restart(world, gate)
+                row = gate.db.execute("SELECT original, evidence FROM stream_faults").fetchone()
+                self.assertIsNotNone(row)
+                self.assertEqual(tuple(row), (original["frame_hash"], rival["frame_hash"]))
+                self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM authority_faults").fetchone()[0], 0)
+                code = "unknown-key" if recovery == "removed-key" else "stream-equivocation"
+                for frame in (original, rival):
+                    self.reject(code, gate.accept, canonical(frame))
+                self.assertEqual(gate.accept(canonical(world.policies["destination"]))["status"], "duplicate")
+
+    def test_staged_owner_fork_and_later_batch_survive_restart(self):
+        world, gate = self.fresh(through="request")
+        original = world.policies["source"]
+        rival = self.modified(world, original, lambda item: item["payload"].update(max_clock_uncertainty_ms=999))
+        gate.stage(canonical(rival))
+        gate = self.restart(world, gate)
+        self.assertEqual(gate.drain()["quarantined"],
+                         [{"frame_hash": rival["frame_hash"], "refusal": "stream-fork"}])
+        gate = self.restart(world, gate)
+        successor = world.make_request(name="staged-successor", seconds=30, request_id=digest("staged-successor"))
+        for frame in (original, rival, successor):
+            gate.stage(canonical(frame))
+        result = gate.drain()
+        self.assertEqual(result["accepted"], [])
+        self.assertEqual(result["pending"], 0)
+        self.assertEqual({entry["refusal"] for entry in result["quarantined"]}, {"stream-equivocation"})
+
+    def test_earlier_fork_moves_frontier_back_without_losing_prior_evidence(self):
+        world, gate = self.fresh(through="request")
+        rival_grant = self.modified(world, world.grant, lambda item: item["payload"].update(max_total_units=19))
+        self.reject("stream-fork", gate.accept, canonical(rival_grant))
+        original, rival_policy = self.policy_fork(world, gate)
+        gate = self.restart(world, gate)
+        rows = list(gate.db.execute("SELECT sequence, evidence FROM stream_faults ORDER BY sequence"))
+        self.assertEqual([tuple(row) for row in rows],
+                         [(original["seq"], rival_policy["frame_hash"]),
+                          (world.grant["seq"], rival_grant["frame_hash"])])
+        self.reject("stream-equivocation", gate.accept, canonical(world.frames["source-peer"]))
+        self.assertEqual(gate.accept(canonical(world.frames["source-governance-genesis"]))["status"], "duplicate")
+
+    def test_committed_fault_is_visible_to_an_already_open_receiver_connection(self):
+        world, gate = self.fresh(through="request")
+        other = world.gate(self.paths[-1])
+        self.gates.append(other)
+        original, rival = self.policy_fork(world, gate)
+        self.reject("stream-equivocation", other.accept, canonical(original))
+        self.assertEqual(other.db.execute("SELECT raw FROM quarantine WHERE hash=?",
+                                          (rival["frame_hash"],)).fetchone()[0], canonical(rival))
+        self.assertEqual(other.db.execute("SELECT COUNT(*) FROM authority_faults").fetchone()[0], 1)
+
+    def test_retained_fork_evidence_rebuilds_a_missing_stream_fault_index(self):
+        world, gate = self.fresh(through="request")
+        original, _ = self.policy_fork(world, gate)
+        gate.db.execute("DELETE FROM stream_faults")
+        gate = self.restart(world, gate)
+        self.reject("stream-equivocation", gate.accept, canonical(original))
+        self.assertEqual(gate.db.execute("SELECT COUNT(*) FROM stream_faults").fetchone()[0], 1)
+
+    def test_corrupt_fork_proof_requires_recovery_quarantine(self):
+        world, gate = self.fresh(through="request")
+        self.policy_fork(world, gate)
+        gate.db.execute("UPDATE stream_faults SET raw=?", (b"{}",))
+        path = self.paths[-1]
+        gate.close()
+        self.gates.remove(gate)
+        self.reject("recovery-quarantine", Federation, path, local_hive=world.hives["destination"],
+                    anchors=world.anchors, clock=Clock(stamp(20), stamp(20)))
+
+
 class Authority(Vectors):
     def test_registered_memory_genesis_cannot_be_owned_by_a_different_principal(self):
         world, gate = self.fresh(through="request")

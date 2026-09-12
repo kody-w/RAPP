@@ -2,12 +2,12 @@
   "profile": "rapp-federation/1",
   "conformance_class": "interval-local-receiver",
   "activation": "candidate-not-activated",
-  "tests_run": 139,
+  "tests_run": 154,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
   "verified_fixture_frames": 37,
-  "negative_checks": 179,
+  "negative_checks": 251,
   "selected_tests": [
     "full-suite"
   ],
@@ -729,6 +729,294 @@
     {
       "test": "test_wave_tampering_is_cryptographically_refused",
       "refusal": "frame-hash"
+    },
+    {
+      "test": "test_committed_fault_is_visible_to_an_already_open_receiver_connection",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_committed_fault_is_visible_to_an_already_open_receiver_connection",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_corrupt_fork_proof_requires_recovery_quarantine",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_corrupt_fork_proof_requires_recovery_quarantine",
+      "refusal": "recovery-quarantine"
+    },
+    {
+      "test": "test_earlier_fork_moves_frontier_back_without_losing_prior_evidence",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_earlier_fork_moves_frontier_back_without_losing_prior_evidence",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_earlier_fork_moves_frontier_back_without_losing_prior_evidence",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_forged_or_wrong_stream_owner_forks_cannot_latch",
+      "refusal": "signature-invalid"
+    },
+    {
+      "test": "test_forged_or_wrong_stream_owner_forks_cannot_latch",
+      "refusal": "issuer-signature"
+    },
+    {
+      "test": "test_forged_or_wrong_stream_owner_forks_cannot_latch",
+      "refusal": "stream-issuer"
+    },
+    {
+      "test": "test_forged_or_wrong_stream_owner_forks_cannot_latch",
+      "refusal": "stream-issuer"
+    },
+    {
+      "test": "test_inflight_outcome_can_be_recorded_without_reauthorizing_faulted_policy",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_new_receipt_authorization_and_key_release_stop_after_policy_fork",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_new_receipt_authorization_and_key_release_stop_after_policy_fork",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_new_receipt_authorization_and_key_release_stop_after_policy_fork",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_new_receipt_authorization_and_key_release_stop_after_policy_fork",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_new_receipt_authorization_and_key_release_stop_after_policy_fork",
+      "refusal": "authority-equivocation"
+    },
+    {
+      "test": "test_new_receipt_authorization_and_key_release_stop_after_policy_fork",
+      "refusal": "authority-equivocation"
+    },
+    {
+      "test": "test_nonowner_fork_does_not_suspend_unaffected_prefix_authorization",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_nonowner_fork_does_not_suspend_unaffected_prefix_authorization",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "unknown-key"
+    },
+    {
+      "test": "test_nonowner_fork_proof_survives_revocation_and_index_recovery",
+      "refusal": "unknown-key"
+    },
+    {
+      "test": "test_nonowner_request_or_receipt_fork_blocks_pending_key_release",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_nonowner_request_or_receipt_fork_blocks_pending_key_release",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_request_or_receipt_fork_blocks_pending_key_release",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_request_or_receipt_fork_blocks_pending_key_release",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_nonowner_request_or_receipt_fork_blocks_pending_key_release",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_request_or_receipt_fork_blocks_pending_key_release",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_nonowner_stream_fork_latches_only_its_stream_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_original_successors_and_cross_stream_dependents_fail_across_restart",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_owner_policy_fork_retains_exact_evidence_and_refuses_both_branches",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_owner_policy_fork_retains_exact_evidence_and_refuses_both_branches",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_owner_policy_fork_retains_exact_evidence_and_refuses_both_branches",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_registry_refresh_cannot_clear_owner_stream_fault",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_registry_refresh_cannot_clear_owner_stream_fault",
+      "refusal": "stream-equivocation"
+    },
+    {
+      "test": "test_retained_fork_evidence_rebuilds_a_missing_stream_fault_index",
+      "refusal": "stream-fork"
+    },
+    {
+      "test": "test_retained_fork_evidence_rebuilds_a_missing_stream_fault_index",
+      "refusal": "stream-equivocation"
     }
   ],
   "environment": {
@@ -741,10 +1029,10 @@
     "SPEC.md": "ec5560a639a2283213c71ded658920008024d2e705b010c0c4b8fdd74736bcd3",
     "schema.json": "d5ae3a3af3030632171db9cbb139d05e589116fb0e6a3a585e86d0c83e4f155a",
     "requirements.txt": "f2661695af26aedec09b6f1ac907c2cc6aa821ca04483396fed0cc2bfc83dd3f",
-    "reference/README.md": "5992e2be7785d43cca5a0236816202e5aebdf6d8f1796a57f3d3a3061c2e3654",
+    "reference/README.md": "dc6ff7c6c09ea9c1faefa86e13b7e4d941544e3ad176d4562fc2f153810eb6d6",
     "fixtures/ed25519-bilateral.json": "4b7645b5316aa0d48c94fabcf5f0c70a757f9132f392c35f92501120f0c8d8b3",
-    "reference/conformance.py": "29deedf258846443d04221311410c1446b70a263ba2d1162d25319df91345e0d",
-    "reference/rapp_federation.py": "fdaa014f775e6f22105fd882ef3b3d56cdd5cc43e58cd6372a97873f357dbdbd",
+    "reference/conformance.py": "776ef1a8f4a5344567a721d27250d4bfc81d8bf6b2bedb365757a8fd6962dfb3",
+    "reference/rapp_federation.py": "4c262b401b0328522ffeb023d79bc5a4d219b9c65ab87339395f38c9d978cf81",
     "reference/schema_source.py": "4f5f6e6e591d7620f393cf8402c93d063330b53016c43974108b96635d8e5388",
     "reference/vectors.py": "180d2a5b8b307c09fe4556225a04f426b37cc32586d3b9c6435f8b27b4473c92",
     "reference/wire.py": "04683689bfd6bd6007fe41f85bdda516087b48f4f87816f86ebda0cc324a6271"

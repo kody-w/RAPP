@@ -94,6 +94,48 @@ rollback-resistant storage and one receiving serialization domain per
 recipient. An owner-equivocation latch survives ordinary restart and registry
 refresh; clearing it is not exposed as a convenient API.
 
+## Authenticated stream forks
+
+Every authenticated fork of a registered stream durably records the original
+wave, competing wave, exact competing bytes, cell, stream, and sequence.
+Humans, AIs, services, relays, and estate owners use the same stream-binding
+and signature rules. The stream fault and quarantined evidence commit together
+before `accept` raises `stream-fork` (or `sovereign-fork` for the authority
+stream). A failed transaction cannot leave only the refusal without its latch.
+
+Only a fork signed by the anchored estate owner additionally suspends
+estate-wide authorization, in the same transaction. This includes owner
+governance/policy streams, not just the dedicated authority stream. A valid
+non-owner actor fork faults that stream and its dependents, not the whole cell.
+
+Known branches at or beyond the earliest fault position, their successors,
+and transitive dependents raise `stream-equivocation`, including duplicate
+retries of previously accepted waves. New authorization and key release check
+both the original request and its current receipt ancestry, so a non-owner
+request/receipt fork cannot escape through an already executing request.
+Earlier nonfaulted prefixes and independent streams remain usable. An
+owner-caused cell suspension also blocks unrelated new authorization involving
+that cell, even if a different stream or fresh registry is presented.
+
+`frame`, `payload`, and `history` still expose retained accepted evidence, not
+renewed authority. Non-authorizing receipt phases may record in-flight
+outcomes; accepted/executing receipts and key release must pass the live
+fault checks. Historical catalog/policy/request evidence is never deleted to
+pretend the fork did not occur.
+
+On reopen, retained proofs are reauthenticated against the actor's registered
+SPKI and exact stream binding, using registries signed by the anchored owner.
+Historical registry evidence preserves a known fault after that actor's key
+is revoked or removed. The stream-fault index can be rebuilt from existing
+authenticated fault/quarantine evidence; corrupt stored proofs fail with
+`recovery-quarantine`. Neither registry refresh nor restart clears a fault,
+and owner resolution/re-genesis remains outside this release.
+
+An invalid signature or mismatched issuer/stream owner cannot create any
+fault latch. A non-owner signature cannot create an estate-wide authority
+fault or authorize owner governance. Quarantine labels alone are never
+sufficient proof to install a latch.
+
 Cross-cell private control/registry/receipt metadata also requires a signed
 parent sealed egg, not merely a private URL or encrypted business payload.
 These local APIs consume already authorized decoded bytes; transport

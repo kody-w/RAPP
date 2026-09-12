@@ -9,7 +9,7 @@
       "spec_path": "protocols/rapp-hive/1/SPEC.md",
       "spec_sha256": "79aeef7bc5000f4a7b09483844b035c66adf817475540e583138f2e6b432c822",
       "schema_path": "protocols/rapp-hive/1/schema.json",
-      "schema_sha256": "698365da4d6e4a2b76f75c0c53ad9e61f21a8eb62b2838399c4f355168a1a5cc",
+      "schema_sha256": "9b383535d6a2ad379e8c70b1a1cb3ab6ed3f9ca71114c37695e24fd8560415e0",
       "conformance": "protocols/rapp-hive/1/reference/hive_conformance.py"
     },
     {

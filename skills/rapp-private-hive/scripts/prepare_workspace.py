@@ -738,6 +738,85 @@ def command_prepare(args) -> dict:
         return {"status": "prepared", "workspace": str(root), **receipt}
 
 
+def embed_project_skill(workspace: Path) -> dict:
+    destination = workspace / ".github" / "skills" / "rapp-private-hive"
+    cursor = workspace
+    for part in (".github", "skills", "rapp-private-hive"):
+        cursor = cursor / part
+        if cursor.is_symlink():
+            raise ValueError("project skill path cannot contain a symlink")
+    try:
+        if destination.resolve() == ROOT.resolve():
+            if not destination.is_dir():
+                raise ValueError("repository-native project skill path is not a directory")
+            return {
+                "status": "repository-native",
+                "path": ".github/skills/rapp-private-hive",
+            }
+    except FileNotFoundError:
+        pass
+    lock = read_json(ROOT / "rapp" / "agent.lock.json")
+    expected = {
+        entry["path"]: entry["sha256"]
+        for entry in lock.get("files", [])
+    }
+    if len(expected) != len(lock.get("files", [])) or not expected:
+        raise ValueError("source Private Hive skill lock is invalid")
+    expected["rapp/agent.lock.json"] = sha256((ROOT / "rapp" / "agent.lock.json").read_bytes())
+
+    if destination.exists() or destination.is_symlink():
+        if destination.is_symlink() or not destination.is_dir():
+            raise ValueError("existing project skill path is unsafe")
+        actual = {}
+        for path in destination.rglob("*"):
+            relative = path.relative_to(destination)
+            if "__pycache__" in relative.parts or path.suffix == ".pyc":
+                continue
+            if path.is_symlink() or (path.exists() and not path.is_file() and not path.is_dir()):
+                raise ValueError("existing project skill contains an unsafe entry")
+            if path.is_file():
+                actual[relative.as_posix()] = sha256(path.read_bytes())
+        if actual != expected:
+            raise ValueError("existing project skill differs; explicit reviewed upgrade is required")
+        return {
+            "status": "already-embedded",
+            "path": ".github/skills/rapp-private-hive",
+            "version": lock.get("version"),
+            "files": len(expected),
+        }
+
+    parent = destination.parent
+    cursor = workspace
+    for part in (".github", "skills"):
+        cursor = cursor / part
+        if cursor.is_symlink():
+            raise ValueError("project skill parent cannot be a symlink")
+        cursor.mkdir(exist_ok=True)
+    temporary = parent / f".rapp-private-hive.tmp-{os.getpid()}-{os.urandom(4).hex()}"
+    try:
+        temporary.mkdir()
+        for relative, expected_hash in sorted(expected.items()):
+            source = ROOT / relative
+            if source.is_symlink() or not source.is_file():
+                raise ValueError(f"source project skill file is unsafe: {relative}")
+            data = source.read_bytes()
+            if sha256(data) != expected_hash:
+                raise ValueError(f"source project skill lock mismatch: {relative}")
+            target = temporary / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            atomic_write(target, data, 0o644)
+        os.replace(temporary, destination)
+    finally:
+        if temporary.exists():
+            shutil.rmtree(temporary)
+    return {
+        "status": "embedded",
+        "path": ".github/skills/rapp-private-hive",
+        "version": lock.get("version"),
+        "files": len(expected),
+    }
+
+
 def command_migrate(args) -> dict:
     root = workspace_root(args.workspace)
     workspace_record, workspace_rappid = workspace_identity(root)
@@ -746,6 +825,7 @@ def command_migrate(args) -> dict:
         state, declaration, _ = control_files(root)
         baseline = read_json(control_root(root) / "baseline.json")["files"]
         verify_unchanged(root, baseline)
+        embedded = embed_project_skill(root)
         source_spec = workspace_record.get("workspace_spec") or "legacy-unversioned"
         migration_identity = {
             "workspace_rappid": workspace_rappid,
@@ -775,6 +855,7 @@ def command_migrate(args) -> dict:
                 "hive_rappid": declaration["hive_rappid"],
                 "identity_preserved": True,
                 "original_bytes_unchanged": True,
+                "project_skill": embedded,
             }
         receipt = {
             "schema": "rapp-private-hive-migration-receipt/1",
@@ -791,6 +872,7 @@ def command_migrate(args) -> dict:
             "identity_preserved": True,
             "original_bytes_unchanged": True,
             "migration_mode": "additive-sidecar",
+            "project_skill": embedded,
         }
         atomic_write(path, canonical_bytes(receipt))
         verify_unchanged(root, baseline)

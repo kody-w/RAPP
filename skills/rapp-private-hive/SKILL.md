@@ -5,6 +5,13 @@ description: Prepare and deploy a single-owner RAPP Private Hive through an appr
 
 # RAPP Private Hive
 
+This is a repository-level project skill. When the RAPP workspace is cloned or
+shared, GitHub Copilot CLI discovers it from
+`.github/skills/rapp-private-hive` without a separate personal-skill install.
+For a workspace migrated by this skill, the exact checksum-locked capability is
+embedded at that same project path. In an already-running CLI session, use
+`/skills reload`; a newly started session discovers it automatically.
+
 The RAPP Private Hive is the intentionally shared, access-restricted,
 off-device portion of a RAPP workspace. It is a RAPP/1 workspace object that
 may contain any verified RAPP/1 object and may project through private Git,
@@ -91,7 +98,9 @@ Migration preserves the existing workspace RAPPID and every original file. It
 adds the Hive protocol as an additive sidecar, records the prior
 `workspace_spec` (or `legacy-unversioned`), and writes a deterministic migration
 receipt only after re-verifying the complete baseline. Re-running the same
-migration is idempotent. Conflicting identities, changed baseline bytes,
+migration is idempotent. It also embeds this locked project skill at
+`.github/skills/rapp-private-hive`, so sharing the migrated workspace carries
+the capability with it. Conflicting identities, changed baseline bytes,
 incomplete control state, or a different requested Hive configuration are
 refused rather than repaired or overwritten.
 

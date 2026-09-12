@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/kody-w/RAPP/main/protocols/rapp-hive/1/schema.json",
+  "$id": "https://raw.githubusercontent.com/kody-w/rapp-work/main/protocols/rapp-hive/1/schema.json",
   "title": "RAPP Private Hive v1 payloads",
   "description": "Structural and scalar-domain validation. Cross-document ordering, authorization, ancestry, audience, and convergence invariants require the normative reference validator.",
   "$comment": "JSON Schema alone does not establish RAPP/1 authority or rapp-hive/1 semantic conformance.",

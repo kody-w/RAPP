@@ -20,6 +20,7 @@ from rapp_profile import bounded_int, canonical_object, exact_keys, hex64, parti
 
 
 CATALOG_KINDS = {"hive.object", "hive.godd-slice", "hive.reconciliation"}
+FORK_REASONS = {"stream-fork", "fork-ancestor"}
 
 
 class RegistryAuthority:
@@ -149,9 +150,11 @@ class HiveAcceptance:
         self._pending = {}
         self._retained = {}
         self._stream_heads = {}
+        self._forks = {}
         self._receipt_heads = {}
         self._convergences = {}
         self._catalogs = {}
+        self._restore_failed = False
         require(self._hive in registry._genesis, "Mother Hive: no registered genesis")
         genesis = self._chain(registry._genesis[self._hive])
         require(len(genesis) == 1 and genesis[0]["kind"] == "hive.declaration",
@@ -174,6 +177,7 @@ class HiveAcceptance:
 
     def checkpoint(self) -> dict:
         with self._lock:
+            require(not self._restore_failed, "restore: failed history recovery")
             return {
                 "registry_seq": self.registry.sequence,
                 "registry_hash": self.registry.commitment,
@@ -318,10 +322,6 @@ class HiveAcceptance:
         require(candidate["source_channel_ids"] and set(candidate["source_channel_ids"]) <= channels,
                 "candidate: unknown source channel")
         self._ancestors(frame["frame_hash"])
-        pinned = self._stream_heads.get(frame["stream_id"])
-        if pinned is not None and frame["frame_hash"] not in self._settled:
-            require(frame["seq"] >= pinned["seq"] and chain[pinned["seq"]]["frame_hash"] == pinned["frame_hash"],
-                    "candidate: does not descend from the accepted stream head")
         return frame
 
     def _components(self, frames: dict[str, dict]) -> list[set[str]]:
@@ -346,13 +346,30 @@ class HiveAcceptance:
                 components.append(group)
         return components
 
-    def _active(self) -> dict[str, dict]:
+    def _fork_reason(self, value: str, forks: dict) -> str | None:
+        frontiers = {}
+        for stream, sequence in forks:
+            frontiers[stream] = min(sequence, frontiers.get(stream, sequence))
+
+        def faulted(frame):
+            return frame["stream_id"] in frontiers and frame["seq"] >= frontiers[frame["stream_id"]]
+
+        if faulted(self._frames[value]):
+            return "stream-fork"
+        if any(faulted(self._frames[parent]) for parent in self._ancestors(value)):
+            return "fork-ancestor"
+        return None
+
+    def _active(self, forks=None) -> dict[str, dict]:
+        forks = self._forks if forks is None else forks
+        eligible = {value: frame for value, frame in self._accepted.items()
+                    if self._fork_reason(value, forks) is None}
         active = {}
-        for value, frame in self._accepted.items():
+        for value, frame in eligible.items():
             for key in frame["payload"]["mutation_keys"]:
                 if not any(
                     key in other["payload"]["mutation_keys"] and value in self._ancestors(other_hash)
-                    for other_hash, other in self._accepted.items() if other_hash != value
+                    for other_hash, other in eligible.items() if other_hash != value
                 ):
                     active[value] = frame
                     break
@@ -371,17 +388,29 @@ class HiveAcceptance:
             raise ValueError("convergence: unresolved candidate bytes or metadata changed")
         prior = self._settled
         positions = {}
+        observed = {value for value, frame in self._retained.items() if frame["kind"] in CATALOG_KINDS}
         for value in valid:
-            for ancestor in self._chain(value):
-                position = (ancestor["stream_id"], ancestor["seq"])
-                positions.setdefault(position, set()).add(ancestor["frame_hash"])
-        forks = {position for position, hashes in positions.items() if len(hashes) > 1}
-        for value in set(valid) - prior:
-            if any((frame["stream_id"], frame["seq"]) in forks for frame in self._chain(value)):
-                quarantine[value] = "stream-fork"
+            observed.update(self._ancestors(value) | {value})
+        for value in observed:
+            frame = self._frames[value]
+            positions.setdefault((frame["stream_id"], frame["seq"]), set()).add(value)
+        forks = dict(self._forks)
+        for position, hashes in positions.items():
+            if len(hashes) > 1:
+                forks[position] = frozenset(hashes) | forks.get(position, frozenset())
+        for value, frame in valid.items():
+            reason = self._fork_reason(value, forks)
+            if reason is not None:
+                quarantine[value] = reason
+                continue
+            pinned = self._stream_heads.get(frame["stream_id"])
+            if pinned is not None and value not in prior:
+                chain = self._chain(value)
+                if frame["seq"] < pinned["seq"] or chain[pinned["seq"]]["frame_hash"] != pinned["frame_hash"]:
+                    quarantine[value] = "invalid-candidate"
         for value in quarantine:
             valid.pop(value, None)
-        active = self._active()
+        active = self._active(forks)
         while True:
             missing = {
                 value for value in set(valid) - prior
@@ -459,11 +488,12 @@ class HiveAcceptance:
         accepted = dict(self._accepted)
         accepted.update({value: valid[value] for value, (status, _) in statuses.items() if status == "accepted"})
         catalog = H.catalog_payload(self._declaration, accepted)
-        return decisions, sorted(resolutions, key=lambda item: item["mutation_key"]), catalog, accepted, valid
+        return decisions, sorted(resolutions, key=lambda item: item["mutation_key"]), catalog, accepted, valid, forks
 
     def preview_convergence(self, candidates: list[dict], created_utc: str) -> dict:
         """A signing proposal only; this does not advance any accepted state."""
         with self._lock:
+            require(not self._restore_failed, "restore: failed history recovery")
             candidates = copy.deepcopy(candidates)
             payload = {
                 "schema": H.CONVERGENCE_SCHEMA, "hive_rappid": self._hive, "created_utc": created_utc,
@@ -476,7 +506,7 @@ class HiveAcceptance:
                 "resolutions": [], "resulting_catalog_hash": particle_hash(self._catalog), "status": "converged",
             }
             H.validate_convergence(payload, self._declaration)
-            decisions, resolutions, catalog, _, _ = self._evaluate(candidates)
+            decisions, resolutions, catalog, _, _, _ = self._evaluate(candidates)
             payload.update(decisions=decisions, resolutions=resolutions, resulting_catalog_hash=particle_hash(catalog),
                            status="partial" if any(item["status"] == "conflict" for item in decisions) else "converged")
             H.validate_convergence(payload, self._declaration)
@@ -484,6 +514,7 @@ class HiveAcceptance:
 
     def accept_convergence(self, frame_hash: str) -> dict:
         with self._lock:
+            require(not self._restore_failed, "restore: failed history recovery")
             require(frame_hash != self._head["frame_hash"], "convergence: Mother Hive frame replay")
             chain = self._chain(frame_hash)
             frame = chain[-1]
@@ -497,10 +528,16 @@ class HiveAcceptance:
             base_convergence = self._head["payload_hash"] if self._head["kind"] == "hive.convergence" else None
             require(payload["base_convergence_payload_hash"] == base_convergence, "convergence: stale base convergence")
             require(payload["base_catalog_hash"] == particle_hash(self._catalog), "convergence: stale base catalog")
-            decisions, resolutions, catalog, accepted, valid = self._evaluate(payload["candidates"])
+            decisions, resolutions, catalog, accepted, valid, forks = self._evaluate(payload["candidates"])
             require([(item["frame_hash"], item["status"]) for item in payload["decisions"]]
                     == [(item["frame_hash"], item["status"]) for item in decisions],
                     "convergence: decisions differ from authenticated evaluation (including required duplicate decisions)")
+            # A recorded fork must not become an ordinary quarantine when its bytes go missing on restore.
+            require({(item["frame_hash"], item["reason_code"]) for item in payload["decisions"]
+                     if item["reason_code"] in FORK_REASONS}
+                    == {(item["frame_hash"], item["reason_code"]) for item in decisions
+                        if item["reason_code"] in FORK_REASONS},
+                    "convergence: fork evidence differs from authenticated evaluation or is unavailable")
             require(payload["resolutions"] == resolutions, "convergence: resolutions differ from signed complete parent sets")
             require(payload["resulting_catalog_hash"] == particle_hash(catalog),
                     "convergence: resulting catalog hash differs from accepted frames")
@@ -509,6 +546,11 @@ class HiveAcceptance:
             self._catalogs[particle_hash(catalog)] = catalog
             self._pending = {item["frame_hash"]: valid[item["frame_hash"]]
                              for item in decisions if item["status"] == "conflict"}
+            evidence = {value for hashes in forks.values() for value in hashes}
+            evidence.update(item["frame_hash"] for item in decisions if item["reason_code"] in FORK_REASONS)
+            for value in evidence:
+                for retained in self._ancestors(value) | {value}:
+                    self._retained[retained] = self._frames[retained]
             for item in decisions:
                 if item["status"] == "quarantined":
                     continue
@@ -521,6 +563,7 @@ class HiveAcceptance:
                     previous = self._stream_heads.get(candidate["stream_id"])
                     if previous is None or candidate["seq"] > previous["seq"]:
                         self._stream_heads[candidate["stream_id"]] = candidate
+            self._forks = forks
             self._head = frame
             self._mother.append(frame_hash)
             self._retained[frame_hash] = frame
@@ -530,15 +573,21 @@ class HiveAcceptance:
     def restore(self, mother_head_frame_hash: str) -> dict:
         """Rebuild state from signed history, not a serialized accepted-frame list."""
         with self._lock:
+            require(not self._restore_failed, "restore: failed history recovery")
             require(len(self._mother) == 1, "restore requires a genesis-only verifier")
-            chain = self._chain(mother_head_frame_hash)
-            require(chain[0]["frame_hash"] == self._head["frame_hash"], "restore: foreign genesis")
-            for frame in chain[1:]:
-                self.accept_convergence(frame["frame_hash"])
-            return self.checkpoint()
+            try:
+                chain = self._chain(mother_head_frame_hash)
+                require(chain[0]["frame_hash"] == self._head["frame_hash"], "restore: foreign genesis")
+                for frame in chain[1:]:
+                    self.accept_convergence(frame["frame_hash"])
+                return self.checkpoint()
+            except Exception:
+                self._restore_failed = True
+                raise
 
     def artifact_manifest(self) -> dict:
         with self._lock:
+            require(not self._restore_failed, "restore: failed history recovery")
             require(self._head["kind"] == "hive.convergence", "manifest: no accepted convergence")
             addresses = {("rapp/1:wave", value) for value in self._retained}
             addresses.update(("rapp/1:particle", value) for value in self._catalogs)
@@ -563,6 +612,7 @@ class HiveAcceptance:
 
     def accept_projection(self, frame_hash: str, *, manifest_bytes: bytes, artifact_resolver) -> dict:
         with self._lock:
+            require(not self._restore_failed, "restore: failed history recovery")
             require(callable(artifact_resolver), "projection: artifact byte resolver is required")
             chain = self._chain(frame_hash)
             receipt = chain[-1]
