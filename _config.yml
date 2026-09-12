@@ -30,6 +30,7 @@ exclude:
   - tests
   - tools
   - scripts
+  - skills
   - worker
   - community_rapp
   - historical/source-archive

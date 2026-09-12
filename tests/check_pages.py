@@ -279,6 +279,7 @@ def main() -> int:
         "tests",
         "tools",
         "scripts",
+        "skills",
         "worker",
         "historical/source-archive",
         "rapp_brainstem",
