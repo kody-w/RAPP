@@ -9,8 +9,10 @@
 
 ## Status
 
-**Draft** until the maintainer merges pull request #119; that merge accepts
-it (Article XXX.2).
+**Implemented** when the amendment PR from the branch
+`experimental/amendment-0001-live-agents` is merged. That PR follows the
+maintainer's acceptance of this proposal in pull request #119 (Article
+XXX.2).
 
 The maintainer (@kody-w) approved the substance in conversation on
 2026-09-24. It had been pointed out to him that the constitution says agents

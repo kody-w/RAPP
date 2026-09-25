@@ -786,6 +786,7 @@ meta-agent. v1.12 formalized a companion verb for **distribution**:
 - **Workshop** — a folder of `*_agent.py` files under
   `agents/workspace_agents/<my_swarm>/` where a user iterates against
   the hotload loop.
+  > **Note (2026-09-24):** the local Brainstem (Tier 1) hot-loads only the top-level `agents/*_agent.py` files, so a workshop folder is organization only and its files are not hot-loaded. To try a workshop agent, move it to the top of `agents/`; move it back into a folder to unload it. See `CONSTITUTION.md` Article XVII (2026-09-24 amendment) and `docs/proposals/0001-only-top-level-agents-are-live.md`.
 - **Singleton** — one `*_agent.py` file produced by
   `swarm_factory_agent.py`, containing the inlined capabilities of the
   entire workshop.
