@@ -50,9 +50,10 @@ XX: in the local Brainstem, live agents come only from the top-level
 `agents/*_agent.py` files, hot-loaded on every `/chat` request. Every folder
 under `agents/` is organization only and never loads. Loading or unloading an
 agent is a plain file move, meaning drag and drop. The grail's
-`load_agents()` (`rapp_brainstem/brainstem.py` at `brainstem-v0.6.9`, lines
-1202-1205) globs one level, `/chat` calls it on every request (line 1464),
-and each file runs fresh from its own path (line 1039).
+`load_agents()` (`rapp_brainstem/brainstem.py` at
+`kody-w/rapp-installer@brainstem-v0.6.9`, lines 1202-1205; RAPP's copy is
+byte-identical) globs one level, `/chat` calls it on every request
+(line 1464), and each file runs fresh from its own path (line 1039).
 
 ### How Tier 2 differs today
 
@@ -195,7 +196,9 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
 
 Proposal 0001 goes first, in its own two PRs (pull request #119, then its
 amendment PR). Those are 0001's steps, not steps of this proposal. Each step
-below lands in one PR.
+below lands in one PR. If step 2's PR, or a later revert of it, is
+squash-merged rather than merged with a merge commit, a ledger-only commit
+on `main` must follow it (see Merge method in step 2).
 
 1. **Acceptance.** The owner merges this proposal, with the option he picks.
    The proposal merge is his (Article XXX.2). Before a pull request is opened
