@@ -9,8 +9,8 @@
 
 ## Status
 
-**Draft** until the maintainer merges pull request #119; that merge accepts
-it (Article XXX.2).
+**Accepted** when the maintainer merges pull request #119 (Article XXX.2); a
+draft until then.
 
 The maintainer (@kody-w) approved the substance in conversation on
 2026-09-24. It had been pointed out to him that the constitution says agents
@@ -31,7 +31,9 @@ request #119 holds only this proposal and its receipts. The amendment it
 describes is ready on the branch `experimental/amendment-0001-live-agents`,
 for a separate PR after #119 is merged; that PR also sets this Status to
 `implemented`. Both merges are the maintainer's (Articles XXVIII.4 and
-XXX.2).
+XXX.2). Squash-merge both: this branch's history includes commits that added
+and then removed the notes before the split, and a squash merge keeps them
+off `main`.
 
 **Numbering.** No earlier numbered proposal exists under this repository's
 `docs/proposals/` (checked with `git log --all -- docs/proposals`). The only
@@ -131,7 +133,7 @@ Almost. Checked with `git log -S`, `git blame`, and against every release tag:
   grail release, and RAPP's own copy since 2026-05-01. The other documents
   that still differ are listed in Migration step 3.
 
-### The ruling
+### The ruling, as this proposal reads it
 
 - **Live** agents come only from the top-level `agents/*_agent.py` files,
   hot-loaded on every `/chat` request.
@@ -176,7 +178,9 @@ is pre-acceptance, and its effects are refused by default
   634-637), whether that is the Azure File Share
   (`list_directories_and_files()`, `rapp_swarm/utils/azure_file_storage.py`
   line 573) or the local fallback (`os.listdir()`,
-  `rapp_swarm/utils/local_file_storage.py` line 380). Nothing recurses.
+  `rapp_swarm/utils/local_file_storage.py` line 380). Python imports the
+  identical copies of those modules in `rapp_swarm/_vendored/utils/`.
+  Nothing recurses.
 - **It differs from Tier 1 in at least four ways:**
   1. *It caches.* Agents are cached for five minutes
      (`AGENTS_CACHE_TTL_SECONDS = 5 * 60` at line 266, `_get_cached_agents()`
@@ -189,12 +193,13 @@ is pre-acceptance, and its effects are refused by default
      `_agent.py` (line 637).
   3. *Its build copies folders.* The preserved historical build in
      `rapp_swarm/build.sh` (lines 62-77) copies the `agents/` tree
-     recursively, skipping `experimental_agents` and `disabled_agents`, and
-     then copies it to `rapp_swarm/agents/` (lines 91-93). If that build
-     ran, subfolders would be copied but never loaded. Today its apply mode
-     is refused (lines 112-117 and 128-130), `rapp_swarm/agents` is
-     gitignored (`.gitignore` line 44), and `rapp_swarm/.funcignore` (line 4)
-     keeps `agents/` out of a Functions publish.
+     recursively, skipping only `experimental_agents`, `disabled_agents` and
+     `__pycache__`, and then copies it to `rapp_swarm/agents/` (lines 91-93).
+     If that build ran, subfolders would be copied but never loaded. Today
+     its apply mode is refused (lines 112-117 and 128-130).
+     `rapp_swarm/agents` is gitignored (`.gitignore` line 44), and
+     `rapp_swarm/.funcignore` (line 4) keeps `agents/` out of a Functions
+     publish.
   4. *It imports local files by module name.* `importlib.import_module()`
      (line 562) keeps the first import, so an edited file keeps its old code
      until a restart, and a file with the same name in another `agents/`
@@ -211,18 +216,19 @@ is pre-acceptance, and its effects are refused by default
 The change is additive only. It follows the "Amendment (2026-07-08)"
 precedent in Articles XLVI and XLVII: add a governing blockquote note, keep
 the stale wording, and state that the note governs or that the old wording is
-superseded.
+superseded. Article LII.2 reads Article XXVI the same way, as "the same
+append-only discipline as this Constitution". The notes carry the date of the
+ruling, 2026-09-24.
 
-The notes go inside Articles XVII, XVIII and XX, next to the text they
-correct. That puts them inside the file's RAPP1 historical section, which
-runs from the marker at line 10 to the marker just before Article LV. The
-2026-07-08 notes were written before those markers existed (they were added
-on 2026-07-17, in `4c3183e`), and new governing text since then has gone
-after Article LV (Articles LVI and LVII). These would be the first governing
-notes added inside the section since the markers. They belong there because
-they only say how Articles XVII, XVIII and XX are to be read. The file header
-sends protocol matters to RAPP/1 (Article LV), and which agent files load is
-not one of them; the notes claim nothing about protocol.
+The in-place notes sit next to the text they correct, inside the file's RAPP1
+historical section, which runs from the marker at line 10 to the marker just
+before Article LV. The file header says those "bounded Articles 0–LIV preserve
+constitutional-era application history", and the new articles added since the
+markers (on 2026-07-17, in `4c3183e`) have gone after Article LV: the draft
+Article LVI and Article LVII. The 2026-07-08 notes predate the markers. So
+the amendment also adds a short dated section after Article LVII, outside the
+historical section. It states the rule as current guidance and says that the
+in-place notes govern how Articles XVII, XVIII and XX are read.
 
 The amendment PR (Migration step 2) makes these changes:
 
@@ -235,21 +241,26 @@ The amendment PR (Migration step 2) makes these changes:
 2. **`CONSTITUTION.md`, Article XVIII.** A short note at "The mapping":
    **Load** = move the file to the top level of `agents/`; **Unload** = move
    it into any folder, or delete it. A plain file move, such as drag and drop
-   in a file manager, is all it takes. Reserved folder names are conventions
-   with no engine meaning.
+   in a file manager, is all it takes. The "Disable", "Enable" and "Mark
+   experimental" rows stay as UI conventions for such moves, but the folders
+   they name have no engine meaning.
 3. **`CONSTITUTION.md`, Article XX.** A short note under the beginner-view
-   bullet "Reserved folders hidden": the engine reserves no folder names. A
-   view may still hide folders, but that changes nothing about what loads.
+   bullet "Reserved folders hidden": the engine reserves no folder names, and
+   whether a view shows or hides a folder changes nothing about what loads.
+   The article's "engine-internal" wording stops governing.
 4. **`pages/docs/SPEC.md`, §18.5.** A short note under the "Workshop" bullet
    (lines 786-788). The bullet says a workshop under
    `agents/workspace_agents/<my_swarm>/` iterates "against the hotload loop".
    Under the ruling it does not.
-5. **Receipts.** Pull request #119 adds this file and refreshes
-   `RAPP1_ADAPTATION_INVENTORY.json` (path count and path-set digest) and
-   `tests/fixtures/rapp1-doc-scope.json` (path, byte and document counts, and
-   this proposal's `current` disposition). The amendment PR refreshes the
-   byte count again. Both use the digest rules in
-   `tests/test_adaptation_inventory.py` and `tools/check_rapp1_docs.py`.
+5. **`CONSTITUTION.md`, after Article LVII.** The short dated section
+   described above.
+
+**Receipts.** Pull request #119 adds this file and refreshes
+`RAPP1_ADAPTATION_INVENTORY.json` (path count and path-set digest) and
+`tests/fixtures/rapp1-doc-scope.json` (path, byte and document counts, and
+this proposal's `current` disposition). The amendment PR refreshes the byte
+count again. Both use the digest rules in `tests/test_adaptation_inventory.py`
+and `tools/check_rapp1_docs.py`.
 
 What does not change:
 
@@ -277,34 +288,40 @@ What does not change:
 Each step below lands in its own PR or PRs.
 
 1. **Accept the proposal.** Pull request #119: this file and its receipts.
-   The maintainer's deliberate merge accepts it (Articles XXVIII.4 and
+   The maintainer's deliberate squash merge accepts it (Articles XXVIII.4 and
    XXX.2). Until then, nothing here governs.
 2. **Apply the amendment.** A separate PR from the branch
-   `experimental/amendment-0001-live-agents`: the three constitutional notes,
-   the SPEC.md note, the receipts, and this Status set to `implemented`. It
-   cites this proposal (Article XXVIII.6). Before opening it, merge `main`
-   into that branch and refresh the receipts. The maintainer merges it by
-   hand (Article XXX.2).
+   `experimental/amendment-0001-live-agents`: the three in-place notes, the
+   section after Article LVII, the SPEC.md note, the receipts, and this
+   Status set to `implemented`. It cites this proposal (Article XXVIII.6).
+   Before opening it, merge `main` into that branch. After a squash merge of
+   #119 that merge conflicts on this file and on the receipts: keep that
+   branch's version of this file, and recompute the receipts. The maintainer
+   squash-merges it by hand (Article XXX.2).
 3. **Follow-up docs (optional, the owner's call).** Additive notes or
-   corrections, each in its own PR:
+   corrections, each in its own PR. A change to `rapp_brainstem/CONSTITUTION.md`
+   is a constitution change, so the maintainer merges it himself.
    - `rapp_brainstem/CONSTITUTION.md`, the historical application
      constitution. In Article IX, lines 497-499 and 506-507 say workshop
      folders iterate against "the hotload loop", and line 544 offers a folder
      under `workspace_agents/` as the place to develop. Article XII, lines
-     723-734, 747-770, 783-785, 791 and 797-805, repeats the recursive tree,
-     the reserved names, the curriculum-only top level, `rglob` and Tier 2
-     mirroring. Article XIII, lines 828-834 and 851, and Article XIV, lines
-     877-878, repeat the reserved-folder rows and rules. The file is outside
-     the kernel freeze, but it is left untouched here.
+     692-719, 723-770, 779-785, 791 and 797-805, repeats the showroom and
+     shop split, the recursive tree, the reserved names, the curriculum-only
+     top level, `rglob` and Tier 2 mirroring. Article XIII, lines 828-834
+     and 851, and Article XIV, lines 877-878, repeat the reserved-folder rows
+     and rules. The file is outside the kernel freeze, but it is left
+     untouched here.
    - `rapp_brainstem/.gitignore`, lines 26-28: the comment says
      `agents/workspace_agents/local_agents/` is "auto-loaded by brainstem".
-   - The vault drafts, left alone here:
-     `pages/vault/Blog Drafts/the-experimental-graveyard.md` (lines 6, 19,
-     23, 25 and 36 describe `experimental_agents/` as a folder the loader
-     filters out, and line 75 names a
-     `rapp_brainstem/agents/workspace_agents/experimental_agents/` path that
-     the grail does not ship) and `pages/vault/Plans & Ledgers/Blog Roadmap.md`
-     line 120 (the same hook).
+   - `pages/product/faq.html` line 191: it says to build a swarm in
+     `workspace_agents/my_swarm/` and iterate there.
+   - The vault posts, left alone here:
+     `pages/vault/Blog Drafts/the-experimental-graveyard.md` (published,
+     `status: shipped`; lines 6, 19, 23, 25 and 36 describe
+     `experimental_agents/` as a folder the loader filters out, and line 75
+     names a `rapp_brainstem/agents/workspace_agents/experimental_agents/`
+     path that the grail does not ship) and
+     `pages/vault/Plans & Ledgers/Blog Roadmap.md` line 120 (the same hook).
    - `README.md` line 134 and Article XVII lines 923-928: folder and file
      names (`workspace_agents/`, the starter set) that differ from what the
      grail ships.
@@ -323,9 +340,10 @@ Each step below lands in its own PR or PRs.
   the amendment branch.
 - **After #119, before the amendment:** a later proposal can supersede this
   one (Article XXVIII.3), and the amendment branch can be dropped.
-- **After the amendment PR:** revert it, and #119 as well if wanted. Unless
-  later commits changed the same files, each revert restores the earlier
-  bytes exactly and leaves the receipts consistent.
+- **After the amendment PR:** revert it. Unless later commits changed the same
+  files, the revert restores the earlier bytes exactly and leaves the
+  receipts consistent. To undo the proposal itself, supersede it with a later
+  proposal rather than deleting it (Article XXVIII.3).
 
 No runtime behavior changes, so nothing outside the repository needs rolling
 back.
@@ -334,7 +352,8 @@ back.
 
 - [`CONSTITUTION.md`](../../CONSTITUTION.md): Article I, Article III.7,
   Article XVII, Article XVIII, Article XX, Article XXV, Article XXVI,
-  Article XXVIII (.3, .4, .6), Article XXX.2, Article XXXIII and Article LV.4.
+  Article XXVIII (.3, .4, .6), Article XXX.2, Article XXXIII, Article LII.2
+  and Article LV.4.
 - Precedent: the "Amendment (2026-07-08)" notes in Articles XLVI and XLVII.
 - Grail loader: `rapp_brainstem/brainstem.py` lines 1202-1205, pinned by
   `KERNEL_PIN.json` and checked by `check_kernel_pin.py` (see also
