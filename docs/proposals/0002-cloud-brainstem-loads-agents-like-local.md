@@ -14,8 +14,8 @@
 An AI assistant drafted this proposal from the open Tier 2 question that
 [proposal 0001](./0001-only-top-level-agents-are-live.md) leaves for the
 owner (its Migration step 4, "Tier 2 decision"). It was requested for the
-owner, who is away, as a draft he can accept or refuse, and the request named
-Option A as the recommendation. **The owner has not chosen yet.** He can
+owner as a draft he can accept or refuse, and the request named Option A as
+the recommendation. **As of 2026-09-25, the owner has not chosen.** He can
 accept Option A, pick Alternative B or C, or refuse the proposal. Nothing
 here governs until he merges it by hand (Article XXVIII.4, Article XXX.2).
 
@@ -45,14 +45,14 @@ Line numbers are for the files on this branch.
 
 ### The Tier 1 rule (proposal 0001)
 
-Proposal 0001 would amend Articles XVII, XVIII and XX to say that in the
-local Brainstem, live agents come only from the top-level `agents/*_agent.py`
-files, hot-loaded on every `/chat` request. Every folder under `agents/` is
-organization only and never loads. Loading or unloading an agent is a plain
-file move, meaning drag and drop. The grail's `load_agents()`
-(`rapp_brainstem/brainstem.py` at `brainstem-v0.6.9`, lines 1202-1205) globs
-one level, `/chat` calls it on every request (line 1464), and each file runs
-fresh from its own path (line 1039).
+The rule, from proposal 0001 and its amendment to Articles XVII, XVIII and
+XX: in the local Brainstem, live agents come only from the top-level
+`agents/*_agent.py` files, hot-loaded on every `/chat` request. Every folder
+under `agents/` is organization only and never loads. Loading or unloading an
+agent is a plain file move, meaning drag and drop. The grail's
+`load_agents()` (`rapp_brainstem/brainstem.py` at `brainstem-v0.6.9`, lines
+1202-1205) globs one level, `/chat` calls it on every request (line 1464),
+and each file runs fresh from its own path (line 1039).
 
 ### How Tier 2 differs today
 
@@ -85,9 +85,10 @@ are identical. So subfolders never load in Tier 2 either. Four things differ:
    preserved `historical_build` in `rapp_swarm/build.sh` copies the
    `rapp_brainstem/agents/` tree recursively (lines 62-77, `rsync -a`, with a
    `cp -R` fallback at lines 73-75). It then copies that tree to
-   `rapp_swarm/agents/` (lines 91-93). The only folders it skips are
-   `experimental_agents`, `disabled_agents` and `__pycache__`; under 0001 the
-   first two names mean nothing. The grail's real subfolder, `experimental/`,
+   `rapp_swarm/agents/` (lines 91-93). The `rsync` path skips
+   `experimental_agents`, `disabled_agents` and `__pycache__` at any depth;
+   the fallback removes them only at the top level. Under 0001 the first two
+   names mean nothing. The grail's real subfolder, `experimental/`,
    would be copied and then never loaded. The build does not run today: plan
    is the default mode (lines 124-127), and apply is refused (lines 112-117
    and 128-130). `rapp_swarm/agents` is gitignored (`.gitignore` line 44), so
@@ -135,7 +136,7 @@ Tier 2 tombstone and historical evidence" (`README.md` line 135).
 So this decision sets the rule that the preserved Tier 2 code follows if it is
 ever reviewed and switched back on. It changes nothing a user sees today.
 
-## Proposed change (recommended)
+## Proposed change (recommended in the request)
 
 **Option A: Tier 2 uses the Tier 1 file rule, loads each file from its path,
 and keeps its cache.** This is the option the request named. Whether to take
@@ -195,18 +196,25 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
 1. **Acceptance.** The owner merges 0001 first (pull request #119, then its
    amendment PR), then this proposal with the option he picks. The proposal
    merge is his (Article XXX.2). Before a pull request is opened for this
-   branch, merge `main` into it and recompute the receipts, because both
-   earlier merges change them.
+   branch, merge `main` into it. After the two squash merges, that merge
+   conflicts on proposal 0001 and on the receipts: keep `main`'s version of
+   0001 (its Status then reads "Implemented"), and recompute the receipts.
+   Before merging this proposal, set its Status to `accepted`, record the
+   option the owner picked in place of "the owner has not chosen", and
+   squash-merge it, since this branch carries proposal 0001's pre-split
+   commits.
 2. **One implementation PR, with tests, approved and merged by the owner**
    (see Constraints). Its code changes are in `rapp_swarm/`; it also adds
    tests and refreshes receipts. For C, it is only the README note and the
    receipts.
    - `rapp_swarm/function_app.py` (A and B): require `*_agent.py` in the local
      branch, and load each local file from its path. For B, also bypass the
-     cache. Where one of Article XXXIII.4's alternatives works (an additive
-     sibling file, or a wrapper around the kernel), prefer it to editing
-     `function_app.py`. Any edit must add lines rather than rewrite them
-     (see Constraints).
+     cache. Article XXXII.1 says agent discovery is kernel code that "must
+     run inline in `brainstem.py` (or a utility it imports)"; for Tier 2 that
+     means `function_app.py` or a module it imports, so a wrapper around the
+     kernel does not fit, and even an added sibling module needs a new import
+     line in `function_app.py`. Any edit must add lines and change none (see
+     Constraints).
    - `rapp_swarm/build.sh` (A and B): add a copy step that takes only the
      top-level agent files, for any future reviewed apply path. The preserved
      `historical_build` stays as evidence.
@@ -243,30 +251,35 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
   sacred files. But Article XXXIII.1 lists `rapp_swarm/function_app.py` as
   kernel "DNA" ("Sacred ... Never edited by AI assistants"), and
   Article XXXIII.4 says AI assistants must not propose or apply changes to it
-  as part of regular task work. So for A or B, the owner writes the
-  `function_app.py` change himself, or approves each edit before it is made,
-  and the implementation PR is not merged by an AI under Article XXX.1's
-  standing authorization. `build.sh`, `README.md` and the
-  tests are not kernel files. The PR touches nothing under `rapp_brainstem/`.
+  as part of regular task work. XXXIII.4's stop-and-ask path lets the user
+  approve an assistant's edit, but XXXIII.1 says kernel files are "Never
+  edited by AI assistants"; this draft reads the stricter rule as governing.
+  So for A or B, the owner writes the `function_app.py` change himself, and
+  the implementation PR is not merged by an AI under Article XXX.1's
+  standing authorization. `build.sh`, `README.md` and the tests are not
+  kernel files. The PR touches nothing under `rapp_brainstem/`.
 - **Article I.** It says the only legitimate reason to modify
   `function_app.py` is a new output slot, and it gives no other exception.
   Options A and B stay within Article I's own responsibility 3
   ("Auto-discover `*_agent.py` files and hot-load them") and add no
   responsibility (Article XXVI), but they still edit the file, so they
-  conflict with that sentence as written. Choosing A or B therefore also
-  needs the owner to record how he reads Article I for this change. Amending
-  Article I is not a way around it, because Article XXVI says amendments must
-  preserve Article I. Option C needs neither.
-- **The source ledger leaves no room today.** `function_app.py` must keep
-  99.5% of its historical lines and every historical symbol
+  conflict with that sentence as written. Article XXXII, which the
+  XXXIII.1 table points to "for what changes the kernel admits at all", says
+  which code belongs in the kernel (agent discovery does); it adds no reason
+  to edit it. Choosing A or B therefore also needs the owner to record how he
+  reads Article I for this change. Amending Article I is not a way around
+  it, because Article XXVI says amendments must preserve Article I. Option C
+  needs neither.
+- **The source ledger allows no changed lines today.** `function_app.py`
+  must keep 99.5% of its historical lines and every historical symbol
   (`python_symbols(0.995)`, `tools/build_historical_source_ledger.py` lines
   506-509). It is at 99.55% now: 4 of the 895 historical lines that the check
   counts are already missing, and 4 is the most allowed. `build.sh` must keep
   all of its historical lines (`normalized_line_coverage(1.0, ...)`, same
   file, lines 488-491), and it does. So must `rapp_swarm/README.md` (record
-  `swarm-readme`, lines 622-638). So the change must be additive: leave
-  line 620, the cache lines and the `rsync` lines as they are, and add the new
-  code beside them.
+  `swarm-readme`, lines 622-638). So the change must be purely additive:
+  change no existing counted line, including lines 562, 620 and 626, the
+  cache lines and the `rsync` lines, and add the new code beside them.
 - **Tests and evidence.** `tests/test_restored_swarm_sim_sources.py` checks
   the provenance, the markers such as `def load_agents_from_folder` and
   `rsync -a`, and the symbols (line 377). `tests/test_rapp1_containment.py`
@@ -274,11 +287,13 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
   `tests/fixtures/rapp1-doc-scope.json` classifies `rapp_swarm/README.md` as
   `excluded`, a "current pre-acceptance safety boundary plus bounded verbatim
   historical Tier-2 guide". Leave `rapp_swarm/_vendored/` alone: it is
-  preserved evidence. No gate blocks a committed edit there, though. The test
-  at line 1443 of `tests/test_restored_swarm_sim_sources.py` sees only
-  unstaged changes, and `tests/test-t2t-removal.sh` (lines 164-192) checks
-  only that the build plan leaves it unchanged and that certain files are
-  present or absent.
+  preserved evidence. No gate checks the content of a committed edit there,
+  though. The test at line 1443 of `tests/test_restored_swarm_sim_sources.py`
+  sees only unstaged changes, and `tests/test-t2t-removal.sh` (lines 164-192)
+  checks only that the build plan leaves it unchanged and that certain files
+  are present or absent. A size change would still fail the byte receipt,
+  and an added or removed file would fail the `PS-SWARM` and `PS-ALL` path
+  sets until they are recomputed.
 - **Containment.** Tier 2 stays contained. No route starts calling the loader,
   and accepting this proposal does not switch Tier 2 on.
 
@@ -302,8 +317,8 @@ Tier 2 is contained, so no deployed behavior changes in either direction.
   request #119 as of 2026-09-25.
 - [`CONSTITUTION.md`](../../CONSTITUTION.md): Article I, Article III.3,
   Article XV, Article XVII, Article XVIII, Article XX, Article XXVI,
-  Article XXVIII (.3, .4), Article XXX.1, Article XXX.2 and Article XXXIII
-  (.1, .4).
+  Article XXVIII (.3, .4), Article XXX.1, Article XXX.2, Article XXXII.1 and
+  Article XXXIII (.1, .4).
 - Tier 1: `rapp_brainstem/brainstem.py` lines 1039, 1042-1066, 1202-1205 and
   1464.
 - Tier 2: `rapp_swarm/function_app.py` lines 25-32, 266, 525-551, 562-565,
