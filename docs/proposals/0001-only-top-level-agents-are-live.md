@@ -97,6 +97,15 @@ Why it matters: a person who follows Article XVII puts `weather_agent.py` in
 wants to turn an agent off looks for a special folder, when any folder already
 does the job.
 
+### Has it always been this way?
+
+Almost. Checked with `git log -S` and against every release tag:
+
+- **The grail went flat before its first release.** Its first tracked core (`kody-w/rapp-installer` `91d13ce`, 2026-02-24) also globbed `**` recursively. `8220932` (2026-03-05), tagged `brainstem-v0.1.0`, made discovery non-recursive. Every grail release since is flat, and the grail has never used `rglob`.
+- **RAPP's own copy recursed for about ten days.** `c1f356e` (2026-04-21) added an `rglob` walk. `16695a4` (2026-04-23) restored the flat loader, but `4646fd3` added recursion back 13 minutes later, and `06d16f1` (2026-05-01) made it flat for good. RAPP's releases `brainstem-v0.10.0` to `brainstem-v0.12.1` shipped the recursive loader.
+- **Article XVII's recursive text dates from that window** (`c1f356e` and `6e62083` on 2026-04-21, `16695a4` on 2026-04-23). It was not updated when `06d16f1` brought the flat loader back.
+- **So this proposal changes no current behavior.** It makes the documentation match the pinned grail, every grail release, and RAPP's own copy since 2026-05-01.
+
 ### The ruling
 
 - **Live** means exactly the top-level `agents/*_agent.py` files, hot-loaded
