@@ -1,11 +1,11 @@
-# Proposal 0002 — The cloud Brainstem loads agents like the local one
+# Proposal 0002 — Which agent files the cloud Brainstem loads
 
 > **Current RAPP/1 authority (rev-5).** For canonicalization, identity, frames,
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md). This proposal changes none of
-> them. It only says which agent files the Tier 2 (cloud) Brainstem loads, and
-> this draft changes no code.
+> them. It only says which agent files the Tier 2 (cloud) Brainstem loads, how,
+> and when. This draft changes no code.
 
 ## Status
 
@@ -41,7 +41,7 @@ is `kody-w/RAPP_Store`'s own proposal 0002, not this one.
 
 ## Context
 
-Line numbers are for the files on this branch.
+Line numbers are for `main` at commit `8afc973`.
 
 ### The Tier 1 rule (proposal 0001)
 
@@ -146,7 +146,7 @@ XXXIII.4).
 1. **Only top-level `*_agent.py` files load, the same rule as Tier 1.** This
    applies to both branches: the local `agents/` folder, which today takes any
    `.py` file, and the storage share, which already requires `*_agent.py`.
-   `basic_agent.py` is still skipped as the base class.
+   `basic_agent.py`, the base class, still yields no agent, as in Tier 1.
 2. **Each local file is loaded from its own path in `rapp_swarm/agents/`,**
    as Tier 1 does. A file of the same name elsewhere on `sys.path` then cannot
    stand in for it, and every cache refresh runs the file fresh.
@@ -155,7 +155,7 @@ XXXIII.4).
    something else needs it. Today nothing in `rapp_swarm/` reads one.
 4. **Keep the 5-minute cache as a documented cloud detail.** A moved or
    edited file takes effect within 5 minutes. Say so in `rapp_swarm/README.md`
-   and next to `AGENTS_CACHE_TTL_SECONDS`.
+   and in a comment next to `AGENTS_CACHE_TTL_SECONDS` in `function_app.py`.
 
 Why this option:
 
@@ -193,23 +193,29 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
 
 ## Migration
 
-1. **Acceptance.** The owner merges 0001 first (pull request #119, then its
-   amendment PR), then this proposal with the option he picks. The proposal
-   merge is his (Article XXX.2). Before a pull request is opened for this
-   branch, merge `main` into it. After the two squash merges, that merge
-   conflicts on proposal 0001 and on the receipts: keep `main`'s version of
-   0001 (its Status then reads "Implemented"), and recompute the receipts.
-   Before merging this proposal, set its Status to `accepted`, record the
-   option the owner picked in place of "the owner has not chosen", and
-   squash-merge it, since this branch carries proposal 0001's pre-split
+Proposal 0001 goes first, in its own two PRs (pull request #119, then its
+amendment PR). Those are 0001's steps, not steps of this proposal. Each step
+below lands in one PR.
+
+1. **Acceptance.** The owner merges this proposal, with the option he picks.
+   The proposal merge is his (Article XXX.2). Before a pull request is opened
+   for this branch, merge `main` into it. After 0001's two squash merges, that
+   merge conflicts on proposal 0001 and on the receipts: keep `main`'s version
+   of 0001 (its Status then says it is implemented), and recompute the
+   receipts. Before merging this proposal, set its Status to `accepted`, and
+   record the option the owner picked in place of "the owner has not chosen"
+   and, for A or B, how he reads Article I for this change (see Constraints).
+   Squash-merge it, since this branch carries proposal 0001's pre-split
    commits.
-2. **One implementation PR, with tests, approved and merged by the owner**
-   (see Constraints). Its code changes are in `rapp_swarm/`; it also adds
-   tests and refreshes receipts. For C, it is only the README note and the
-   receipts.
+2. **One implementation PR.** It sets this proposal's Status to `implemented`
+   and refreshes the receipts. For A and B, it also changes code in
+   `rapp_swarm/` and adds tests, and the owner approves and merges it (see
+   Constraints). For C, it adds only the README note.
    - `rapp_swarm/function_app.py` (A and B): require `*_agent.py` in the local
      branch, and load each local file from its path. For B, also bypass the
-     cache. Article XXXII.1 says agent discovery is kernel code that "must
+     cache. For A, also add a comment line just above
+     `AGENTS_CACHE_TTL_SECONDS` (line 266), leaving that line as it is.
+     Article XXXII.1 says agent discovery is kernel code that "must
      run inline in `brainstem.py` (or a utility it imports)"; for Tier 2 that
      means `function_app.py` or a module it imports, so a wrapper around the
      kernel does not fit, and even an added sibling module needs a new import
@@ -219,8 +225,7 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
      top-level agent files, for any future reviewed apply path. The preserved
      `historical_build` stays as evidence.
    - `rapp_swarm/README.md`: the cache note (A), the no-cache behavior (B), or
-     the four differences (C), added without changing its existing lines. For
-     A, also a comment next to line 266.
+     the four differences (C), added without changing its existing lines.
    - Offline tests, in a new module. It can load `function_app.py` the way
      `tests/test_restored_swarm_sim_sources.py` already does (`_load_module`,
      line 321), with storage stubbed, and it must control `sys.path`
@@ -236,8 +241,10 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
      `README.md`, regenerate `HISTORICAL_SOURCE_LEDGER.json` with
      `python3 tools/build_historical_source_ledger.py --write`, because each
      record pins its file's latest commit and bytes. Refresh the byte count in
-     `tests/fixtures/rapp1-doc-scope.json` for any byte change, and the
-     inventory and doc-scope path counts for any new file.
+     `tests/fixtures/rapp1-doc-scope.json` for any byte change. For any new
+     file, also refresh the inventory's path counts and path-set digests (the
+     `snapshot`, and each path set that covers the file, such as `PS-ALL`)
+     and the doc-scope path count.
    - Merge method: the ledger records the branch commit, which a squash merge
      replaces. Merge this PR with a merge commit, or regenerate the ledger on
      `main` right after a squash merge (Article XXX.1 expects squash merges).
@@ -267,19 +274,23 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
   XXXIII.1 table points to "for what changes the kernel admits at all", says
   which code belongs in the kernel (agent discovery does); it adds no reason
   to edit it. Choosing A or B therefore also needs the owner to record how he
-  reads Article I for this change. Amending Article I is not a way around
-  it, because Article XXVI says amendments must preserve Article I. Option C
-  needs neither.
-- **The source ledger allows no changed lines today.** `function_app.py`
-  must keep 99.5% of its historical lines and every historical symbol
-  (`python_symbols(0.995)`, `tools/build_historical_source_ledger.py` lines
-  506-509). It is at 99.55% now: 4 of the 895 historical lines that the check
-  counts are already missing, and 4 is the most allowed. `build.sh` must keep
-  all of its historical lines (`normalized_line_coverage(1.0, ...)`, same
-  file, lines 488-491), and it does. So must `rapp_swarm/README.md` (record
-  `swarm-readme`, lines 622-638). So the change must be purely additive:
-  change no existing counted line, including lines 562, 620 and 626, the
-  cache lines and the `rsync` lines, and add the new code beside them.
+  reads Article I for this change. This draft does not treat amending
+  Article I as a way around it, because Article XXVI says amendments must
+  preserve Article I. Option C needs neither.
+- **The source ledger allows no changed lines today.** The ledger's checks
+  run in `tests/test_adaptation_inventory.py` (lines 151-159 and 409-423).
+  They count each historical line that is 8 or more characters long once
+  whitespace is collapsed, and look for it anywhere in the current file.
+  `function_app.py` must keep 99.5% of those lines and every historical
+  symbol (`python_symbols(0.995)`, `tools/build_historical_source_ledger.py`
+  lines 506-509). It is at 99.55% now: 4 of the 895 historical lines that the
+  check counts are already missing, and 4 is the most allowed. `build.sh` must
+  keep all of its counted historical lines
+  (`normalized_line_coverage(1.0, ...)`, same file, lines 488-491), and it
+  does. So must `rapp_swarm/README.md` (record `swarm-readme`, lines
+  622-638). So the change must be purely additive: change no existing counted
+  line, including lines 562, 620 and 626, the cache lines and the `rsync`
+  lines, and add the new code beside them.
 - **Tests and evidence.** `tests/test_restored_swarm_sim_sources.py` checks
   the provenance, the markers such as `def load_agents_from_folder` and
   `rsync -a`, and the symbols (line 377). `tests/test_rapp1_containment.py`
@@ -303,10 +314,12 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
   changes.
 - **After the proposal, before the implementation PR:** a later proposal can
   supersede this one (Article XXVIII.3). Nothing else needs undoing.
-- **After the implementation PR:** revert it, and regenerate the source ledger
-  and refresh the receipts in the same revert PR. Merge that revert with a
-  merge commit, or regenerate the ledger on `main` right after a squash
-  merge, for the reason given under Migration.
+- **After the implementation PR:** revert it. For A or B the revert changes
+  `function_app.py`, so the owner makes and merges it himself (see
+  Constraints). Regenerate the source ledger and refresh the receipts in the
+  same revert PR. Merge that revert with a merge commit, or regenerate the
+  ledger on `main` right after a squash merge, for the reason given under
+  Migration.
 
 Tier 2 is contained, so no deployed behavior changes in either direction.
 
@@ -327,6 +340,7 @@ Tier 2 is contained, so no deployed behavior changes in either direction.
   `rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json`; `README.md` line 135.
 - Kernel freeze: `KERNEL_PIN.json`, `check_kernel_pin.py`, `KERNEL_TREE.md`.
 - Gates: `tools/build_historical_source_ledger.py`,
+  `tests/test_adaptation_inventory.py`,
   `tests/test_restored_swarm_sim_sources.py`, `tests/test-t2t-removal.sh`,
   `tests/test_rapp1_containment.py`, `tests/rapp1-test-suite-inventory.json`,
   `tests/fixtures/rapp1-doc-scope.json`.
