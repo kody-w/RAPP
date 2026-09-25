@@ -13,22 +13,27 @@
 
 An AI assistant drafted this proposal from the open Tier 2 question that
 [proposal 0001](./0001-only-top-level-agents-are-live.md) leaves for the
-owner (its Migration step 4, "Tier 2 decision"). **The owner has not chosen
-yet.** He can accept the recommended option, pick Alternative B or C, or
-refuse the proposal. Nothing here governs until he merges it by hand
-(Article XXVIII.4, Article XXX.2).
+owner (its Migration step 4, "Tier 2 decision"). It was requested for the
+owner, who is away, as a draft he can accept or refuse, and the request named
+Option A as the recommendation. **The owner has not chosen yet.** He can
+accept Option A, pick Alternative B or C, or refuse the proposal. Nothing
+here governs until he merges it by hand (Article XXVIII.4, Article XXX.2).
 
-Article XXXIII.4 says AI assistants must not propose or apply changes to
-`function_app.py` as part of regular task work, and that an assistant that
-believes such a change is needed must stop and ask the user to approve it.
-This draft is that request. It was written for the owner's decision, it
-changes no code, and Options A and B need his explicit approval before any
-edit (see Constraints under Migration).
+Article XXXIII.4 says: "AI assistants must not propose or apply changes to
+`brainstem.py`, `basic_agent.py`, or `function_app.py` as part of regular task
+work." It adds: "If an AI assistant believes a kernel edit is genuinely
+required — for example, a new top-level slot delimiter on the order of
+`|||VOICE|||` — it must stop and ask the user to approve before any edit.
+Authority to change DNA is held by the user, not by the assistant." This
+draft does not claim that an edit to `function_app.py` is genuinely required;
+Option C needs none. It sets out the choice for the owner, changes no code,
+and leaves any edit to `function_app.py` to him (see Constraints under
+Migration).
 
-This builds on 0001, which as of 2026-09-25 is under review in pull request
-#119 (branch `experimental/constitution-live-agents`). This draft lives on
-`experimental/proposal-0002-tier2-parity`, and no pull request is open for it.
-The AI opens no pull request and merges nothing.
+As of 2026-09-25, 0001 is under review in pull request #119 (branch
+`experimental/constitution-live-agents`), and no pull request is open for this
+draft, which lives on `experimental/proposal-0002-tier2-parity`. The assistant
+that drafted it merges nothing.
 
 **Numbering.** 0002 is the next number after 0001 in this repository's
 `docs/proposals/`. The "Proposal 0002" in the title of RAPP pull request #25
@@ -84,19 +89,21 @@ are identical. So subfolders never load in Tier 2 either. Four things differ:
    `experimental_agents`, `disabled_agents` and `__pycache__`; under 0001 the
    first two names mean nothing. The grail's real subfolder, `experimental/`,
    would be copied and then never loaded. The build does not run today: plan
-   is the default mode (lines 124-127), apply is refused (lines 112-117 and
-   128-130), and `rapp_swarm/agents` is gitignored (`.gitignore` line 44).
+   is the default mode (lines 124-127), and apply is refused (lines 112-117
+   and 128-130). `rapp_swarm/agents` is gitignored (`.gitignore` line 44), so
+   no built copy is tracked.
 4. **It imports local files by module name, not by path.**
    `_load_single_agent_local()` calls `importlib.import_module()` on
    `agents.<name>` (line 562). Python keeps the first import, so an edited
    local file keeps its old code until the app restarts. The storage branch,
    by contrast, runs each file fresh on every load (lines 589-591). The name is
    also looked up through every `agents/` folder on `sys.path`. Lines 25-32 put
-   `rapp_brainstem/` and `rapp_swarm/_vendored/` ahead of the rest, so a file
-   of the same name in `rapp_brainstem/agents/` or
-   `rapp_swarm/_vendored/agents/` stands in for the one in
-   `rapp_swarm/agents/`. A file that exists only in `rapp_swarm/agents/` is
-   found only when the host has put `rapp_swarm/` on `sys.path`.
+   `rapp_brainstem/`, `rapp_swarm/_vendored/` and the repository root, in that
+   order, ahead of the rest, so a file of the same name in
+   `rapp_brainstem/agents/` or `rapp_swarm/_vendored/agents/` stands in for
+   the one in `rapp_swarm/agents/`. A file that exists only in
+   `rapp_swarm/agents/` is found only when the host has put `rapp_swarm/` on
+   `sys.path`.
 
 The loaders also differ in ways this proposal leaves alone. Tier 2 keeps only
 the first `BasicAgent` subclass it finds in a file (lines 563-565), while
@@ -131,7 +138,9 @@ ever reviewed and switched back on. It changes nothing a user sees today.
 ## Proposed change (recommended)
 
 **Option A: Tier 2 uses the Tier 1 file rule, loads each file from its path,
-and keeps its cache.**
+and keeps its cache.** This is the option the request named. Whether to take
+it, and who writes any kernel edit, is the owner's decision (Article
+XXXIII.4).
 
 1. **Only top-level `*_agent.py` files load, the same rule as Tier 1.** This
    applies to both branches: the local `agents/` folder, which today takes any
@@ -185,7 +194,9 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
 
 1. **Acceptance.** The owner merges 0001 first (pull request #119, then its
    amendment PR), then this proposal with the option he picks. The proposal
-   merge is his (Article XXX.2).
+   merge is his (Article XXX.2). Before a pull request is opened for this
+   branch, merge `main` into it and recompute the receipts, because both
+   earlier merges change them.
 2. **One implementation PR, with tests, approved and merged by the owner**
    (see Constraints). Its code changes are in `rapp_swarm/`; it also adds
    tests and refreshes receipts. For C, it is only the README note and the
@@ -232,9 +243,10 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
   sacred files. But Article XXXIII.1 lists `rapp_swarm/function_app.py` as
   kernel "DNA" ("Sacred ... Never edited by AI assistants"), and
   Article XXXIII.4 says AI assistants must not propose or apply changes to it
-  as part of regular task work. So for A or B, the owner approves the edit
-  himself, and the implementation PR is not merged by an AI under
-  Article XXX.1's standing authorization. `build.sh`, `README.md` and the
+  as part of regular task work. So for A or B, the owner writes the
+  `function_app.py` change himself, or approves each edit before it is made,
+  and the implementation PR is not merged by an AI under Article XXX.1's
+  standing authorization. `build.sh`, `README.md` and the
   tests are not kernel files. The PR touches nothing under `rapp_brainstem/`.
 - **Article I.** It says the only legitimate reason to modify
   `function_app.py` is a new output slot, and it gives no other exception.
@@ -242,8 +254,9 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
   ("Auto-discover `*_agent.py` files and hot-load them") and add no
   responsibility (Article XXVI), but they still edit the file, so they
   conflict with that sentence as written. Choosing A or B therefore also
-  needs the owner to record how he reads Article I for this change, or to
-  amend it (Article XXVI). Option C needs neither.
+  needs the owner to record how he reads Article I for this change. Amending
+  Article I is not a way around it, because Article XXVI says amendments must
+  preserve Article I. Option C needs neither.
 - **The source ledger leaves no room today.** `function_app.py` must keep
   99.5% of its historical lines and every historical symbol
   (`python_symbols(0.995)`, `tools/build_historical_source_ledger.py` lines
@@ -285,8 +298,8 @@ Tier 2 is contained, so no deployed behavior changes in either direction.
 ## References
 
 - [Proposal 0001](./0001-only-top-level-agents-are-live.md), the Tier 1 rule
-  and the open Tier 2 question (Migration step 4), under review in pull
-  request #119.
+  and the open Tier 2 question (Migration step 4); under review in pull
+  request #119 as of 2026-09-25.
 - [`CONSTITUTION.md`](../../CONSTITUTION.md): Article I, Article III.3,
   Article XV, Article XVII, Article XVIII, Article XX, Article XXVI,
   Article XXVIII (.3, .4), Article XXX.1, Article XXX.2 and Article XXXIII
