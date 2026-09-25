@@ -11,7 +11,7 @@
     "mutable_generated_paths": [],
     "current_inventory": {
       "tracked_paths": 795,
-      "stable_tracked_bytes": 15229679
+      "stable_tracked_bytes": 15237970
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -492,7 +492,7 @@
       "sha256": {
         "pages/index.html": "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289",
         "cave/rar/index.json": "0243ca6318e4ca6176326ee9d1eee70cba4bfb2cf737f329c0525ad309c3eb04",
-        "cave/super-rar/index.json": "929bd95215e8346f8c29aa6aa76c91302b142382f472065507761344437f7071"
+        "cave/super-rar/index.json": "3fdb030dc301d4c6596729e4c795ad79054ffb376caa2bb8a5b87e86767c8a99"
       },
       "paths": [
         "pages/index.html",

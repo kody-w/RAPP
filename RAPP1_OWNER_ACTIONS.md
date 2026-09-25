@@ -508,6 +508,24 @@ rollback owner are deliberately `null`.
   documented 410/78 refusal and creates no files, child processes, or sockets.
   The target's immutable copies remain byte-identical until an independently
   authorized replacement artifact is adopted.
+- **Proposal 0003 framing waiver (2026-09-25):**
+  [Proposal 0003](./docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md)
+  Part A asks the maintainer to waive this section once, for a framing-only
+  change; merging Part A grants that waiver and nothing more. It sets the
+  UTF-8 name flag in every ZIP header of both `cubby-rapp-installer.egg`
+  copies (90 bytes per copy). SHA-256
+  `38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b` becomes
+  `01468b160d6b96f92fe05f98169498db47592385ce7a6dd4930fd0ba016aa105`,
+  recorded as exception `proposal-0003-part-a` in
+  `installer/RETIRED_ARTIFACTS.json`. The egg address, the manifest, and all
+  44 members, including this `hatch.py`, stay byte-identical. This is not an
+  authorized replacement artifact: the copies stay unsigned, unpublished, and
+  not distributable; rapp-1's structural `verify_egg` now accepts them while
+  `rapp1_core` still refuses them; and authenticated acceptance still needs an
+  owner signature and the authenticated registry. The external-owner fix and
+  acceptance above still apply. From the waiver on, the copies stay
+  byte-identical to the re-framed bytes until an independently authorized
+  replacement artifact is adopted.
 
 ## Status-blocker closure map
 

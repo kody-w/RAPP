@@ -245,6 +245,117 @@ def test_retired_archive_manifest_pins_bytes_without_active_publication():
         assert _sha256(path) == record["sha256"]
 
 
+PROPOSAL_0003 = "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md"
+REFRAMED_CUBBY_EGGS = (
+    "cave/rapplications/rapp-installer/cubby-rapp-installer.egg",
+    "cave/cubbies/kody-w/eggs/cubby-rapp-installer.egg",
+)
+
+
+def _zip_flag_high_bytes(blob: bytes) -> tuple[int, set[int]]:
+    """Return the entry count and each local/central flag high-byte offset."""
+    eocd = len(blob) - 22
+    assert blob[eocd : eocd + 4] == b"PK\x05\x06"
+    entries = int.from_bytes(blob[eocd + 10 : eocd + 12], "little")
+    cursor = int.from_bytes(blob[eocd + 16 : eocd + 20], "little")
+    offsets: set[int] = set()
+    for _ in range(entries):
+        assert blob[cursor : cursor + 4] == b"PK\x01\x02"
+        local = int.from_bytes(blob[cursor + 42 : cursor + 46], "little")
+        assert blob[local : local + 4] == b"PK\x03\x04"
+        offsets.update((local + 7, cursor + 9))
+        name_length = int.from_bytes(blob[cursor + 28 : cursor + 30], "little")
+        extra_length = int.from_bytes(blob[cursor + 30 : cursor + 32], "little")
+        comment_length = int.from_bytes(blob[cursor + 32 : cursor + 34], "little")
+        cursor += 46 + name_length + extra_length + comment_length
+    return entries, offsets
+
+
+def test_proposal_0003_reframing_exception_is_exact_and_identity_preserving():
+    import io
+    import zipfile
+
+    from rapp1_core.hashing import EGG_MANIFEST_SPACE, hash_value
+
+    manifest = json.loads(
+        (ROOT / "installer/RETIRED_ARTIFACTS.json").read_text(encoding="utf-8")
+    )
+    assert manifest["repacking_allowed"] is False
+    (exception,) = manifest["repacking_exceptions"]
+    assert exception["proposal"] == PROPOSAL_0003
+    assert (ROOT / PROPOSAL_0003).is_file()
+    assert exception["scope"] == "zip-framing-only"
+    assert exception["other_artifacts_covered"] is False
+    assert exception["packer"] == {
+        "repository": "kody-w/rapp-1",
+        "commit": "591e014ad39e223b00ab343ae26e5d9a867ebeee",
+        "path": "rapp.py",
+        "function": "pack_egg",
+    }
+    assert tuple(exception["paths"]) == REFRAMED_CUBBY_EGGS
+    assert exception["id"] == "proposal-0003-part-a"
+    snapshot = manifest["prepared_snapshot"]
+    assert snapshot["modification_allowed"] is False
+    assert snapshot["modification_exceptions"] == [exception["id"]]
+    assert REFRAMED_CUBBY_EGGS[0].startswith(snapshot["path"] + "/")
+    ledger = (ROOT / "RAPP1_OWNER_ACTIONS.md").read_text(encoding="utf-8")
+    residual = ledger.split("\n## Issue-ready immutable Cave residual", 1)[1]
+    residual = residual.split("\n## ", 1)[0]
+    for marker in (
+        "waive",
+        PROPOSAL_0003,
+        exception["id"],
+        exception["before_sha256"],
+        exception["after_sha256"],
+    ):
+        assert marker in residual, marker
+    records = {record["path"]: record for record in manifest["immutable_eggs"]}
+    for relative in REFRAMED_CUBBY_EGGS:
+        assert records[relative]["sha256"] == exception["after_sha256"]
+        assert records[relative]["bytes"] == exception["bytes"]
+        current = (ROOT / relative).read_bytes()
+        before = subprocess.check_output(
+            ("git", "show", f"{exception['before_bytes_commit']}:{relative}"),
+            cwd=ROOT,
+        )
+        assert hashlib.sha256(before).hexdigest() == exception["before_sha256"]
+        assert hashlib.sha256(current).hexdigest() == exception["after_sha256"]
+        assert len(before) == len(current) == exception["bytes"]
+
+        entries, flag_high_bytes = _zip_flag_high_bytes(current)
+        assert entries == exception["zip_entries"] == exception["members"] + 1
+        assert _zip_flag_high_bytes(before) == (entries, flag_high_bytes)
+        changed = {
+            offset
+            for offset, (old, new) in enumerate(zip(before, current))
+            if old != new
+        }
+        assert changed == flag_high_bytes
+        assert len(changed) == exception["changed_bytes_per_copy"] == 2 * entries
+        for offset in changed:
+            assert (before[offset - 1], before[offset]) == (0x00, 0x00)
+            assert (current[offset - 1], current[offset]) == (0x00, 0x08)
+
+        with zipfile.ZipFile(io.BytesIO(before)) as old_zip, zipfile.ZipFile(
+            io.BytesIO(current)
+        ) as new_zip:
+            names = new_zip.namelist()
+            assert names == old_zip.namelist()
+            assert names[0] == "manifest.json"
+            assert len(names) - 1 == exception["members"]
+            for name in names:
+                assert new_zip.read(name) == old_zip.read(name), name
+            egg_manifest = json.loads(new_zip.read("manifest.json"))
+        assert egg_manifest["schema"] == "rapp/1-egg"
+        assert egg_manifest["sig"] is None
+        address_value = {
+            key: value for key, value in egg_manifest.items() if key != "sig"
+        }
+        assert (
+            hash_value(EGG_MANIFEST_SPACE, address_value) == exception["egg_address"]
+        )
+
+
 def test_owned_distribution_pages_publish_neither_tier2_nor_power_archive():
     for relative in ("index.html", "installer/index.html"):
         source = (ROOT / relative).read_text(encoding="utf-8")
