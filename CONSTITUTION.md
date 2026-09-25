@@ -4353,4 +4353,5 @@ legal right.
 > organization only and never loads, whatever its name. Loading or unloading
 > an agent is a plain file move: to the top of `agents/` to load it, into any
 > folder to unload it. The notes of the same date in Articles XVII, XVIII
-> and XX apply this rule to their text, and they govern how it is read.
+> and XX apply this rule to their text, and they govern how those articles
+> are read.
