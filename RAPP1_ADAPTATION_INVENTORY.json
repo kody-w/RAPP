@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-25",
-    "tracked_path_count": 795,
-    "tracked_path_set_sha256": "405f91551ad0a65d0c2b64c2912636e840ad0667b2d1c3c54e7be51a0585640b",
+    "tracked_path_count": 794,
+    "tracked_path_set_sha256": "db96105ec846bdcd368ab81229f2fdfe66f91f05958a8d7bbc2f5533c5fd4c85",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 795,
-      "path_set_sha256": "405f91551ad0a65d0c2b64c2912636e840ad0667b2d1c3c54e7be51a0585640b"
+      "expected_count": 794,
+      "path_set_sha256": "db96105ec846bdcd368ab81229f2fdfe66f91f05958a8d7bbc2f5533c5fd4c85"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
@@ -142,8 +142,8 @@
         "type": "git-prefix",
         "prefix": "pages/"
       },
-      "expected_count": 212,
-      "path_set_sha256": "1811cdae52865c1afa5dd18fc743c4d5cf566146d43ead20c59cf01cd10c6689"
+      "expected_count": 211,
+      "path_set_sha256": "e9e6f613d72f78e67e394ac5d66bded44fd9535be6d3e10303da905b5de8a966"
     },
     {
       "id": "PS-ADAPTED-PAGES",
@@ -260,7 +260,6 @@
             "rapp1_core/egg.py",
             "tests/rapp1_core/test_eggs.py",
             "tools/import_peer_egg.py",
-            "pages/tutorials/commons.egg",
             "pages/tutorials/sample-session.egg",
             "installer/hatchling",
             "rapp_swarm/twin-egg.sh",
@@ -774,7 +773,6 @@
       "paths": [
         "rapp1_core/egg.py",
         "tools/import_peer_egg.py",
-        "pages/tutorials/commons.egg",
         "pages/tutorials/sample-session.egg",
         "installer/hatchling",
         "rapp_swarm/twin-egg.sh",
@@ -785,7 +783,7 @@
         "identity_rappid": "Signer and variant identity are not authenticated.",
         "exact_chat_wire": "Not applicable.",
         "frames": "No accepted frame is implied by an egg.",
-        "eggs": "Actual JWS verification and acceptance receipts remain incomplete; the Commons invite is invalid legacy evidence.",
+        "eggs": "Actual JWS verification and acceptance receipts remain incomplete; the invalid placeholder Commons invite is retired (path, SHA-256, and git history only) and its signed reissue remains owner-only.",
         "registry_trust_freshness": "Variant registration, signer tenure, revocation, and freshness require the authenticated registry.",
         "grail_installer_pin": "Historical installer eggs cannot override KERNEL_PIN.json.",
         "side_effects": "Inspection is read-only; accepted extraction must stage bytes and never execute them."

@@ -71,7 +71,7 @@ Recomputed after rebasing onto target `main` at
 | Facade support | launcher SHA-256 `4737fae8574e58177010653f8f83cf376b011add0c855e1c81a686ae4a74a9f9`; contract SHA-256 `bbfb683f63e01a370bff38a1f5f0178f4a32c0a907f376f26a37a362f2247176`; tests SHA-256 `dd1bdb4032285ac1175988477b2e86d267f0643158dc75ac0b4116999e8fd042` |
 | Current facade migration state | SQLite schema version 3; canonical semantic request-fingerprint version 3; bound legacy version 2 and unbound legacy version 1 remain migration inputs; production inference defaults to target-owned refusal and has no grail module dependency |
 | Current pending errors | Exactly `malformed-request`, `unknown-session`, `idempotency-in-progress`, `session-in-progress`, `inference-refused`, `facade-storage-refused`; still candidate-unregistered |
-| Recomputed unchanged evidence | `rappid.json`, Commons invite, local ecosystem JSON, kernel archive/manifest, `KERNEL_PIN.json`, cave identity, and installer packaging identity retain the hashes in the machine ledger |
+| Recomputed unchanged evidence | `rappid.json`, local ecosystem JSON, kernel archive/manifest, `KERNEL_PIN.json`, cave identity, and installer packaging identity retain the hashes in the machine ledger; the retired Commons invite is no longer a current path (proposal 0003) and keeps only its path, SHA-256, and git history |
 
 ### Audit baseline and unchanged trust evidence
 
@@ -245,16 +245,18 @@ are deliberately `null`. **No automation can self-authorize.**
 
 **Issue title:** `[Owner action] Reissue the signed RAPP/1 Commons invite and retire the placeholder`
 
-- **Why:** The 443-byte `pages/tutorials/commons.egg` at address
+- **Why:** The retired 443-byte `pages/tutorials/commons.egg` at address
   `a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7`
-  has a placeholder-shaped, non-verifying signature member and points at the
-  404 URL `https://kody-w.github.io/commons/`. The external well-known object
-  is still `brainstem-egg/2.3-neighborhood` with the superseded 32-hex
-  identity.
+  had a placeholder-shaped, non-verifying signature member and pointed at the
+  404 URL `https://kody-w.github.io/commons/`. Proposal 0003 removed it from
+  the tree. The external well-known object is still
+  `brainstem-egg/2.3-neighborhood` with the superseded 32-hex identity, so no
+  valid Commons invite exists until the owner issues one.
 - **What:** Authorize Commons identity continuity, issue a new canonical signed
   `rapp/1-egg` `invite` for the current Commons target, record its new path and
-  address, publish it at the well-known external path and one approved
-  target-owned path, then remove the old tutorial artifact from live use.
+  address, and publish it at the well-known external path and one approved
+  target-owned path. The old tutorial artifact is already out of live use
+  (proposal 0003); the replacement never reuses its path.
 - **Where:**
   - replace `kody-w/rapp-commons:.well-known/neighborhood.egg`;
   - public URL
@@ -262,10 +264,12 @@ are deliberately `null`. **No automation can self-authorize.**
   - candidate target path `pages/tutorials/artifacts/commons-invite.egg`;
   - URL-only fixed candidate address
     `d15305a25cbe6c9aab51a4ed2ab5514345772023a95d658b37fc19303e5778bc`;
-  - retire `pages/tutorials/commons.egg`.
+  - `pages/tutorials/commons.egg`, retired by proposal 0003 (path, SHA-256,
+    and git history only).
 - **When:** After the Commons upgrade re-anchor and owner succession are
-  authenticated. Switch links and retire the placeholder atomically only after
-  both replacement locations verify.
+  authenticated. Proposal 0003 re-sequenced the retirement: the placeholder is
+  retired first, and links switch to the replacement only after both
+  replacement locations verify.
 - **How:**
   1. Create the exact seven-member §9.1 manifest with
      `schema:"rapp/1-egg"`, `variant:"invite"`, `contents:[]`, and no extras.
@@ -283,8 +287,9 @@ are deliberately `null`. **No automation can self-authorize.**
   6. Record `H("rapp/1:egg-manifest", manifest without signature)`. If the URL
      is the sole changed unsigned member, it must equal `d15305…e5778bc`;
      signing alone cannot alter the address.
-  7. Publish byte-identical canonical JSON at both approved locations, update
-     tutorial links, and remove the old path from live distribution.
+  7. Publish byte-identical canonical JSON at both approved locations and
+     update tutorial links. The old path is already out of live distribution
+     (proposal 0003).
 - **Prerequisites:** Explicitly owner-selected and authenticated lawful Commons
   re-anchor plus owner succession; owner-confirmed current Commons identity and
   Pages URL; external repository publisher; approved target path and commits.
@@ -304,7 +309,10 @@ are deliberately `null`. **No automation can self-authorize.**
 - **Rollback/retirement:** Joining remains disabled on failure—never fall back
   to either invalid predecessor. Preserve the retired target artifact only by
   path, SHA-256, and git history. Future invites are new addressed artifacts,
-  not edits to a content-addressed invite.
+  not edits to a content-addressed invite. Proposal 0003 applied this rule to
+  the placeholder: its path and SHA-256 are recorded here and in
+  `installer/RETIRED_ARTIFACTS.json`, and its bytes remain in git history at
+  `b824965a0297b133d04bd556f6d9726de9a2fefa`.
 
 Owner creation time, owner key identifier, Commons re-anchor case, approved
 target path, final egg address, and publication commits are deliberately

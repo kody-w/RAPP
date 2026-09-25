@@ -285,10 +285,15 @@ test('retired archives remain exact bytes without publication', () => {
     ...manifest.power_archive.copies,
     ...manifest.immutable_eggs,
   ];
-  equal(records.length, 7);
+  equal(records.length, 6);
   for (const record of records) {
     equal(sha256(record.path), record.sha256, `archive drift: ${record.path}`);
     equal(statSync(join(ROOT, record.path)).size, record.bytes, `size drift: ${record.path}`);
+  }
+  equal(manifest.removed_eggs.length, 1);
+  for (const record of manifest.removed_eggs) {
+    assert(!existsSync(join(ROOT, record.path)), `retired egg is back in the tree: ${record.path}`);
+    equal(record.preserved_by.join(','), 'path,sha256,git-history');
   }
 });
 

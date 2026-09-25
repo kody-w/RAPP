@@ -62,11 +62,6 @@
       "bytes": 481
     },
     {
-      "path": "pages/tutorials/commons.egg",
-      "sha256": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
-      "bytes": 443
-    },
-    {
       "path": "cave/rapplications/rapp-installer/cubby-rapp-installer.egg",
       "sha256": "01468b160d6b96f92fe05f98169498db47592385ce7a6dd4930fd0ba016aa105",
       "bytes": 526007
@@ -75,6 +70,25 @@
       "path": "cave/cubbies/kody-w/eggs/cubby-rapp-installer.egg",
       "sha256": "01468b160d6b96f92fe05f98169498db47592385ce7a6dd4930fd0ba016aa105",
       "bytes": 526007
+    }
+  ],
+  "removed_eggs": [
+    {
+      "path": "pages/tutorials/commons.egg",
+      "sha256": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
+      "bytes": 443,
+      "egg_address": "a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7",
+      "state": "retired-removed-from-tree",
+      "preserved_by": [
+        "path",
+        "sha256",
+        "git-history"
+      ],
+      "bytes_commit": "b824965a0297b133d04bd556f6d9726de9a2fefa",
+      "date": "2026-09-25",
+      "proposal": "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md",
+      "owner_ledger": "RAPP1_OWNER_ACTIONS.json",
+      "open_owner_action": "owner-reissue-commons-invite"
     }
   ],
   "prepared_snapshot": {
