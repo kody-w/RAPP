@@ -199,14 +199,14 @@ below lands in one PR.
 
 1. **Acceptance.** The owner merges this proposal, with the option he picks.
    The proposal merge is his (Article XXX.2). Before a pull request is opened
-   for this branch, merge `main` into it. After 0001's two squash merges, that
-   merge conflicts on proposal 0001 and on the receipts: keep `main`'s version
-   of 0001 (its Status then says it is implemented), and recompute the
-   receipts. Before merging this proposal, set its Status to `accepted`, and
-   record the option the owner picked in place of "the owner has not chosen"
-   and, for A or B, how he reads Article I for this change (see Constraints).
-   Squash-merge it, since this branch carries proposal 0001's pre-split
-   commits.
+   for its branch, `experimental/proposal-0002-tier2-parity`, merge `main`
+   into that branch. After 0001's two squash merges, that merge conflicts on
+   proposal 0001 and on the receipts: keep `main`'s version of 0001 (its
+   Status then says it is implemented), and recompute the receipts. Before
+   merging this proposal, set its Status to `accepted`, and record the option
+   the owner picked in place of "the owner has not chosen" and, for A or B,
+   how he reads Article I for this change (see Constraints). Squash-merge it,
+   since that branch carries proposal 0001's pre-split commits.
 2. **One implementation PR.** It sets this proposal's Status to `implemented`
    and refreshes the receipts. For A and B, it also changes code in
    `rapp_swarm/` and adds tests, and the owner approves and merges it (see
