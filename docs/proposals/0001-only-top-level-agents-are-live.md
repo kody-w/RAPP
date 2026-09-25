@@ -9,10 +9,9 @@
 
 ## Status
 
-**Implemented** when the amendment PR from the branch
-`experimental/amendment-0001-live-agents` is merged. That PR follows the
-maintainer's acceptance of this proposal in pull request #119 (Article
-XXX.2).
+**Implemented when the amendment PR from the branch
+`experimental/amendment-0001-live-agents` is merged** (after pull request
+#119 accepts this proposal; Article XXX.2).
 
 The maintainer (@kody-w) approved the substance in conversation on
 2026-09-24. It had been pointed out to him that the constitution says agents
@@ -30,7 +29,7 @@ review in pull request #119, and the agent merges nothing.
 
 **Order.** Article XXVIII.6 has a proposal precede the amendment PR, so pull
 request #119 holds only this proposal and its receipts. The amendment it
-describes is ready on the branch `experimental/amendment-0001-live-agents`,
+describes was prepared on the branch `experimental/amendment-0001-live-agents`,
 for a separate PR after #119 is merged; that PR also sets this Status to
 `implemented`. Both merges are the maintainer's (Articles XXVIII.4 and
 XXX.2). Squash-merge both: this branch's history includes commits that added
@@ -95,6 +94,7 @@ def load_agents():
 | Art. XVII, lines 949-959 | "Anything else the user creates under `agents/` auto-loads" |
 | Art. XVII, lines 973-975 and 985-986 | subfolder names reserved by the engine; no depth limit on `agents/` recursion |
 | Art. XVII, lines 988-999 | `load_agents()` "walks `agents/` recursively via `rglob("*_agent.py")`", and `rapp_swarm/build.sh` makes Tier 2 mirror Tier 1's shape |
+| Art. XVIII, line 1019 and lines 1070-1072 | a new agent is written "at the chosen tree location", and the brainstem "is supposed to auto-discover whatever's on disk" |
 | Art. XVIII, lines 1024-1026 | "Disable", "Enable" and "Mark experimental" map to moves into and out of reserved folders |
 | Art. XVIII, lines 1029-1032 and 1059-1061 | the reserved subfolders are shown "with their semantics (experimental won't auto-load, disabled is off)" |
 | Art. XX, lines 1143-1144 (also 1154-1155 and 1167-1168) | the beginner view hides "reserved folders", and "The three reserved names are engine-internal" |
@@ -130,10 +130,10 @@ Almost. Checked with `git log -S`, `git blame`, and against every release tag:
 - **Article XVII's recursive text dates from that window** (`c1f356e` and
   `6e62083` on 2026-04-21, `16695a4` on 2026-04-23). It was not updated when
   `06d16f1` brought the flat loader back.
-- **So this proposal changes no current behavior.** Its notes would make
-  Articles XVII, XVIII and XX and SPEC §18.5 match the pinned grail, every
-  grail release, and RAPP's own copy since 2026-05-01. The other documents
-  that still differ are listed in Migration step 3.
+- **So this proposal changes no current behavior.** The amendment's notes
+  bring Articles XVII, XVIII and XX and SPEC §18.5 into line with the pinned
+  grail, every grail release, and RAPP's own copy since 2026-05-01. The
+  other documents that still differ are listed in Migration step 3.
 
 ### The ruling, as this proposal reads it
 
@@ -158,10 +158,11 @@ Almost. Checked with `git log -S`, `git blame`, and against every release tag:
   `swarm_factory_agent.py`, at either tag. Article XVII says to keep "the one
   engine tool (`swarm_factory_agent.py`)" under `workspace_agents/` (lines
   930-934, 938-941 and 979-982). With a flat loader, that leaves the tool
-  parked, not live, and the proposed Article XVII note says so. The only copy
-  in this repository,
-  `rapp_swarm/_vendored/agents/workspace_agents/swarm_factory_agent.py`, is in
-  a subfolder, so neither tier's loader loads it.
+  parked, not live, and the Article XVII note in the amendment says so. The
+  only copy in this repository,
+  `rapp_swarm/_vendored/agents/workspace_agents/swarm_factory_agent.py`, is
+  not loaded by either tier: neither loader lists `rapp_swarm/_vendored/agents/`,
+  and the file sits in a subfolder of it besides.
 - Article XVII's starter set (lines 923-928: `learn_new_agent.py`,
   `save_memory_agent.py`, `recall_memory_agent.py`) does not match the grail's
   top level either. That is a separate drift. This proposal does not amend it
@@ -169,9 +170,12 @@ Almost. Checked with `git log -S`, `git blame`, and against every release tag:
 
 ### Tier 2 (`rapp_swarm/`)
 
-This is what the code does today. This proposal changes no Tier 2 code. Tier 2
-is pre-acceptance, and its effects are refused by default
-(`rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json`).
+This is how the preserved Tier 2 loader behaves when it is called. No active
+route calls it today: `_get_cached_agents()` is called only from the
+`_historical_*` handlers at lines 1244, 1313 and 1388 of
+`rapp_swarm/function_app.py`, which no route registers. This proposal changes
+no Tier 2 code. Tier 2 is pre-acceptance, and its effects are refused by
+default (`rapp_swarm/RAPP1_DEPLOYMENT_GUARD.json`).
 
 - **Its loader is flat too.** `rapp_swarm/function_app.py`
   `load_agents_from_folder()` (lines 616-660) calls `os.listdir()` on
@@ -194,9 +198,11 @@ is pre-acceptance, and its effects are refused by default
      (line 620), not only `*_agent.py`. The storage branch does require
      `_agent.py` (line 637).
   3. *Its build copies folders.* The preserved historical build in
-     `rapp_swarm/build.sh` (lines 62-77) copies the `agents/` tree
-     recursively, skipping only `experimental_agents`, `disabled_agents` and
-     `__pycache__`, and then copies it to `rapp_swarm/agents/` (lines 91-93).
+     `rapp_swarm/build.sh` copies the `agents/` tree recursively (lines
+     62-77). Its `rsync` path skips `experimental_agents`, `disabled_agents`
+     and `__pycache__` at any depth, and its `cp -R` fallback removes them
+     only at the top level. It then copies the tree to `rapp_swarm/agents/`
+     (lines 91-93).
      If that build ran, subfolders would be copied but never loaded. Today
      its apply mode is refused (lines 112-117 and 128-130).
      `rapp_swarm/agents` is gitignored (`.gitignore` line 44), and
@@ -268,12 +274,14 @@ What does not change:
 
 - No code, no agent file, and nothing under `rapp_brainstem/`. The three grail
   files pinned by `KERNEL_PIN.json` are untouched (Article LV.4).
-- No stale sentence is deleted or rewritten (Article XXVI).
-- `README.md` line 134 is left as it is, because it is not wrong under the
-  ruling. It calls the top level the "Showroom (top-level starter agents)"
-  and `workspace_agents/` "everything organizational". (It names a
-  `workspace_agents/` folder that the grail does not ship; that is listed as
-  a follow-up.)
+- No stale sentence is deleted or rewritten (Article XXVI, as Article LII.2
+  and the 2026-07-08 precedent read it).
+- `README.md` line 134 is left as it is. It does not claim that folders
+  load: it calls the top level the "Showroom (top-level starter agents)" and
+  `workspace_agents/` "everything organizational", which the ruling makes
+  parked. (It names a `workspace_agents/` folder that the grail does not
+  ship, and it files "system" agents there, where they would not be live;
+  that is listed as a follow-up.)
 
 ### Article XXVI check
 
@@ -297,12 +305,18 @@ Each step below lands in its own PR or PRs.
    section after Article LVII, the SPEC.md note, the receipts, and this
    Status set to `implemented`. It cites this proposal (Article XXVIII.6).
    Before opening it, merge `main` into that branch. After a squash merge of
-   #119 that merge conflicts on this file and on the receipts: keep that
-   branch's version of this file, and recompute the receipts. The maintainer
+   #119 that merge conflicts on this file and on
+   `tests/fixtures/rapp1-doc-scope.json`: keep that branch's version of this
+   file, and recompute the receipts. The maintainer
    squash-merges it by hand (Article XXX.2).
 3. **Follow-up docs (optional, the owner's call).** Additive notes or
    corrections, each in its own PR. A change to `rapp_brainstem/CONSTITUTION.md`
-   is a constitution change, so the maintainer merges it himself.
+   is a constitution change, so the maintainer merges it himself. Article
+   LIII.1 says a Constitution amendment is not "done" until the retired form
+   has been hunted ecosystem-wide and every hit carries a `drift()` issue.
+   The list below is that sweep for this repository; when the amendment
+   merges, each item needs such an issue, and other repositories need the
+   same sweep.
    - `rapp_brainstem/CONSTITUTION.md`, the historical application
      constitution. In Article IX, lines 497-499 and 506-507 say workshop
      folders iterate against "the hotload loop", and line 544 offers a folder
@@ -310,9 +324,9 @@ Each step below lands in its own PR or PRs.
      692-719, 723-770, 779-785, 791 and 797-805, repeats the showroom and
      shop split, the recursive tree, the reserved names, the curriculum-only
      top level, `rglob` and Tier 2 mirroring. Article XIII, lines 828-834
-     and 851, and Article XIV, lines 877-878, repeat the reserved-folder rows
-     and rules. The file is outside the kernel freeze, but it is left
-     untouched here.
+     and 851, and Article XIV, lines 877-878, 885 and 894, repeat the
+     reserved-folder rows and rules. The file is outside the kernel freeze,
+     but it is left untouched here.
    - `rapp_brainstem/.gitignore`, lines 26-28: the comment says
      `agents/workspace_agents/local_agents/` is "auto-loaded by brainstem".
    - `pages/product/faq.html` line 191: it says to build a swarm in
@@ -323,7 +337,8 @@ Each step below lands in its own PR or PRs.
      `experimental_agents/` as a folder the loader filters out, and line 75
      names a `rapp_brainstem/agents/workspace_agents/experimental_agents/`
      path that the grail does not ship) and
-     `pages/vault/Plans & Ledgers/Blog Roadmap.md` line 120 (the same hook).
+     `pages/vault/Plans & Ledgers/Blog Roadmap.md` line 120 (the same hook),
+     with its copy in the generated `pages/vault/content-bundle.json`.
    - `README.md` line 134 and Article XVII lines 923-928: folder and file
      names (`workspace_agents/`, the starter set) that differ from what the
      grail ships.
@@ -354,13 +369,13 @@ back.
 
 - [`CONSTITUTION.md`](../../CONSTITUTION.md): Article I, Article III.7,
   Article XVII, Article XVIII, Article XX, Article XXV, Article XXVI,
-  Article XXVIII (.3, .4, .6), Article XXX.2, Article XXXIII, Article LII.2
-  and Article LV.4.
+  Article XXVIII (.3, .4, .6), Article XXX.2, Article XXXIII, Article LII.2,
+  Article LIII.1 and Article LV.4.
 - Precedent: the "Amendment (2026-07-08)" notes in Articles XLVI and XLVII.
 - Grail loader: `rapp_brainstem/brainstem.py` lines 1202-1205, pinned by
   `KERNEL_PIN.json` and checked by `check_kernel_pin.py` (see also
   `KERNEL_TREE.md`).
 - Tier 2: `rapp_swarm/function_app.py` lines 266, 525-542, 562 and 616-660;
   `rapp_swarm/build.sh` lines 62-93 and 112-130; `rapp_swarm/.funcignore`.
-- Review: pull request #119; the amendment is on the branch
+- Review: pull request #119; the amendment was prepared on the branch
   `experimental/amendment-0001-live-agents`.
