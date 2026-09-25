@@ -32,9 +32,10 @@ request #119 holds only this proposal and its receipts. The amendment it
 describes was prepared on the branch `experimental/amendment-0001-live-agents`,
 for a separate PR after #119 is merged; that PR also sets this Status to
 `implemented`. Both merges are the maintainer's (Articles XXVIII.4 and
-XXX.2). Squash-merge both: this branch's history includes commits that added
-and then removed the notes before the split, and a squash merge keeps them
-off `main`.
+XXX.2). Squash-merge both: the history of
+`experimental/constitution-live-agents`, which the amendment branch builds
+on, includes commits that added and then removed the notes before the split,
+and a squash merge keeps them off `main`.
 
 **Numbering.** No earlier numbered proposal exists under this repository's
 `docs/proposals/` (checked with `git log --all -- docs/proposals`). The only
@@ -334,9 +335,11 @@ PR under this proposal.
    - `pages/product/faq.html` line 191: it says to build a swarm in
      `workspace_agents/my_swarm/` and iterate there.
    - The vault posts, left alone here:
-     `pages/vault/Blog Drafts/the-experimental-graveyard.md` (published,
-     `status: shipped`; lines 6, 19, 23, 25 and 36 describe
-     `experimental_agents/` as a folder the loader filters out, and line 75
+     `pages/vault/Blog Drafts/the-experimental-graveyard.md`
+     (`status: shipped`; `kody-w/kody-w.github.io` added it to the blog on
+     2026-04-24, in `6746bd2`, and removed it on 2026-05-03, in `748bfcd`;
+     lines 6, 19, 23, 25 and 36 describe `experimental_agents/` as a folder
+     the loader filters out, and line 75
      names a `rapp_brainstem/agents/workspace_agents/experimental_agents/`
      path that the grail does not ship) and
      `pages/vault/Plans & Ledgers/Blog Roadmap.md` line 120 (the same hook),
@@ -355,8 +358,8 @@ PR under this proposal.
 
 ## Rollback
 
-- **Before any merge:** close pull request #119 and delete this branch and
-  the amendment branch.
+- **Before any merge:** close pull request #119 and delete its branch,
+  `experimental/constitution-live-agents`, and the amendment branch.
 - **After #119, before the amendment:** a later proposal can supersede this
   one (Article XXVIII.3), and the amendment branch can be dropped.
 - **After the amendment PR:** revert it. Unless later commits changed the same
