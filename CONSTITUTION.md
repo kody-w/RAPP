@@ -893,6 +893,8 @@ The two roots — repo and `rapp_brainstem/` — share one discipline:
 
 ## Article XVII — `agents/` IS the User's Workspace
 
+> **Amendment (2026-09-24) — only top-level agents are live; additive per Article XXVI.** Live means exactly the top-level `agents/*_agent.py` files, hot-loaded on every request. The grail's `load_agents()` in `rapp_brainstem/brainstem.py` (lines 1202-1205) does `pattern = os.path.join(AGENTS_PATH, "*_agent.py")` and then `glob.glob(pattern)`: one level, no recursion, no `rglob`. Every subfolder of `agents/` is organization only and never loads, whatever its name; `experimental_agents/`, `disabled_agents/`, `local_agents/` and `workspace_agents/` are conventions with no engine meaning. Loading or unloading an agent is a plain file move, meaning drag and drop: move `weather_agent.py` to the top of `agents/` to load it, or into any folder to unload it. The recursive-tree, reserved-name, `rglob` and Tier 2 mirroring wording below is preserved (Article XXVI: additive-only, no removals) but does not govern; this note governs. See [proposal 0001](./docs/proposals/0001-only-top-level-agents-are-live.md).
+
 `rapp_brainstem/agents/` is **the user's entire operational workspace**
 for setting up and managing their brainstem. To add a capability,
 organize a swarm, group a project's agents, turn something off — all
@@ -1013,6 +1015,8 @@ see files, paths, or Python.
 > `agents/`. No UI-only concepts that don't exist on disk.**
 
 ### The mapping
+
+> **Amendment (2026-09-24) — load and unload are file moves; additive per Article XXVI.** Only top-level `agents/*_agent.py` files are live (Article XVII amendment). **Load** = move the file to the top level of `agents/`. **Unload** = move it into any folder. Drag and drop is the whole interaction. Reserved folder names such as `experimental_agents/` and `disabled_agents/` are conventions with no engine meaning, so the "Disable", "Enable" and "Mark experimental" rows and the reserved-subdir wording below are preserved but do not govern; this note governs.
 
 | UI action                 | Filesystem operation                                |
 |---------------------------|-----------------------------------------------------|
@@ -1142,6 +1146,7 @@ detail is revealed only when the user asks for it.
   of `GITHUB_TOKEN: set`.
 - **Reserved folders hidden.** `experimental_agents/` and
   `disabled_agents/` are filtered out of the tree view entirely.
+  > **Amendment (2026-09-24) — no engine-reserved folders; additive per Article XXVI.** The engine reserves no folder names. Every folder under `agents/` is organization only, and nothing in a folder is live (Article XVII amendment). This bullet and the other "reserved folders" items in this article describe a display convention, not engine behavior. This note governs.
 - **Folders collapsed on load.** Users expand what they want to
   explore, not drown in a wall of nested paths.
 - **Curated field set.** Only the settings a learner needs — model,
