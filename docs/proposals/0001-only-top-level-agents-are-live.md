@@ -38,10 +38,10 @@ off `main`.
 **Numbering.** No earlier numbered proposal exists under this repository's
 `docs/proposals/` (checked with `git log --all -- docs/proposals`). The only
 earlier file there, `docs/proposals/2026-07-25-kernel-minimality-enforcement.md`,
-is an unmerged draft named by date, in open pull request #100 (branch
-`law/kernel-minimality`). The numbered proposals that older RAPP commit
-messages cite, 0001 to 0004, belong to `kody-w/RAPP_Store`, which numbers its
-own. This proposal is therefore 0001.
+is a draft named by date; as of 2026-09-25 it is unmerged, in open pull
+request #100 (branch `law/kernel-minimality`). The numbered proposals that
+older RAPP commit messages cite, 0001 to 0004, belong to `kody-w/RAPP_Store`,
+which numbers its own. This proposal is therefore 0001.
 
 ## Context
 
@@ -75,10 +75,10 @@ def load_agents():
   via drag & drop", saves the file at the top level (lines 1843-1862), so a
   dropped file is live on the next request. `DELETE /agents/<filename>` also
   acts only on the top level (lines 1821-1841).
-- The grail's highest-numbered `brainstem-v*` tag, `brainstem-v0.6.16`
-  (commit `5fbde17`, 2026-07-10), keeps the same flat loader: `load_agents()`
-  at lines 1832-1835 does `files = sorted(glob.glob(pattern))`, and `/chat`
-  calls it at line 2271.
+- As of 2026-09-25, the grail's highest-numbered `brainstem-v*` tag is
+  `brainstem-v0.6.16` (commit `5fbde17`, 2026-07-10). It keeps the same flat
+  loader: `load_agents()` at lines 1832-1835 does
+  `files = sorted(glob.glob(pattern))`, and `/chat` calls it at line 2271.
 - This repository's own test pins the top-level `*_agent.py` file names with
   the same flat glob (`rapp_brainstem/test_reserved_agents.py`, lines 21-29).
 
@@ -230,12 +230,13 @@ ruling, 2026-09-24.
 The in-place notes sit next to the text they correct, inside the file's RAPP1
 historical section, which runs from the marker at line 10 to the marker just
 before Article LV. The file header says those "bounded Articles 0–LIV preserve
-constitutional-era application history", and the new articles added since the
-markers (on 2026-07-17, in `4c3183e`) have gone after Article LV: the draft
-Article LVI and Article LVII. The 2026-07-08 notes predate the markers. So
-the amendment also adds a short dated section after Article LVII, outside the
-historical section. It states the rule as current guidance and says that the
-in-place notes govern how Articles XVII, XVIII and XX are read.
+constitutional-era application history", and the articles added since the
+markers went in (2026-07-17, in `4c3183e`) have gone after Article LV: the
+draft Article LVI (2026-08-01) and Article LVII (2026-08-30). The 2026-07-08
+notes predate the markers. So the amendment also adds a short dated section
+after Article LVII, outside the historical section. It states the rule as
+current guidance and says that the in-place notes govern how Articles XVII,
+XVIII and XX are read.
 
 The amendment PR (Migration step 2) makes these changes:
 
@@ -294,7 +295,8 @@ What does not change:
 
 ## Migration
 
-Each step below lands in its own PR or PRs.
+Steps 1 to 3 each land in one PR. Step 4 is a decision for the owner, not a
+PR under this proposal.
 
 1. **Accept the proposal.** Pull request #119: this file and its receipts.
    The maintainer's deliberate squash merge accepts it (Articles XXVIII.4 and
@@ -309,8 +311,8 @@ Each step below lands in its own PR or PRs.
    file, and recompute the receipts. The maintainer
    squash-merges it by hand (Article XXX.2).
 3. **Follow-up docs (optional, the owner's call).** Additive notes or
-   corrections, each in its own PR. A change to `rapp_brainstem/CONSTITUTION.md`
-   is a constitution change, so the maintainer merges it himself. Article
+   corrections, in one PR. A change to `rapp_brainstem/CONSTITUTION.md` is a
+   constitution change, so the maintainer merges that PR himself. Article
    LIII.1 says a Constitution amendment is not "done" until the retired form
    has been hunted ecosystem-wide and every hit carries a `drift()` issue.
    The list below is that sweep for this repository; when the amendment
