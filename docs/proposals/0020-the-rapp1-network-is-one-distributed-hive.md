@@ -27,15 +27,16 @@ later pull request, after acceptance (Article XXVIII.6).
 
 **Numbering.** This workstream numbers its drafts from 0020, and the other
 drafts use 0001 to 0019: 0001 merged as pull request #119, 0002 is on the
-branch `experimental/proposal-0002-tier2-parity`, and 0003 is pull request
-#121. Article XXVIII.3 asks for monotonic numbers, so if this merges before the
-lower numbers are used, the owner may renumber it first. HIVE-MD's "Remote
+branch `experimental/proposal-0002-tier2-parity`, and 0003 merged as pull
+request #121 (`aeb0d7e`). Article XXVIII.3 asks for monotonic numbers, so if
+this merges before the lower numbers are used, the owner may renumber it
+first. HIVE-MD's "Remote
 member spaces" and `DISTRIBUTED-HIVE.md` already cite it as RAPP proposal 0020.
 
-Line numbers are for `main` at commit `e045fc3`. The files they point into are
-the same at `8afc973`, where this draft began, except `CONSTITUTION.md`, whose
-placement lines moved down by five with proposal 0001's amendment. This branch
-changes none of them.
+Line numbers are for `main` at commit `aeb0d7e`. The files they point into are
+the same there as at `e045fc3`, and as at `8afc973`, where this draft began,
+except `CONSTITUTION.md`, whose placement lines moved down by five with
+proposal 0001's amendment. This branch changes none of them.
 
 ## Context
 
@@ -712,8 +713,8 @@ same.
 >   base of the public copy, `commit` its full 40-hex commit, and
 >   `published_sha256` the hash of its `PUBLISHED.md` at that commit. Door
 >   entries keep XLVI.3's shape. The chain needs no new seed or beacon field:
->   readers read an operator entry's handle, `beacon_url` and `estate_url`,
->   and ignore its other members. `hives[]` is
+>   readers read an operator entry's handle (`github`, or `handle`),
+>   `beacon_url` and `estate_url`, and ignore its other members. `hives[]` is
 >   the one part of `estate.json` that XLVI.6's rebuild does not recompute.
 > - **LTS** (`rapp1-lts`) reads each curated station at the full commit its
 >   pointer pins and checks every file against the pointer's hash; a station
@@ -801,4 +802,4 @@ same.
   [`kody-w/rapp-tools` `rapp_workspace.py` line 88 at `b0e37eb`](https://github.com/kody-w/rapp-tools/blob/b0e37eb3c67e309f342629e0ec96dea2688a5951/rapp_workspace.py#L88).
 - Related pull requests: #119 (proposal 0001), #124 (proposal 0001's
   amendment, merged as `e045fc3`), #120 (RAPP's network header) and #121
-  (proposal 0003).
+  (proposal 0003, merged as `aeb0d7e`).
