@@ -189,6 +189,7 @@
     <h2>What's a "swarm"?</h2>
     <div class="a">
       <p>A swarm is a folder of agents that are good at working together on a class of problem. You build it in <code>workspace_agents/my_swarm/</code>, iterate, and when it's ready you run the swarm factory to converge all the files into <strong>one</strong> portable <code>*_agent.py</code> file.</p>
+      <p><strong>Note (2026-09-24):</strong> the local Brainstem (Tier 1) hot-loads only the top-level <code>agents/*_agent.py</code> files, so a folder such as <code>workspace_agents/my_swarm/</code> is organization only and its files are not hot-loaded. To try one of its agents, move the file to the top of <code>agents/</code>; move it back into its folder to unload it. See <code>CONSTITUTION.md</code> Article XVII (2026-09-24 amendment) and <code>docs/proposals/0001-only-top-level-agents-are-live.md</code>.</p>
       <p>That singleton <em>is</em> the swarm, packaged for distribution. Someone else drops it in their <code>agents/</code> folder and they have the whole swarm running in seconds.</p>
     </div>
   </section>

@@ -135,7 +135,7 @@ explicitly re-enables them. Do not pipe repository content into a shell.
 | Path | What |
 |---|---|
 | `rapp_brainstem/` | The engine — Flask server, agent loader, auth chain |
-| `rapp_brainstem/agents/` | Showroom (top-level starter agents) + `workspace_agents/` (everything organizational: system, experimental, disabled, local-only, project folders) |
+| `rapp_brainstem/agents/` | Live agents: only the top-level `*_agent.py` files load (`context_memory_agent.py`, `hacker_news_agent.py`, `manage_memory_agent.py`, plus the `basic_agent.py` base class). Every subfolder, such as `experimental/`, is organization and is parked; move a file to the top to load it |
 | `rapp_swarm/` | Retired Tier 2 tombstone and historical evidence |
 | `worker/` | Retired Cloudflare auth/proxy source |
 | `kody-w/rapp_store` (external) | Historical, non-authoritative catalog reference; no current download contract |
