@@ -1,5 +1,9 @@
 # RAPP
 
+<!-- rapp1:network-header:start -->
+[![RAPP/1](https://kody-w.github.io/rapp-hive-public/portfolio/badges/RAPP.svg)](https://github.com/kody-w/rapp-hive-public/blob/main/portfolio/repos/RAPP.md) · **New to RAPP?** [Start here: get your Brainstem →](https://github.com/kody-w/rapp-installer#start-here)
+<!-- rapp1:network-header:end -->
+
 > **Repository authority:** this is the canonical home of the public RAPP
 > foundation, reference implementation, organism model, and
 > [philosophy](./PHILOSOPHY.md).
@@ -131,7 +135,7 @@ explicitly re-enables them. Do not pipe repository content into a shell.
 | Path | What |
 |---|---|
 | `rapp_brainstem/` | The engine — Flask server, agent loader, auth chain |
-| `rapp_brainstem/agents/` | Showroom (top-level starter agents) + `workspace_agents/` (everything organizational: system, experimental, disabled, local-only, project folders) |
+| `rapp_brainstem/agents/` | Live agents: only the top-level `*_agent.py` files load (`context_memory_agent.py`, `hacker_news_agent.py`, `manage_memory_agent.py`, plus the `basic_agent.py` base class). Every subfolder, such as `experimental/`, is organization and is parked; move a file to the top to load it |
 | `rapp_swarm/` | Retired Tier 2 tombstone and historical evidence |
 | `worker/` | Retired Cloudflare auth/proxy source |
 | `kody-w/rapp_store` (external) | Historical, non-authoritative catalog reference; no current download contract |
