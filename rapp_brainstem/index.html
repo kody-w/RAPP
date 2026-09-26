@@ -5092,5 +5092,106 @@
     return items;
   };
 </script>
+<!-- ── rapplication skins ─────────────────────────────────────────────────
+     Every rapplication ships a custom UI. When one is installed
+     (.brainstem_data/rapp_ui/<id>/), this block injects it ON TOP of the
+     default chat: a dock lists installed rapplications, opening one overlays
+     its skin in an iframe, and this page answers the cartridge protocol
+     (rapp:get_cartridge / rapp:invoke) by calling the skin's own agent
+     directly via POST /agents/invoke. Close the overlay and the default chat
+     is exactly where you left it. Deep link: #rapp=<id>. -->
+<style>
+  #rappSkinDock { position: fixed; right: 14px; bottom: 14px; z-index: 9000;
+    display: flex; gap: 8px; align-items: center; padding: 8px 10px;
+    background: rgba(22,27,34,.94); border: 1px solid #30363d; border-radius: 12px;
+    font: 12px -apple-system, system-ui, sans-serif; color: #8b949e;
+    box-shadow: 0 6px 24px rgba(0,0,0,.45); }
+  #rappSkinDock .rsd-label { letter-spacing: 1px; text-transform: uppercase; font-size: 10px; }
+  #rappSkinDock button { background: #21262d; border: 1px solid #30363d; color: #e6edf3;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; font: inherit; }
+  #rappSkinDock button:hover { border-color: #58a6ff; color: #58a6ff; }
+  #rappSkinOverlay { position: fixed; inset: 0; z-index: 9500; background: #0d1117;
+    display: flex; flex-direction: column; }
+  #rappSkinOverlay[hidden] { display: none; }
+  #rappSkinBar { display: flex; align-items: center; gap: 12px; padding: 8px 14px;
+    background: #161b22; border-bottom: 1px solid #30363d; color: #e6edf3;
+    font: 13px -apple-system, system-ui, sans-serif; }
+  #rappSkinBar .rsb-name { font-weight: 700; }
+  #rappSkinBar .rsb-sub { color: #6e7681; font-size: 11px; font-family: ui-monospace, monospace; }
+  #rappSkinBar button { margin-left: auto; background: #21262d; border: 1px solid #30363d;
+    color: #e6edf3; padding: 5px 14px; border-radius: 8px; cursor: pointer; font: inherit; }
+  #rappSkinBar button:hover { border-color: #58a6ff; color: #58a6ff; }
+  #rappSkinFrame { flex: 1; border: 0; width: 100%; background: #0d1117; }
+</style>
+<div id="rappSkinDock" hidden><span class="rsd-label">rapplications</span></div>
+<div id="rappSkinOverlay" hidden>
+  <div id="rappSkinBar">
+    <span class="rsb-name" id="rappSkinName"></span>
+    <span class="rsb-sub" id="rappSkinSub"></span>
+    <button id="rappSkinClose" type="button">✕ back to chat</button>
+  </div>
+  <iframe id="rappSkinFrame" title="rapplication UI"></iframe>
+</div>
+<script>
+(() => {
+  'use strict';
+  const dock = document.getElementById('rappSkinDock');
+  const overlay = document.getElementById('rappSkinOverlay');
+  const frame = document.getElementById('rappSkinFrame');
+  let active = null;
+
+  function openSkin(s) {
+    active = s;
+    document.getElementById('rappSkinName').textContent = s.name || s.id;
+    document.getElementById('rappSkinSub').textContent = s.rappid || '';
+    frame.src = s.entry;
+    overlay.hidden = false;
+  }
+  document.getElementById('rappSkinClose').addEventListener('click', () => {
+    overlay.hidden = true;
+    frame.src = 'about:blank';
+    active = null;
+  });
+
+  fetch('/rapp_ui').then(r => (r.ok ? r.json() : { skins: [] })).then(d => {
+    const skins = d.skins || [];
+    if (!skins.length) return;
+    for (const s of skins) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = s.name || s.id;
+      b.addEventListener('click', () => openSkin(s));
+      dock.appendChild(b);
+    }
+    dock.hidden = false;
+    const m = (location.hash || '').match(/rapp=([\w.-]+)/);
+    if (m) { const s = skins.find(x => x.id === m[1]); if (s) openSkin(s); }
+  }).catch(() => {});
+
+  window.addEventListener('message', async (ev) => {
+    if (!active || ev.source !== frame.contentWindow) return;
+    const d = ev.data || {};
+    if (d.type === 'rapp:get_cartridge') {
+      frame.contentWindow.postMessage({
+        type: 'rapp:cartridge', id: active.id,
+        context: { tether: { active: true, base: location.origin }, user: null },
+      }, '*');
+    } else if (d.type === 'rapp:invoke') {
+      try {
+        const r = await fetch('/agents/invoke', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agent: active.agent || active.id, args: d.args || {} }),
+        });
+        const j = await r.json();
+        if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+        frame.contentWindow.postMessage({ type: 'rapp:invoke:result', id: d.id, result: j.result }, '*');
+      } catch (e) {
+        frame.contentWindow.postMessage({ type: 'rapp:invoke:result', id: d.id, error: String((e && e.message) || e) }, '*');
+      }
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
