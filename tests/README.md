@@ -58,6 +58,28 @@ The supplemental `rapp-drift-lint` workflow is pinned to immutable commit
 `de1c664154d3456224bdf95e830736ffb5270c2b`; it is hygiene only, not RAPP/1
 authority or authenticated acceptance evidence.
 
+## Project-local port regression
+
+```bash
+python3 -m pytest -q tests/test_restored_distribution_sources.py -k project_local_free_port
+```
+
+This offline regression extracts the real `find_free_port`, `main_local`, and
+`main` functions from both shell installer copies without running either
+installer. It stubs `lsof`, the inline TCP probe, registry reads, and installer
+effects, and syntax-checks and executes the resulting fixtures with
+`/bin/bash` (including macOS Bash 3.2). No real ports or live RAPP state are used.
+The scan still considers exactly 50 candidates beginning at 7072 by default,
+preserves each copy's existing probes (including peer claims in
+`installer/install.sh`), and fails with an empty stdout and nonzero status on
+exhaustion. Callers must stop before writing a launcher, updating registries,
+or reporting success, even when Bash's `errexit` is disabled or suppressed.
+
+These fixes do not enable the contained public installer paths. Exact original
+source capsules remain unchanged in `HISTORICAL_SOURCE_LEDGER.json`; explicit,
+reversible replacements let the provenance checks recover the original blobs
+without relaxing their byte or line-preservation assertions.
+
 ## Retired tests
 
 Exact bytes of tests that positively asserted pre-rev-5 identity, frame, egg,
