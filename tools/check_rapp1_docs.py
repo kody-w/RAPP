@@ -502,7 +502,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "0243ca6318e4ca6176326ee9d1eee70cba4bfb2cf737f329c0525ad309c3eb04"
         ),
         "cave/super-rar/index.json": (
-            "929bd95215e8346f8c29aa6aa76c91302b142382f472065507761344437f7071"
+            "3fdb030dc301d4c6596729e4c795ad79054ffb376caa2bb8a5b87e86767c8a99"
         ),
     }
     terminal_hashes = target_checks.get("integrated_terminal_states", {}).get(
