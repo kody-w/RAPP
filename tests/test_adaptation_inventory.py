@@ -46,6 +46,7 @@ REQUIRED_SURFACE_IDS = {
     "HISTORY-001",
     "TEST-001",
     "MIRROR-001",
+    "APP-001",
 }
 REQUIRED_RESTORED_SOURCE_PATHS = {
     "azuredeploy.json",
