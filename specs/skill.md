@@ -43,17 +43,18 @@ Your **personal rappid** is your identity passport. It anchors every door you cr
 curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash
 ```
 
-**Manual path** (no brainstem install): generate the rappid yourself. You need a GitHub repo to anchor it to — typically `<your-handle>/rapp-estate` or a personal twin repo like `<your-handle>/<your-handle>-twin`.
+**Manual path (retired):** the former repository-name hashing recipe has been
+removed. Repository names are locator labels, never identity entropy. A legacy
+Eternity string is not a current RAPP/1 identity, and rewriting its spelling on
+read does not make it one.
 
-```python
-import hashlib
-owner_repo = "your-handle/your-handle-twin"
-h = hashlib.sha256(owner_repo.encode()).hexdigest()  # full 256-bit SHA-256
-rappid = f"rappid:@{owner_repo}:{h}"  # Eternity: self-locating; kind ('operator') lives in the rappid.json record
-print(rappid)
-```
-
-The rappid format is the consolidated **Eternity form** `rappid:@<owner>/<slug>:<64hex>` (CONSTITUTION Art. XXXIV.1, locked 2026-06-03) — see SPEC §2 for the full grammar. The `@<owner>/<slug>` segment is self-locating (`github.com/<owner>/<slug>`); `kind` lives in your `rappid.json` record, **not** the string. Any legacy `rappid:v2:…` string you already hold is canonicalized on read (`tools/door_address.py::canonicalize_rappid`), never re-minted.
+Current minting, preservation, and re-anchor rules are in
+[RAPP/1 §6](https://github.com/kody-w/rapp-1/blob/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md),
+as pinned by [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json). Start current
+onboarding at the [repository README](../README.md) and
+[`RAPP1_STATUS.md`](../RAPP1_STATUS.md); authenticated participation remains
+blocked by the documented owner actions. This archived runbook supplies no
+current minting implementation.
 
 ---
 

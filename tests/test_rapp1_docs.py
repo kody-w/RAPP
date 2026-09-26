@@ -293,6 +293,43 @@ class Rapp1DocumentationTests(unittest.TestCase):
             )
         self.assertTrue(any("bounded markers" in error for error in errors), errors)
 
+    def test_archived_onboarding_has_no_name_derived_identity_recipe(self) -> None:
+        path = "specs/skill.md"
+        text = (ROOT / path).read_text(encoding="utf-8")
+        for retired_instruction in (
+            "owner_repo.encode",
+            "hashlib.sha256",
+            'rappid = f"rappid:@',
+            "generate the rappid yourself",
+            "The rappid format is the consolidated",
+            "is canonicalized on read",
+        ):
+            with self.subTest(instruction=retired_instruction):
+                self.assertFalse(
+                    retired_instruction in text,
+                    f"{path}: retired identity instruction {retired_instruction!r}",
+                )
+
+    def test_archived_onboarding_manual_identity_defers_to_pinned_authority(self) -> None:
+        text = (ROOT / "specs/skill.md").read_text(encoding="utf-8")
+        self.assertIn("Archived pre-RAPP/1 onboarding runbook", text)
+        for marker in self.fixture["required_markers"].values():
+            self.assertIn(marker, text)
+        step_one = text.split("### Step 1", 1)[1].split("### Step 2", 1)[0]
+        manual_path = " ".join(step_one.split("**Manual path", 1)[1].split())
+        authority = json.loads((ROOT / "RAPP1_AUTHORITY.json").read_text())
+        for required in (
+            "Repository names are locator labels, never identity entropy.",
+            "RAPP/1 §6",
+            authority["standard"]["canonical_url"],
+            "../RAPP1_AUTHORITY.json",
+            "../RAPP1_STATUS.md",
+            "../README.md",
+            "owner actions",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, manual_path)
+
     def test_load_bearing_pitch_history_remains_renderable(self) -> None:
         text = (ROOT / "pitch-playbook.html").read_text(encoding="utf-8")
         self.assertNotIn('<div hidden aria-hidden="true">', text)
