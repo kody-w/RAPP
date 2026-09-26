@@ -14,19 +14,19 @@
 An AI assistant drafted this proposal for the distributed-Hive workstream.
 **The owner has not chosen.** He can accept it with the recommended owner
 decisions (D1 to D4 below), change any of them, or refuse it. Nothing here
-governs until he merges it by hand (Article XXVIII.4, Article XXX.2).
+governs until the owner merges it, himself or on his authorization (Articles
+XXVIII.4 and XXX.2).
 
 The draft lives on the branch `experimental/proposal-0020-distributed-hive`,
-and the AI assistant opened a pull request from it. The AI merges nothing:
-merging that pull request is the owner's acceptance, made by him or on his
-authorization (Articles XXVIII.4 and XXX.2). Besides this file, the pull
+and the AI assistant opened pull request #133 from it. The AI merges nothing:
+merging that pull request is the owner's acceptance. Besides this file, the pull
 request refreshes only the two receipts that count tracked files
 (`RAPP1_ADAPTATION_INVENTORY.json` and `tests/fixtures/rapp1-doc-scope.json`).
 It does not edit `CONSTITUTION.md`. The amendment text near the end is for a
 later pull request, after acceptance (Article XXVIII.6).
 
-**Numbering.** Numbers 0020 to 0029 are set aside for this workstream, and
-0001 to 0019 for other drafts: 0001 merged as pull request #119, 0002 is on the
+**Numbering.** This workstream numbers its drafts from 0020, and the other
+drafts use 0001 to 0019: 0001 merged as pull request #119, 0002 is on the
 branch `experimental/proposal-0002-tier2-parity`, and 0003 is pull request
 #121. Article XXVIII.3 asks for monotonic numbers, so if this merges before the
 lower numbers are used, the owner may renumber it first. HIVE-MD's "Remote
@@ -61,7 +61,7 @@ operator's catalog of doors.
   own `source_policy` requires a full commit pin and a SHA-256 and accepts no
   moving ref (lines 14–20). `federation_hints` is empty.
 - **The beacon is a placeholder.** In `kody-w/rapp-estate` at `main` (commit
-  `acc17dc`, 2026-09-25),
+  `acc17dc` of 2026-08-26, still `main` on 2026-09-26),
   [`.well-known/rapp-network.json`](https://github.com/kody-w/rapp-estate/blob/acc17dca283619f288274f237c8c61f437d014f3/.well-known/rapp-network.json)
   is a status document: `document_type: rapp-network-publication-status`,
   `accepted_as_network_beacon: false`, a top-level `indexable: false`, and no
@@ -114,10 +114,11 @@ files) its `PUBLISHED.md` also lists 317 station pointers in the contract's
 version 2: 4 pinned at an LTS commit (`rapp-1`, `rapp-installer`, `rapp-map`
 and `rapp-work`) and 313 on the newest channel. They were published before this
 proposal's acceptance, as Hive files under the Hive's own rules. No
-`estate.json` pins that copy, so no walk from the seed reaches them; a walk
-started at the root does, and the network tooling's resolver reads all 317 and
-verifies the 4 LTS stations' files. At `HEAD` it also reads the first 8 station
-cards, merged on 2026-09-26 (Migration step 4).
+`estate.json` on `main` pins that copy, so no walk from the live seed reaches
+them; a walk started at the root does, and the network tooling's resolver reads
+all 317 and checks the 4 LTS stations' files against their pointers' hashes. At
+`HEAD` it also reads the 11 station cards merged on 2026-09-26 (Migration
+step 4).
 
 ### What falls short
 
@@ -309,8 +310,8 @@ The network reads only the **readable set**: `README.md`, `rappid.json`,
 instruction-file name, at most 120 characters, ending in `.md`, `.json` or
 `.txt`). It never reads the RAPP Workspace's private folders or bootstrap
 files. A repository named like an instruction file (`agents`, `claude`,
-`gemini`, `skill`, `copilot-instructions`) cannot be a station, because a Hive
-refuses those file names.
+`claude.local`, `gemini`, `skill`, `copilot-instructions`) cannot be a station,
+because a Hive refuses those file names.
 
 A card with `indexable: false` is honored like a beacon's flag (XLVII.3): the
 station is kept only as `{repo, indexable: false}`, and its links are not
@@ -336,10 +337,12 @@ reports a pointer or a Hive root that disagrees with it as drift
 does this as a rehearsal of §13.5 steps 2 and 3. Step 1, verifying the signed
 registry, stays with RAPP/1's reference implementation, so such a result is
 still unverified. On 2026-09-26, against the estate kit's prepared and unsigned
-LTS candidate (release `rapp-1-lts-2026.09`), it checked all 124 files the
-candidate pins and reported 251 of the 317 pointers as drift, since the Hive's
-pointers do not carry those pins yet. Nothing in this proposal depends on
-rev-17: without it, the pointers carry the LTS commits.
+LTS candidate (release `rapp-1-lts-2026.09`, `manifest_hash` `e3cc75de…`), a
+walk from the Hive root at `eafa6de` checked all 126 files the candidate pins,
+reported 247 of the 317 pointers as drift, since the Hive's pointers do not
+carry those pins yet, and reported one LTS pointer (`rapp-map`) as missing from
+it. Nothing in this proposal depends on rev-17: without it, the pointers carry
+the LTS commits.
 
 ### 6. One optional array
 
@@ -392,7 +395,10 @@ repositories carry no frames.
 ### 9. What this does not change
 
 - No beacon field is added or becomes required, and the beacon stays
-  `rapp-network-beacon/1.1`. No seed field is added either.
+  `rapp-network-beacon/1.1`. The chain needs no new seed field either: a
+  reader reads only an operator entry's handle, `beacon_url` and `estate_url`,
+  and ignores its other members, such as a record of the moving URL a pin
+  replaced.
 - Article XLVIII is untouched. Nothing in the chain points into a private
   repository, the Hive root's public copy is public, and cards and pointers
   carry no private content.
@@ -403,8 +409,9 @@ repositories carry no frames.
 - RAPP/1 is unchanged: no new identity form, frame kind or trust rule. The
   lifecycle words and the release-manifest check follow the rev-17 draft
   without depending on it.
-- This branch changes no code. After acceptance only Migration step 6
-  (`tools/sniff_network.py` and its tests) and D2's own acceptance pull request
+- This branch changes no code. After acceptance only Migration step 3 (a
+  containment test that holds the seed's pin), step 6 (`tools/sniff_network.py`
+  and its tests) and D2's own acceptance pull request
   (`cave/tests/test_catalog_containment.py`, on purpose) may change code here,
   and no step changes a grail byte.
 
@@ -503,8 +510,8 @@ five-member entries.**
   commit-pinned `estate_url`, `protocol.implements`, `discovery.indexable:
   true` (the operator wants to be found), `discovery.federation_hints`, and
   XLVIII's `private_estate_pointer`, `private_estate_commitment` and
-  `private_door_count`: the fields RAPP's list of beacon fields
-  (`pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §4.5) already names.
+  `private_door_count`: the fields the historical beacon list in
+  `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §4.5 already names.
 - `hives[]`: exactly `{hive, name, root, commit, published_sha256}`. The Hive
   root pin has one home, the estate inventory, so the beacon stays a small
   consent-and-pointer document and XLVIII.2's rules are untouched (the public
@@ -547,7 +554,7 @@ later, and until then the Hive reads those stations without their cards.
 
 ## Migration
 
-Each step is its own pull request, or one per repository where it says so, and
+Each step is one or more pull requests or signed commits, as it says, and
 names the workstream that owns it. Steps 1 to 3 are drafted on experimental
 branches and change nothing live (step 3 by the estate kit, on `kody-w/rapp-estate`
 `experimental/rapp1-distributed-hive` and RAPP
@@ -579,33 +586,37 @@ branches and change nothing live (step 3 by the estate kit, on `kody-w/rapp-esta
    pin the seed's `beacon_url` to that commit and record its hash. Keep the
    seed's `estate_url` at `main`: `cave/tests/test_catalog_containment.py`
    (line 126) expects it, and the beacon's `estate_url` wins anyway. That pull
-   request also refreshes `tests/fixtures/rapp1-doc-scope.json` and runs the
-   `cave-super-rar` workflow, which watches the seed's path. The drafts read
-   end to end: a walk started at the draft beacon (`26a501c`) reads the
-   `estate.json` it pins and the Hive root that `estate.json` pins, anchored by
-   its `published_sha256`. They still pin `a8f4cd8`, which lists no pointer
-   (step 5).
+   request also adds a containment test that holds the pin, refreshes
+   `tests/fixtures/rapp1-doc-scope.json` and runs the `cave-super-rar`
+   workflow, which watches the seed's path. On 2026-09-26 the drafts read end
+   to end: a walk from RAPP's draft seed (`ec59b24`) reads the draft beacon
+   (`6747768`), the `estate.json` it pins (`bb2b9ce`) and the Hive root that
+   `estate.json` pins (`eafa6de`), anchored by its `published_sha256`, with
+   all 317 pointers.
 4. **Cards** (network lead; wave 2 after D1 and D4). The wave-1
    `rapp1/network-header` pull requests merged on 2026-09-26 (RAPP's own, #120,
-   as `1feed67`); only `kody-w/rapp-installer` #48 is still open. The first 8
-   wave-1 cards followed the same day, each its own pull request made with the
-   card generator's `card` command and schema (`DISTRIBUTED-HIVE.md` sections
-   8 and 18): `RAR`, `rapp-1`, `rapp-model-hive`, `hive-hub-mcp`,
-   `hive-hub-join`, `rapp-hive-hub-join`, `rapp-drift-lint` and `lisppy`. The
-   rest of wave 1 waits: `rapp-installer`'s card with #48, and `RAPP`,
-   `rapp-work`, `hive-hub` and `rapp-hive-hub`, which pin their tracked path
-   sets, for hand-made pull requests. Then wave 2, one pull request per
-   repository. Held repositories get hand-made pull requests. RAPP is one of
+   as `1feed67`); only `kody-w/rapp-installer` #48 is still open. Cards for
+   11 of the 15 wave-1 stations followed the same day, each its own pull
+   request under the card schema (`DISTRIBUTED-HIVE.md` section 8): 8 made
+   with the card generator's `card` command (section 18), for `RAR`,
+   `rapp-1`, `rapp-model-hive`, `hive-hub-mcp`, `hive-hub-join`,
+   `rapp-hive-hub-join`, `rapp-drift-lint` and `lisppy`, and 3 made by hand
+   because those repositories pin their tracked path sets, for `rapp-work`,
+   `hive-hub` and `rapp-hive-hub`. RAPP's own card is pull request #132,
+   `rapp-installer`'s waits with #48, and `rapp-workspace` (whose header is
+   held) and `rapp-hive-public` have none yet. Then wave 2, one pull request
+   per repository. Held repositories get hand-made pull requests. RAPP is one of
    them: its card changes RAPP's path set and adds a tracked document, so its
    pull request also refreshes both receipts and gives `.rapp/member.md` a
    disposition in the documentation scope.
-5. **Pointers and publish** (network lead). The first 317 pointers are
-   published (from `b684d17`, 4 with `lts`). With the estate kit's LTS pins,
+5. **Pointers and publish** (network lead). The 317 pointers in the
+   contract's version 2 are published (from `b684d17`, 4 with `lts`). With the
+   estate kit's LTS pins,
    move each pinned station to `rapp1-lts` in the portfolio and add its `lts`
    by signed commits (the generator refuses a pin whose portfolio channel says
    `newest`), approve the manifest, and publish the public copy. Then the
    estate kit pins `hives[]`, and the beacon and seed pins above it, to that
-   copy, and not to `a8f4cd8`, which lists no pointer.
+   copy.
 6. **Optional `sniff_network.py` stage** (network tooling, a RAPP pull request,
    after acceptance). When an estate has `hives[]`, record each entry, and
    optionally fetch its `PUBLISHED.md` and check the hash. Keep everything else:
@@ -620,7 +631,9 @@ branches and change nothing live (step 3 by the estate kit, on `kody-w/rapp-esta
 
 ## Rollback
 
-- **Before acceptance:** delete this branch. Nothing else changes.
+- **Before acceptance:** close the pull request and delete this branch. The
+  cards and pointers already published stay until they are undone as in
+  steps 4 and 5.
 - **Step 1:** revert the merge in `kody-w/rapp-model-hive`. Remote references
   are device-local pins (`.git/rapp-hive/references.json`, never committed)
   with a device cache (`.git/rapp-hive/remote/`): unpin them and delete the
@@ -737,7 +750,7 @@ same.
   (.1, .2, .5, .6), Article LV (.2, .3) and Article LVII.
 - RAPP/1 rev-5, pinned by [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json):
   [`kody-w/rapp-1` `SPEC.md` at `d2cd5ab`](https://github.com/kody-w/rapp-1/blob/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md),
-  §5, §6.1.1, §6.2, §6.3, §7.1, §7.2, §7.4, §7.5, §10, §13.1 and §13.3.
+  §5, §6.1.1, §6.2, §6.3, §7.1, §7.2, §7.4, §7.5, §7.6, §10, §13.1 and §13.3.
   Status: [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md).
 - This repository: `.well-known/rapp-network-seed.json` lines 2–43;
   `tools/sniff_network.py` lines 71, 815, 921, 992, 1015, 1036, 1106–1111 and
