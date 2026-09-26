@@ -74,7 +74,12 @@ v0.6.0 archive metadata. It is not current protocol or distribution authority.
 
 These files preserve full contextual records and may be analyzed locally.
 Their entries are not accepted artifacts, membership records, trust anchors,
-installation sources, or streaming instructions.
+installation sources, or streaming instructions. One exception to these rules
+and to the seed and moving-reference rules above: the network seed's `kody-w`
+operator entry records the estate owner's acceptance of that operator. It is
+not a trust anchor, and the signed registry it names is the one moving
+reference, accepted only by its signature from the estate-owner rappid you
+hold out of band (read the entry's `acceptance` object).
 
 The restored Cave steward and builder are safe adapters:
 

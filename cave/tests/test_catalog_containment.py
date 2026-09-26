@@ -204,6 +204,8 @@ class CaveCatalogRetentionTests(unittest.TestCase):
         self.assertFalse(original_rapp["accepted"])
 
     def test_network_seed_is_observation_not_membership_or_trust(self) -> None:
+        # The seed document itself stays observation-only. One operator's
+        # acceptance is the owner's recorded decision (see the next test).
         seed = _read_json(ROOT / ".well-known/rapp-network-seed.json")
         self.assertEqual(seed["status"], "observation-only")
         self.assertIs(seed["verified"], False)
@@ -213,16 +215,74 @@ class CaveCatalogRetentionTests(unittest.TestCase):
         self.assertIs(seed["joining_enabled"], False)
         self.assertIs(seed["source_policy"]["network_fetch_default"], False)
         self.assertIs(seed["source_policy"]["moving_refs_accepted"], False)
-        operator = seed["operators"][0]
-        self.assertEqual(operator["membership"], "not-established")
-        self.assertEqual(operator["trust"], "not-established")
         self.assertIs(
-            operator["reference_state"]["usable_for_acceptance"],
-            False,
+            seed["source_policy"]["accepted_registry_required_for_trust"],
+            True,
         )
+        for claim in ("network-membership", "operator-identity", "registry-acceptance"):
+            self.assertIn(claim, seed["not_evidence_for"])
         self.assertEqual(seed["submission_effect"].split(".")[0], (
             "A PR or federation hint is a reviewable observation draft only"
         ))
+
+    def test_network_seed_operator_acceptance_is_owner_gated_on_the_registry(
+        self,
+    ) -> None:
+        # Owner-gated: merge only after registry_seq 3 is published.
+        seed = _read_json(ROOT / ".well-known/rapp-network-seed.json")
+        operator = seed["operators"][0]
+        self.assertIs(operator["verified"], True)
+        self.assertIs(operator["accepted"], True)
+        self.assertEqual(operator["membership"], "established")
+        self.assertEqual(operator["trust"], "established")
+        state = operator["reference_state"]
+        self.assertIs(state["usable_for_acceptance"], True)
+        acceptance = operator["acceptance"]
+        self.assertIn(
+            "owner-gated: merge only after registry_seq 3 is published",
+            acceptance["gate"]["_note"],
+        )
+        self.assertIn(
+            "rapp-estate draft branch is merged into its main without rewriting",
+            acceptance["gate"]["_note"],
+        )
+        self.assertIn("merging this entry", acceptance["decision"])
+        self.assertEqual(
+            acceptance["trust_anchor"],
+            "rappid:@kody-w/estate-owner:"
+            "b5814e45e9988df835dfd58d152a6fb05b6510a087a35c24374a1c4ab833c122",
+        )
+        registry = acceptance["registry"]
+        self.assertEqual(registry["schema"], "rapp/1-registry")
+        self.assertEqual(
+            registry["canonical_source"],
+            "https://raw.githubusercontent.com/kody-w/rapp-map/main/"
+            "ecosystem-spec.json",
+        )
+        self.assertEqual(registry["minimum_registry_seq"], 3)
+        self.assertIn("your own staleness policy", registry["verification"])
+        # Fetched fresh and verified by signature and sequence: no pinned hash.
+        self.assertEqual(
+            set(registry),
+            {"schema", "canonical_source", "minimum_registry_seq", "verification"},
+        )
+        beacon = acceptance["beacon"]
+        self.assertEqual(beacon["url"], operator["beacon_url"])
+        self.assertEqual(beacon["commit_pin"], state["commit_pin"])
+        self.assertEqual(beacon["sha256"], state["sha256"])
+        self.assertEqual(beacon["operator_rappid"], acceptance["trust_anchor"])
+        # A signed release pin covers the beacon (proposal 0020 D2); the rule
+        # still needs the anchor out of band.
+        self.assertIn("release pins cover this beacon", acceptance["gate"]["_note"])
+        self.assertIn("covers the beacon", acceptance["scope"])
+        self.assertIn("No registry entry names this seed entry", acceptance["scope"])
+        self.assertIn("OA-REG", acceptance["scope"])
+        self.assertIn("out-of-band copy", acceptance["consumer_rule"])
+        self.assertIn("pins kody-w/rapp-estate at beacon.commit_pin", acceptance["consumer_rule"])
+        self.assertIn("observation-only", acceptance["consumer_rule"])
+        guide = " ".join((ROOT / "llms.txt").read_text(encoding="utf-8").split())
+        self.assertIn("seed's `kody-w` operator entry records", guide)
+        self.assertIn("the signed registry it names is the one moving reference", guide)
 
     def test_network_seed_pins_the_operator_beacon(self) -> None:
         seed = _read_json(ROOT / ".well-known/rapp-network-seed.json")

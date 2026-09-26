@@ -27,18 +27,41 @@
       "grail_url": "https://kody-w.github.io/rapp-estate/",
       "role": "species-root-operator",
       "added_at": "2026-05-09T00:00:00Z",
-      "verified": false,
-      "accepted": false,
-      "membership": "not-established",
-      "trust": "not-established",
+      "verified": true,
+      "accepted": true,
+      "membership": "established",
+      "trust": "established",
       "reference_state": {
         "estate_url": "moving-branch-observation",
         "beacon_url": "commit-pinned-observation",
         "grail_url": "unverified-public-observation",
         "commit_pin": "674776841610f9b4b1c23dafacc4314897a22e4c",
         "sha256": "9767eface056c9ded683636a1162a7bb492d625bdea62dcce715a7d99dbdca51",
-        "usable_for_acceptance": false,
+        "usable_for_acceptance": true,
         "_note": "commit_pin and sha256 pin the beacon at beacon_url. A reader follows the beacon's own commit-pinned estate_url, which tools/sniff_network.py lets win over estate_url here; estate_url and grail_url stay moving observations and are not used for acceptance. The pinned commit must be reachable from kody-w/rapp-estate main (its draft branch experimental/rapp1-distributed-hive merged without rewriting). historical_beacon_url keeps the moving URL recorded before the pin."
+      },
+      "acceptance": {
+        "gate": {
+          "condition": "registry_seq 3 published and verifying from the trust anchor, its release pins covering this beacon: each release-pin of registry_seq 3 names a release manifest that pins kody-w/rapp-estate at beacon.commit_pin, this beacon and the estate.json it names by SHA-256 and length (RAPP/1 rev-17 section 13.5, which registry_seq 3 requires; proposal 0020 D2); kody-w/rapp-estate experimental/rapp1-distributed-hive merged into its main without rewriting, so the pinned beacon and estate commits are reachable from main; after the owner's decision on RAPP proposal 0020",
+          "_note": "owner-gated: merge only after registry_seq 3 is published, once it verifies from trust_anchor and its release pins cover this beacon, and after the rapp-estate draft branch is merged into its main without rewriting."
+        },
+        "decision": "The estate owner accepts the kody-w operator by merging this entry into kody-w/RAPP main. The entry records that decision; it does not create trust by itself, and the seed stays observation-only as a document (its top-level flags are unchanged).",
+        "trust_anchor": "rappid:@kody-w/estate-owner:b5814e45e9988df835dfd58d152a6fb05b6510a087a35c24374a1c4ab833c122",
+        "trust_anchor_publication": "kody-w/rapp-1 README, section \"Trust anchor (out-of-band publication, §13.1)\"",
+        "registry": {
+          "schema": "rapp/1-registry",
+          "canonical_source": "https://raw.githubusercontent.com/kody-w/rapp-map/main/ecosystem-spec.json",
+          "minimum_registry_seq": 3,
+          "verification": "Fetch the registry fresh from canonical_source, verify its signature from the trust anchor (RAPP/1 section 13), and require registry_seq >= minimum_registry_seq and freshness under your own staleness policy (RAPP/1 section 13.1), not one read from the document. It is the one moving reference here: its signature and registry_seq authenticate it, and no hash of it is pinned, because a pinned copy would go stale at the next registry_seq."
+        },
+        "beacon": {
+          "url": "https://raw.githubusercontent.com/kody-w/rapp-estate/674776841610f9b4b1c23dafacc4314897a22e4c/.well-known/rapp-network.json",
+          "commit_pin": "674776841610f9b4b1c23dafacc4314897a22e4c",
+          "sha256": "9767eface056c9ded683636a1162a7bb492d625bdea62dcce715a7d99dbdca51",
+          "operator_rappid": "rappid:@kody-w/estate-owner:b5814e45e9988df835dfd58d152a6fb05b6510a087a35c24374a1c4ab833c122"
+        },
+        "scope": "The registry authenticates the estate owner's key and, with registry_seq 3, the estate's release pins (RAPP/1 rev-17 section 13.5): both release manifests pin kody-w/rapp-estate at beacon.commit_pin, this beacon and its estate.json by SHA-256 and length, so a verified entry of the estate's signed registry covers the beacon, as RAPP proposal 0020 D2 asks. No registry entry names this seed entry. This acceptance does not close RAPP's owner blocker OA-REG, and RAPP's own tools still report every network record as accepted: false. RAPP's records that call the rapp-map path a quarantined candidate (specs/ecosystem-spec.json, RAPP1_STATUS.md) date from before its first signed registry (registry_seq 1) and are not refreshed here.",
+        "consumer_rule": "Accept kody-w as an operator only while (1) trust_anchor equals your own out-of-band copy of the estate-owner rappid (a trust anchor read only from this file is not evidence), (2) the registry verifies from it as above, (3) the bytes at beacon.url hash to beacon.sha256 and name trust_anchor as operator_rappid, and (4) a release-pin of that registry names a release manifest that pins kody-w/rapp-estate at beacon.commit_pin with a file .well-known/rapp-network.json of beacon.sha256. Otherwise treat this entry as observation-only: verified false, accepted false, membership and trust not-established."
       }
     }
   ],
@@ -70,5 +93,5 @@
   "provenance": {
     "operator_context_restored_from": "27aaf55dbb5ad1d940c701a7b0796ec52d603897"
   },
-  "updated_at": "2026-09-26T07:45:00Z"
+  "updated_at": "2026-09-26T07:45:30Z"
 }
