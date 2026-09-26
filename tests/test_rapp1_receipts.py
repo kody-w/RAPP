@@ -5,7 +5,9 @@ Every test runs in memory against the committed tree: nothing is written.
 
 from __future__ import annotations
 
+import errno
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -293,19 +295,33 @@ def test_stable_bytes_is_a_fixed_point_across_a_digit_boundary():
 
 
 def test_stable_bytes_counts_the_receipts_at_their_new_sizes():
-    new_paths = [f"zz-synthetic/{index:03d}.txt" for index in range(300)]
+    count = len(_tracked())
+    extra = 10 ** len(str(count)) - count  # enough paths for the counts to gain a digit
+    new_paths = [f"zz-synthetic/{index:06d}.txt" for index in range(extra)]
     tracked = _tracked() + new_paths
     result = rr.compute(ROOT, FUTURE, tracked, _sizes(dict.fromkeys(new_paths, 1)))
     written = result.expected
-    for name in rr.RECEIPTS:  # 796 -> 1096 paths: both receipts grow
-        assert len(written[name]) != len(result.current[name]), name
+    for name in rr.RECEIPTS:  # the path counts gain a digit, so both receipts grow
+        assert len(written[name]) > len(result.current[name]), name
+    added = set(new_paths)
     others = sum(
         (ROOT / path).stat().st_size
         for path in tracked
-        if path not in rr.RECEIPTS and path not in new_paths
+        if path not in rr.RECEIPTS and path not in added
     )
-    total = others + 300 + len(written[rr.INVENTORY]) + len(written[rr.DOC_SCOPE])
+    total = others + extra + len(written[rr.INVENTORY]) + len(written[rr.DOC_SCOPE])
     assert _recorded(result) == total
+
+
+def test_a_rename_moves_the_snapshot_digest_with_the_same_count():
+    tracked = _tracked()
+    renamed = next(path for path in tracked if path.startswith("pages/"))
+    moved = [path for path in tracked if path != renamed] + ["zz-synthetic/renamed.html"]
+    result = rr.compute(ROOT, FUTURE, moved, _sizes({"zz-synthetic/renamed.html": 1}))
+    snapshot = json.loads(result.expected[rr.INVENTORY])["snapshot"]
+    assert snapshot["tracked_path_count"] == len(tracked)
+    assert snapshot["tracked_path_set_sha256"] == rr.path_digest(moved)
+    assert snapshot["generated_at"] == FUTURE
 
 
 def test_explicit_path_sets_are_recomputed_duplicates_included():
@@ -363,7 +379,12 @@ def test_exit_codes_and_what_gets_written(monkeypatch, capsys):
     monkeypatch.setattr(rr, "compute", lambda root, today: current)
     assert rr.main(["--write"]) == 0 and writes == [stale]  # a current tree writes nothing
 
-    for failure in (rr.ReceiptError("bad receipt"), FileNotFoundError("git")):
+    failures = (
+        rr.ReceiptError("bad receipt"),
+        FileNotFoundError("git"),
+        subprocess.CalledProcessError(128, ("git", "ls-files")),
+    )
+    for failure in failures:
         def refuse(root, today, failure=failure):
             raise failure
 
@@ -379,22 +400,26 @@ def test_exit_codes_and_what_gets_written(monkeypatch, capsys):
 
 
 def test_a_write_is_all_or_nothing(monkeypatch):
-    stale, calls = _stale_result(), []
+    stale, calls, live = _stale_result(), [], set()
     staged = iter(f"staged-{index}" for index in range(10))
-    def stage(path, data):
-        calls.append(("stage", path.name, data))
-        return next(staged)
 
-    monkeypatch.setattr(rr, "_stage", stage)
-    monkeypatch.setattr(rr.os.path, "exists", lambda path: False)
+    def stage(path, data):
+        name = next(staged)
+        calls.append(("stage", path.name, data))
+        live.add(name)
+        return name
 
     def replace(source, target):
         calls.append(("replace", source, Path(target).name))
         if source == "staged-1":
-            raise PermissionError("read-only")
+            raise OSError(errno.EIO, "input/output error")
+        live.discard(source)
 
+    monkeypatch.setattr(rr, "_stage", stage)
     monkeypatch.setattr(rr.os, "replace", replace)
-    with pytest.raises(PermissionError):
+    monkeypatch.setattr(rr.os.path, "exists", lambda path: path in live)
+    monkeypatch.setattr(rr.os, "unlink", lambda path: calls.append(("unlink", path)))
+    with pytest.raises(OSError):
         rr.write_receipts(ROOT, stale)
     inventory, doc_scope = Path(rr.INVENTORY).name, Path(rr.DOC_SCOPE).name
     assert calls == [
@@ -405,4 +430,21 @@ def test_a_write_is_all_or_nothing(monkeypatch):
         # the first receipt gets its old bytes back
         ("stage", inventory, stale.current[rr.INVENTORY]),
         ("replace", "staged-2", inventory),
+        # the file that never moved is removed
+        ("unlink", "staged-1"),
     ]
+
+
+def test_a_staged_file_sits_beside_its_receipt_with_its_mode(monkeypatch):
+    target = ROOT / rr.DOC_SCOPE
+    made, modes = [], []
+
+    def mkstemp(dir, prefix):
+        made.append((Path(dir), prefix))
+        return os.open(os.devnull, os.O_WRONLY), "staged-name"
+
+    monkeypatch.setattr(rr.tempfile, "mkstemp", mkstemp)
+    monkeypatch.setattr(rr.os, "chmod", lambda path, mode: modes.append((path, mode)))
+    assert rr._stage(target, b"data") == "staged-name"
+    assert made == [(target.parent, f".{target.name}.")]
+    assert modes == [("staged-name", target.stat().st_mode & 0o7777)]
