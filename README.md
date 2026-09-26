@@ -30,9 +30,8 @@ local, pre-acceptance boundary at `127.0.0.1:7073` and defaults to
 `inference-refused` until a safe adapter is explicitly injected. This
 repository ships no installer itself: no public one-line install, browser
 brainstem, Tier 2 service, downloadable egg catalog, or Shortcut is offered
-from it. The grail Brainstem installs from `kody-w/rapp-installer` at
-`brainstem-v0.6.9`, pinned exactly on macOS and Linux; see
-[Get your Brainstem](#get-your-brainstem).
+from it. For installation, start from the installer repo's
+[Start here](https://github.com/kody-w/rapp-installer#start-here) anchor.
 
 > **Historical strategy:** [The Brainstem Mandate](./BRAINSTEM_MANDATE.md)
 > preserves an earlier product direction. It is not current onboarding.
@@ -144,7 +143,8 @@ project-local, version-pin, and LLM-assisted) are retired. Files retained under
 `installer/` are contained historical artifacts unless a future authenticated
 release explicitly re-enables them. Do not pipe repository content into a
 shell. The grail Brainstem installs from its own repository,
-`kody-w/rapp-installer`, as [Get your Brainstem](#get-your-brainstem) shows.
+`kody-w/rapp-installer`; start from the installer repo's
+[Start here](https://github.com/kody-w/rapp-installer#start-here) anchor.
 
 ## Repo layout
 
@@ -210,10 +210,10 @@ Start with [`pages/vault/Foundations/The Platform in 90 Seconds.md`](./pages/vau
 ## Versioning & rollback
 
 Historical releases used `brainstem-v<X.Y.Z>` tags. This repository advertises
-no installer or rollback command of its own; the grail Brainstem installs as
-[Get your Brainstem](#get-your-brainstem) shows. RAPP/1 authority is pinned by
-exact commit and SHA-256 in `RAPP1_AUTHORITY.json`, not by a moving branch or
-`latest` tag.
+no installer or rollback command of its own; start from the installer repo's
+[Start here](https://github.com/kody-w/rapp-installer#start-here) anchor.
+RAPP/1 authority is pinned by exact commit and SHA-256 in
+`RAPP1_AUTHORITY.json`, not by a moving branch or `latest` tag.
 
 ## History
 
