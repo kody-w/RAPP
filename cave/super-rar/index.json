@@ -29,7 +29,7 @@
     "catalog_exhaust_restored_from": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
     "initial_super_rar_design": "cdf1aba25ba39c373ba4c738e7c6d421fff0cf86"
   },
-  "built_at": "2026-09-03T16:45:04Z",
+  "built_at": "2026-09-25T17:22:35Z",
   "count": 2,
   "by_kind": {
     "agent": 1,
@@ -110,12 +110,12 @@
           "accepted": false
         }
       ],
-      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+      "sha256": "01468b160d6b96f92fe05f98169498db47592385ce7a6dd4930fd0ba016aa105",
       "verified": true,
       "verification": {
         "state": "verified-local-sha256",
         "method": "sha256",
-        "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+        "sha256": "01468b160d6b96f92fe05f98169498db47592385ce7a6dd4930fd0ba016aa105",
         "scope": "local-bytes-only"
       },
       "accepted": false,
