@@ -24,14 +24,15 @@ It does not edit `CONSTITUTION.md`. The amendment text near the end is for a
 later pull request, after acceptance (Article XXVIII.6).
 
 **Numbering.** Numbers 0020 to 0029 are set aside for this workstream, and
-0001 to 0019 for other drafts: 0001 is pull request #119, 0002 is on the
+0001 to 0019 for other drafts: 0001 merged as pull request #119, 0002 is on the
 branch `experimental/proposal-0002-tier2-parity`, and 0003 is pull request
 #121. Article XXVIII.3 asks for monotonic numbers, so if this merges before the
 lower numbers are used, the owner may renumber it first. HIVE-MD's "Remote
-member spaces" and `DISTRIBUTED-HIVE.md` already cite it as proposal 0020.
+member spaces" and `DISTRIBUTED-HIVE.md` already cite it as RAPP proposal 0020.
 
-Line numbers are for `main` at commit `8afc973`. This branch changes none of
-the files they point into.
+Line numbers are for `main` at commit `a879530` (the files they point into are
+the same at `8afc973`, where this draft began). This branch changes none of
+them.
 
 ## Context
 
@@ -92,8 +93,9 @@ manifest, and lists all 743 published files with their SHA-256. It holds:
 
 - the **portfolio**
   ([`portfolio/PORTFOLIO.md`](https://github.com/kody-w/rapp-hive-public/blob/a8f4cd86f6248d07f98ce2c38d1a3c0f97307a31/portfolio/PORTFOLIO.md)):
-  one file per public RAPP repository, 317 today, in 18 lines, each with a
-  RAPP/1 status earned from rapp-1's own checker;
+  one file per public RAPP repository, 317 today, in 18 lines, 316 of them
+  with a RAPP/1 status earned from rapp-1's own checker and one not yet
+  checked;
 - the **subway map** drawn from those files
   (<https://kody-w.github.io/rapp-hive-public/portfolio/subway.html>);
 - one RAPP/1 §7 `body.pulse` frame per crawl, on the body stream
@@ -158,10 +160,10 @@ manifest, and lists all 743 published files with their SHA-256. It holds:
 
 The convention and the Hive agent side are already drafted, on
 `kody-w/rapp-model-hive`, branch `experimental/hive-md-distributed`, commit
-`6fac1bb`:
-[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/6fac1bbcc2453574293735e73f3c077851a5896b/DISTRIBUTED-HIVE.md),
+`2142d52`:
+[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/2142d529c78eafcf2b33f8134237faebb7c58043/DISTRIBUTED-HIVE.md),
 the single source of truth for everything below, and
-[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/6fac1bbcc2453574293735e73f3c077851a5896b/HIVE-MD.md#remote-member-spaces),
+[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/2142d529c78eafcf2b33f8134237faebb7c58043/HIVE-MD.md#remote-member-spaces),
 what the Hive agent does with it.
 
 ### RAPP/1 is drafting the same idea from the other side
@@ -238,8 +240,10 @@ In a fully pinned chain, the seed pins the beacon by commit and SHA-256, the
 beacon names `estate.json` at a full commit, `hives[]` pins `PUBLISHED.md` by
 commit and hash, `PUBLISHED.md` pins each pointer, and each pointer pins each
 station file at its LTS commit. Readers check hashes from `hives[]` down. Above
-it they record each URL, whether it is pinned, and the SHA-256 of what they
-read, and check nothing, as `sniff_network.py` does today. A station file must
+it they record each URL, whether it is pinned (it has a 40-hex commit part) and
+the SHA-256 of the bytes they read, and check nothing. `sniff_network.py` also
+checks nothing there today, but it records the SHA-256 of the parsed JSON
+(`parsed_payload_sha256`), not of the bytes, and no pin state. A station file must
 be normalized text (UTF-8, LF line ends, NFC), and its hash is the SHA-256 of
 its bytes: the value HIVE-MD's rule gives, `sha256sum` prints, and a RAPP/1
 release manifest pins. These are file listings, not RAPP/1 §5 content
@@ -249,17 +253,20 @@ none of them.
 
 Hashes prove integrity only. Authenticity needs one signature at the top: the
 estate owner's signed RAPP/1 §13 registry, rooted in a keyed `estate_owner`
-rappid shared out of band (§13.1). How that signature covers the `hives[]` pin
-is RAPP/1's to define (§10, §13; the rev-17 draft's release pins are one way).
-This proposal defines no signature and no trust rule. Until then every result
-says `authenticity: unverified` and nothing is accepted (Article LV.3), just as
-`sniff_network.py` does today.
+rappid shared out of band (§13.1). The kody-w estate's registry exists and is
+signed (`kody-w/rapp-map` `ecosystem-spec.json`, `registry_seq` 2), but no entry
+in it covers this chain. How a signed entry covers the `hives[]` pin is
+RAPP/1's to define (§10, §13; the rev-17 draft's release pins are one way).
+This proposal defines no signature and no trust rule. Until a verified entry
+covers the chain, every result says `authenticity: unverified` and nothing is
+accepted (Article LV.3), just as `sniff_network.py` does today.
 
 ### 4. The pointer and the card
 
 The normative text is `DISTRIBUTED-HIVE.md` (sections 6 to 9). In short, both
 files start with a frontmatter of `key: value` and `  - item` lines only, each
-key once. Readers refuse any other line, an unknown key or a missing key. Each
+key once. Readers refuse any other line, an unknown key or a missing required
+key. Each
 file is at most 64 KB of UTF-8 text under the Hive's text rules.
 
 | Pointer key | Value |
@@ -277,8 +284,8 @@ file is at most 64 KB of UTF-8 text under the Hive's text rules.
 |---|---|
 | `member`, `repo` | the repository's own name, and the `owner/repo` it is read from |
 | `hive`, `hive_root` | the id of its Hive, and the raw base of that Hive's public copy |
-| `what`, `line`, `channel`, `lifecycle`, `superseded_by` | what it is, in one line of at most 200 characters; the rest as in the pointer |
-| `also_on`, `version`, `indexable` | optional; `indexable: false` keeps it out of network indexes |
+| `what`, `line` | what it is, in one line of at most 200 characters; its subway line id |
+| `also_on`, `version`, `channel`, `lifecycle`, `superseded_by`, `indexable` | optional; `channel`, `lifecycle` and `superseded_by` as in the pointer (`superseded_by` only with a `lifecycle` that allows it); the generator writes a `lifecycle` only when it is not `active`, and never a `channel` or `version`; `indexable: false` keeps it out of network indexes |
 | `links`, `shares` | optional sorted lists: its neighbors; its paths under `.rapp/shared/` |
 | `rappid` | only once it exists: the `rappid` of its own `rappid.json` |
 
@@ -345,12 +352,14 @@ graph hash, mode, Hive ids and refs, and totals) for the stream's owner to put
 in the owner's own pulse, and builds a frame only for a stream its caller owns.
 The portfolio already publishes its crawls this way, on `rapp1-network`, with
 `sig: null`. An unsigned pulse is a valid frame whose chain proves integrity
-only; it does not speak for the estate. Until a §13 registry lists the stream's
-genesis and the `body.pulse` kind, such a frame is structurally checkable only
-(RAPP/1 §7.5, §13.3). Under the rev-17 draft (§13.7), a keyless stream such as
-`rapp1-network` can carry frames that speak for the estate once a
-`stream-signer` entry grants a keyed signer that stream. Station repositories
-carry no frames.
+only; it does not speak for the estate. The estate's published registry
+(`kody-w/rapp-map` `ecosystem-spec.json`, `registry_seq` 2) registers the
+`body.pulse` kind but no genesis for `rapp1-network`, so until that genesis is
+registered such a frame is structurally checkable only (RAPP/1 §7.5, §7.6,
+§13.3). Under the rev-17 draft (§13.7), a frame on a keyless stream such as
+`rapp1-network` speaks for the estate when the estate owner signs it, or when a
+`stream-signer` entry grants its keyed signer that stream and kind. Station
+repositories carry no frames.
 
 ### 8. Who writes what
 
@@ -375,7 +384,9 @@ carry no frames.
 - RAPP/1 is unchanged: no new identity form, frame kind or trust rule. The
   lifecycle words and the release-manifest check follow the rev-17 draft
   without depending on it.
-- No code in this repository, and no grail byte, changes.
+- This branch changes no code. After acceptance only Migration step 6 may
+  change code here (`tools/sniff_network.py` and its tests), and no step
+  changes a grail byte.
 
 ### Checked against the articles it touches
 
@@ -385,9 +396,11 @@ carry no frames.
 - **XLVI.3, XLVI.5 and XLVI.6.** Door entries keep `{rappid, added_at, via}`,
   and XLVI.5's ban on stored derived fields applies to them. A `hives[]` entry
   derives from nothing: a Hive root has no rappid. It records the owner's
-  choice of commit, and that choice, unlike a door entry, cannot be recomputed
-  from the network (XLVI.6). Losing it loses only that choice; newest still
-  works.
+  choice of Hive root and commit, which, unlike a door entry, cannot be
+  recomputed from the network (XLVI.6): an estate rebuilt from the network has
+  no `hives[]`, and a walk from the seed then stops at the estate in both
+  channels, as today (Rollback, step 3). A walk started at the Hive root
+  (XLVII.4) still works.
 - **XLVII.1 to XLVII.5.** Publishing is still the signal. The walk is pure
   raw. Both consent flags are honored. A walk can start anywhere. Other
   substrates work through the reader's transport policy (allowed origins and
@@ -438,8 +451,9 @@ now, which is cheap and permanent, and before rev-17 names only a location.
 
 ### D2. Accepting the operator in the seed
 
-**Recommendation: accept `kody-w` only after the beacon is real and pinned.
-Keep `verified: false` and `accepted: false` until then, as today.**
+**Recommendation: accept `kody-w` only after the beacon is real and pinned and
+a verified entry of the estate's signed registry covers it. Keep
+`verified: false` and `accepted: false` until then, as today.**
 
 - Today the seed points at a status document, not a beacon, with
   `indexable: false`, and `estate.json` is a status document too. Accepting
@@ -447,13 +461,15 @@ Keep `verified: false` and `accepted: false` until then, as today.**
 - Conditions: a `rapp-network-beacon/1.1` beacon whose `operator_rappid` is
   keyed (the §13.1 `estate_owner` anchor); the seed entry pinning that beacon
   by commit and SHA-256, which the seed's own `source_policy` already
-  requires; and the signed registry that makes acceptance mean something.
+  requires; and a verified registry entry that covers that beacon or its pins.
+  The estate's signed registry exists, at `registry_seq` 2, but covers neither;
+  RAPP/1 defines how, and the rev-17 draft's release pins are one way.
 - Acceptance changes fields that `cave/tests/test_catalog_containment.py`
   (lines 206–225) holds at their observation-only values, so it is its own
   RAPP pull request that changes that test on purpose.
 
-**Alternative:** accept once the beacon is real and pinned, before the signed
-registry exists. That is sooner, but acceptance would rest on a GitHub account
+**Alternative:** accept once the beacon is real and pinned, before the estate's
+signed registry covers it. That is sooner, but acceptance would rest on a GitHub account
 and a hash rather than a key, against the seed's own
 `accepted_registry_required_for_trust: true` and Article LV.3.
 
@@ -518,7 +534,8 @@ branches and change nothing live.
 0. **Accept** (the owner). Merge this file with its receipts, refreshed on the
    `main` of that day, because other open pull requests change the same counts.
    Record D1 to D4. The Status becomes `accepted`, and `implemented` once
-   steps 1 to 5 are live.
+   steps 1 to 5 are live and the step-7 amendment has merged (step 6 is
+   optional).
 1. **Convention and agent** (rapp-model-hive). Merge `DISTRIBUTED-HIVE.md`,
    HIVE-MD's "Remote member spaces" and the Hive agent's remote references
    (`url=` pinned to a commit, with an optional `sha256=` anchor) and
@@ -532,22 +549,25 @@ branches and change nothing live.
    tested on a synthetic Contoso network.
 3. **Estate, beacon and seed** (estate kit, after D2 and D3). In
    `kody-w/rapp-estate`: a real `rapp-network-beacon/1.1` beacon and an
-   `estate.json` whose `hives[]` pins the current public copy. A keyed
-   `operator_rappid` needs the owner's key (D1, D2); no tool mints it. In RAPP:
+   `estate.json` whose `hives[]` pins the current public copy. Its keyed
+   `operator_rappid` is the estate owner's existing `estate_owner` rappid
+   (`rappid:@kody-w/estate-owner:b5814e45…`, in the published registry); no tool
+   mints one. In RAPP:
    pin the seed's `beacon_url` to that commit and record its hash. Keep the
    seed's `estate_url` at `main`: `cave/tests/test_catalog_containment.py`
    (line 126) expects it, and the beacon's `estate_url` wins anyway. That pull
    request also refreshes `tests/fixtures/rapp1-doc-scope.json` and runs the
    `cave-super-rar` workflow, which watches the seed's path.
-4. **Cards** (network lead, after D1 and D4). Add `.rapp/member.md` through
-   the existing `rapp1/network-header` pull request branches (RAPP's own is
-   pull request #120), with the card generator's `card` command and schema
-   (`DISTRIBUTED-HIVE.md` sections 8 and 18), then wave 2, one pull request per
-   repository. Held
-   repositories get hand-made pull requests. RAPP is one of them: its card
-   changes RAPP's path set and adds a tracked document, so its pull request also
-   refreshes both receipts and gives `.rapp/member.md` a disposition in the
-   documentation scope.
+4. **Cards** (network lead, after D1 and D4). The wave-1
+   `rapp1/network-header` pull requests merged on 2026-09-26 (RAPP's own, #120,
+   as `1feed67`); only `kody-w/rapp-installer` #48 is still open. So each
+   wave-1 card is a new pull request (for `rapp-installer`, #48 may carry it),
+   made with the card generator's `card` command and schema
+   (`DISTRIBUTED-HIVE.md` sections 8 and 18); then wave 2, one pull request per
+   repository. Held repositories get hand-made pull requests. RAPP is one of
+   them: its card changes RAPP's path set and adds a tracked document, so its
+   pull request also refreshes both receipts and gives `.rapp/member.md` a
+   disposition in the documentation scope.
 5. **Pointers and publish** (network lead). With the estate kit's LTS pins,
    write `members/<station>.md` into the Hive's published room by signed
    commits, approve the manifest, and publish the public copy. Then the estate
@@ -585,21 +605,24 @@ branches and change nothing live.
   it, so only public data is ever published.
 - **Step 6:** revert the pull request and regenerate the ledger and receipts in
   the same revert.
-- **Step 7:** revert the amendment pull request. Its text is additive.
+- **Step 7:** do not delete the text. A later amendment, proposed like this
+  one, marks the new rule superseded, and its wording stays, as Article XXVI's
+  additive-only practice requires (see the 2026-07-08 note in Article XLVI).
 
 ## Proposed amendment text
 
 For the pull request of Migration step 7, and only after acceptance. Nothing on
 this branch edits `CONSTITUTION.md`.
 
-**Where.** After XLVII.5.3 and before Article XLVII's closing "What this
-article requires" list (lines 3672 and 3674). Article XLVII lies inside the
-RAPP1 historical section (the markers at lines 10 and 4011), while Articles LVI
-and LVII sit after Article LV. The owner may prefer a new article after LVII,
-with a one-line pointer in XLVII; the text stays the same apart from its
-heading.
+**Where.** As a new amendment section after Article LVII, with a one-line
+pointer after XLVII.5.3 (lines 3672 and 3674). Article XLVII lies inside the
+RAPP1 historical section (the markers at lines 10 and 4011), which the banner
+and `tools/check_rapp1_docs.py` treat as history, and proposal 0001's amendment
+(pull request #124) states its current rule after LVII for the same reason. If
+the owner prefers it inside Article XLVII, it is `### XLVII.6`, and the text
+stays the same apart from its heading.
 
-> #### XLVII.6 — The Network Is One Distributed Hive
+> ### XLVII.6 — The Network Is One Distributed Hive
 >
 > **Amendment (date of merge) — additive per Article XXVI; proposal 0020.**
 >
@@ -621,7 +644,8 @@ heading.
 >   exactly `{hive, name, root, commit, published_sha256}`: `root` is the raw
 >   base of the public copy, `commit` its full 40-hex commit, and
 >   `published_sha256` the hash of its `PUBLISHED.md` at that commit. Door
->   entries keep XLVI.3's shape. No seed or beacon field is added.
+>   entries keep XLVI.3's shape. No seed or beacon field is added. `hives[]` is
+>   the one part of `estate.json` that XLVI.6's rebuild does not recompute.
 > - **LTS** (`rapp1-lts`) reads each curated station at the full commit its
 >   pointer pins and checks every file against the pointer's hash; a station
 >   file is normalized text, hashed by its bytes. **Newest** reads `HEAD` and
@@ -633,16 +657,21 @@ heading.
 >   through links and federation hints and may start at any node (XLVII.4).
 > - A card's `indexable: false` is honored like the beacon's (XLVII.3).
 > - Hashes give integrity. Authenticity comes only from the estate owner's
->   signed RAPP/1 §13 registry. Until it exists, every result is unverified and
->   nothing is accepted (Article LV.3).
-> - Identity, frames and signatures are RAPP/1's. No tool mints a rappid for a
->   station. A walk's pulse is a RAPP/1 §7 `body.pulse` frame on an existing
->   body stream.
+>   signed RAPP/1 §13 registry, and only for what a verified entry in it
+>   covers. Until such an entry covers this chain (RAPP/1 defines how) and a
+>   reader verifies it against the out-of-band anchor, every result is
+>   unverified and nothing is accepted (Article LV.3).
+> - Identity, frames and signatures are RAPP/1's. The network's tools (the
+>   resolver, the card generator and the Hive agent) never mint a rappid or
+>   write `rappid.json`; a station's rappid, if its owner mints one (RAPP/1
+>   §6.2), is minted once, and a card only mirrors it. A walk's pulse is a
+>   RAPP/1 §7 `body.pulse` frame on an existing body stream.
 >
 > **This subsection requires:**
-> - Readers fetch only through an index (`PUBLISHED.md`, a pointer, a card),
->   never by listing a folder, never following a redirect, and only from
->   origins their transport policy allows.
+> - Readers take every set of files from an index (`PUBLISHED.md`, a pointer,
+>   a card) and otherwise read only the chain's documents and a station's
+>   readable set; they never list a folder, never follow a redirect, and fetch
+>   only from origins their transport policy allows.
 > - Readers never fetch `.rapp/cache/`, `.rapp/workspace/`, `.rapp/reports/` or
 >   the RAPP Workspace bootstrap files.
 > - LTS readers report every hash mismatch, missing file and refused file.
@@ -655,9 +684,10 @@ heading.
 > **Why this is constitutional and not a feature:** without it, the map of the
 > network lives in one place and the discovery chain stops at the estate. With
 > it, each repository publishes its own place on the network, the curator pins
-> what it has checked, and anyone can read and check the whole network from the
-> seed with plain raw fetches: no registry, and no trust in the raw server
-> beyond the hashes.
+> what it has checked, and anyone can read the whole network from the seed
+> with plain raw fetches and check every byte from `hives[]` down: no registry,
+> and, until the chain is signed, trust in the raw server only for the seed,
+> the beacon and `estate.json`, whose bytes are recorded but not checked.
 
 ## References
 
@@ -677,9 +707,9 @@ heading.
   `tests/fixtures/rapp1-doc-scope.json`;
   `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §4.5.
 - The convention, on `kody-w/rapp-model-hive`, branch
-  `experimental/hive-md-distributed`, at `6fac1bb`:
-  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/6fac1bbcc2453574293735e73f3c077851a5896b/DISTRIBUTED-HIVE.md)
-  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/6fac1bbcc2453574293735e73f3c077851a5896b/HIVE-MD.md#remote-member-spaces).
+  `experimental/hive-md-distributed`, at `2142d52`:
+  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/2142d529c78eafcf2b33f8134237faebb7c58043/DISTRIBUTED-HIVE.md)
+  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/2142d529c78eafcf2b33f8134237faebb7c58043/HIVE-MD.md#remote-member-spaces).
 - The rev-17 draft of RAPP/1 (experimental, not in force):
   [`kody-w/rapp-1` `SPEC.md` at `619eb2e`](https://github.com/kody-w/rapp-1/blob/619eb2e5ee4ed47f66e732480db63cab71f3ffbf/SPEC.md),
   §13.5, §13.6 and §13.7, and its design record

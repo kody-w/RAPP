@@ -10,8 +10,8 @@
     "integrated_tracked_bytes": 7938989,
     "mutable_generated_paths": [],
     "current_inventory": {
-      "tracked_paths": 794,
-      "stable_tracked_bytes": 15207290
+      "tracked_paths": 795,
+      "stable_tracked_bytes": 15232326
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -527,7 +527,7 @@
       ".md",
       ".html"
     ],
-    "expected_tracked_document_count": 300,
+    "expected_tracked_document_count": 301,
     "excluded_prefixes": {
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
       "pages/vault/Blog Drafts/": "explicitly unpublished draft archive",
@@ -629,6 +629,7 @@
       "TEMPLATE.md",
       "cave/index.html",
       "cave/specs/SUPER_RAR.md",
+      "docs/proposals/0001-only-top-level-agents-are-live.md",
       "docs/proposals/0020-the-rapp1-network-is-one-distributed-hive.md",
       "installer/shortcuts/README.md",
       "installer/shortcuts/brainstem-voice/README.md",
