@@ -1,0 +1,6 @@
+src/**
+out/test/**
+tsconfig.json
+**/*.tsbuildinfo
+.test-tmp/**
+**/*.map

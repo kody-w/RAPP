@@ -1,0 +1,10 @@
+{
+  "schema": "brainstem-app-upstream/1",
+  "fork": "https://github.com/kody-w/vscode",
+  "upstream": "microsoft/vscode",
+  "upstream_product": "Code - OSS",
+  "upstream_license": "MIT",
+  "tag": "1.139.0",
+  "commit": "2242ebbb54efeeb0129e08e919e7e8d43033cd83",
+  "policy": "Pinned, never modified. The build fetches this tag shallowly from the fork, refuses any other commit, and applies the Brainstem overlay to the checkout under .build/ only."
+}

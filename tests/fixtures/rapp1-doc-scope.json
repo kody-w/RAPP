@@ -10,8 +10,8 @@
     "integrated_tracked_bytes": 7938989,
     "mutable_generated_paths": [],
     "current_inventory": {
-      "tracked_paths": 797,
-      "stable_tracked_bytes": 15289111
+      "tracked_paths": 854,
+      "stable_tracked_bytes": 16885112
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -527,7 +527,7 @@
       ".md",
       ".html"
     ],
-    "expected_tracked_document_count": 302,
+    "expected_tracked_document_count": 304,
     "excluded_prefixes": {
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
       "pages/vault/Blog Drafts/": "explicitly unpublished draft archive",
@@ -596,6 +596,8 @@
       "rapp_brainstem/soul.md": "runtime agent soul owned by the code closure",
       "rapp_swarm/index.html": "adapted historical Swarm architecture page with inert controls",
       "release-notes.html": "dated release archive",
+      "brainstem-app/README.md": "Brainstem app documentation: newest channel, not part of RAPP/1 (a frontier canary until the owner graduates it); subordinate to the RAPP/1 authority and status; not protocol guidance",
+      "brainstem-app/extensions/rapp/media/organism/one-page.html": "pinned verbatim organism view from kody-w/rapp-work, shown read-only inside the newest-channel Brainstem app (not part of RAPP/1); its experimental marks are newest-channel work; hash-checked by its PIN.json",
       "worker/README.md": "current Worker safety contract plus bounded verbatim historical guide"
     }
   },

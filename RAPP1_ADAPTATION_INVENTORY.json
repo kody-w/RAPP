@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-26",
-    "tracked_path_count": 797,
-    "tracked_path_set_sha256": "2d548dc853f52c3bd2f64891143f8461bbd40fa9886e5faf7c4c102aa0b39ce6",
+    "tracked_path_count": 854,
+    "tracked_path_set_sha256": "e42707560e939938738633afa8278f58a4d7a4e90aa7a11a8513a29822ccc3e1",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 797,
-      "path_set_sha256": "2d548dc853f52c3bd2f64891143f8461bbd40fa9886e5faf7c4c102aa0b39ce6"
+      "expected_count": 854,
+      "path_set_sha256": "e42707560e939938738633afa8278f58a4d7a4e90aa7a11a8513a29822ccc3e1"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
@@ -209,7 +209,8 @@
       "GENERATED-001",
       "HISTORY-001",
       "TEST-001",
-      "MIRROR-001"
+      "MIRROR-001",
+      "APP-001"
     ],
     "rules": [
       {
@@ -463,6 +464,16 @@
           "prefixes": [
             "docs/",
             "pages/"
+          ]
+        }
+      },
+      {
+        "id": "primary-brainstem-app",
+        "surface_id": "APP-001",
+        "selector": {
+          "type": "prefix",
+          "prefixes": [
+            "brainstem-app/"
           ]
         }
       },
@@ -1630,6 +1641,50 @@
         "No mirror or alias is called a registry or trust anchor."
       ],
       "blocks_full_conformance": false
+    },
+    {
+      "id": "APP-001",
+      "title": "Brainstem app: newest channel, not part of RAPP/1",
+      "planes": [
+        "product-behavior"
+      ],
+      "domains": [
+        "desktop-app",
+        "newest-channel"
+      ],
+      "protocol_sections": [
+        "8"
+      ],
+      "observed_state": "experimental",
+      "desired_state": "newest-channel-until-owner-graduation",
+      "path_set_refs": [],
+      "paths": [
+        "brainstem-app/README.md",
+        "brainstem-app/UPSTREAM.json",
+        "brainstem-app/overlay.json"
+      ],
+      "gap_matrix": {
+        "canonicalization_addressing": "Not a protocol addressing boundary; the Code - OSS base is pinned by exact tag and full commit in brainstem-app/UPSTREAM.json.",
+        "identity_rappid": "Mints, reads and claims no RAPPID or identity.",
+        "exact_chat_wire": "Adds no wire forms: it talks only to the Brainstem on this device, through the grail's own /chat by default or the exact section 8 request and reply shape when set to rapp1.",
+        "frames": "Produces and accepts no frames.",
+        "eggs": "Produces, stages and accepts no eggs.",
+        "registry_trust_freshness": "Reads Hive folders and shows the Hive agent's own checker verdict; accepts nothing into a registry and claims no trust.",
+        "grail_installer_pin": "Shows only the brainstem-v0.6.9 one-liner pinned by KERNEL_PIN.json (macOS and Linux; none for Windows yet) and never edits grail bytes; it ships no installer.",
+        "side_effects": "Writes only its own workspace files and small state in the app's own storage; runs the Hive agent's checker, its standard-library card reader, and, only on a click in a trusted window, the Brainstem folder's own start script in a visible terminal."
+      },
+      "next_local_adaptation": "Stay in the newest channel as a frontier canary until the owner graduates it into RAPP/1; keep its overlay, unit and cross-platform tests and its documents' channel labels synchronized.",
+      "data_exhaust": {
+        "preserve": true,
+        "fidelity": "full-source"
+      },
+      "owner_dependencies": [],
+      "acceptance_tests": [
+        "Every document that labels the app says it is in the newest channel and not part of RAPP/1.",
+        "node --test brainstem-app/tests/*.test.mjs and node brainstem-app/scripts/test-extension.mjs pass on macOS, Ubuntu and Windows.",
+        "The app writes nothing into a Hive, a reference, agents/ or the Brainstem's data, and runs no agent to read it."
+      ],
+      "blocks_full_conformance": false
     }
   ],
   "owner_dependencies": [
@@ -1688,7 +1743,7 @@
       "OA-INVITE"
     ],
     "restored_page_count": 17,
-    "surface_count": 20,
+    "surface_count": 21,
     "validation": "tests/run_restoration_acceptance.py"
   }
 }

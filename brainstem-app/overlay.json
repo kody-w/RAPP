@@ -1,0 +1,368 @@
+{
+  "schema": "brainstem-app-overlay/1",
+  "note": "The Brainstem layer applied to a checkout of the pinned fork. Every change here is made to the build copy under .build/, never to the fork.",
+  "product": {
+    "overlay": "product.json",
+    "remove": {
+      "agentsTelemetryAppName": "telemetry name for the agents window",
+      "voiceWsUrl": "AI voice service endpoint",
+      "trustedExtensionAuthAccess": "silent sign-in access for the host's AI extension",
+      "onboardingKeymaps": "onboarding walkthrough pointing at marketplace extensions",
+      "onboardingThemes": "onboarding walkthrough",
+      "sessionsWindowAllowedExtensions": "AI agent sessions window",
+      "webviewContentExternalBaseUrlTemplate": "vendor CDN for browser webviews; the desktop app serves webviews locally"
+    },
+    "neutralize": {
+      "defaultChatAgent": "The host dereferences this descriptor at startup, so it stays as an inert shape: every URL and endpoint in it is emptied, and chat.disableAIFeatures turns the AI surfaces off."
+    },
+    "forbidden_keys": [
+      "aiConfig",
+      "aiGeneratedWorkspaceTrust",
+      "appCenter",
+      "chatParticipantRegistry",
+      "checksumFailMoreInfoUrl",
+      "commonlyUsedSettings",
+      "configBasedExtensionTips",
+      "configurationSync.store",
+      "crashReporter",
+      "documentationUrl",
+      "downloadUrl",
+      "editSessions.store",
+      "emergencyAlertUrl",
+      "enableTelemetry",
+      "exeBasedExtensionTips",
+      "extensionImportantTips",
+      "extensionKeywords",
+      "extensionRecommendations",
+      "extensionsGallery",
+      "gitHubEntitlement",
+      "introductoryVideosUrl",
+      "keyboardShortcutsUrlLinux",
+      "keyboardShortcutsUrlMac",
+      "keyboardShortcutsUrlWin",
+      "keymapExtensionTips",
+      "languageExtensionTips",
+      "linkProtectionTrustedDomains",
+      "msftInternalDomains",
+      "newsletterSignupUrl",
+      "nlsBaseUrl",
+      "privacyStatementUrl",
+      "releaseNotesUrl",
+      "remoteExtensionTips",
+      "requestFeatureUrl",
+      "sendASmile",
+      "settingsSearchUrl",
+      "surveys",
+      "tasConfig",
+      "tipsAndTricksUrl",
+      "trustedExtensionPublishers",
+      "tunnelApplicationConfig",
+      "twitterUrl",
+      "updateUrl",
+      "virtualWorkspaceExtensionTips",
+      "webEndpointUrl",
+      "webEndpointUrlTemplate",
+      "webExtensionTips",
+      "youTubeUrl"
+    ],
+    "forbidden_key_patterns": [
+      "telemetry",
+      "experiment",
+      "crash",
+      "survey",
+      "gallery",
+      "extensiontips",
+      "recommendation",
+      "onboarding",
+      "voice",
+      "msftinternal",
+      "asmile"
+    ],
+    "allowed_url_prefixes": [
+      "https://github.com/kody-w/RAPP/"
+    ],
+    "branding_keys": [
+      "nameShort",
+      "nameLong",
+      "applicationName",
+      "dataFolderName",
+      "sharedDataFolderName",
+      "serverApplicationName",
+      "serverDataFolderName",
+      "tunnelApplicationName",
+      "win32MutexName",
+      "win32DirName",
+      "win32NameVersion",
+      "win32RegValueName",
+      "win32AppUserModelId",
+      "win32ShellNameShort",
+      "win32TunnelServiceMutex",
+      "win32TunnelMutex",
+      "darwinBundleIdentifier",
+      "linuxDesktopName",
+      "linuxIconName",
+      "urlProtocol"
+    ],
+    "command_keys": [
+      "applicationName",
+      "serverApplicationName",
+      "tunnelApplicationName",
+      "linuxDesktopName"
+    ],
+    "reserved_commands": {
+      "brainstem": "the grail Brainstem's launcher, installed as brainstem (brainstem.cmd and brainstem.ps1 on Windows)"
+    },
+    "forbidden_branding_text": [
+      "visual studio",
+      "vs code",
+      "vscode",
+      "microsoft",
+      "code - oss",
+      "code-oss",
+      "codeoss",
+      "copilot"
+    ]
+  },
+  "remove_paths": {
+    "extensions/copilot": "the host's built-in AI extension; removed the way VSCodium removes it",
+    "extensions/vscode-api-tests": "upstream's test-only extension; packaged builds already leave it out, so dev launches match the product",
+    "extensions/vscode-colorize-tests": "upstream's test-only extension; packaged builds already leave it out",
+    "extensions/vscode-colorize-perf-tests": "upstream's test-only extension; packaged builds already leave it out",
+    "extensions/vscode-test-resolver": "upstream's test-only extension; packaged builds already leave it out"
+  },
+  "keep_paths": {
+    "extensions/simple-browser": "the built-in Simple Browser: it shows the Brainstem's own web UI where the host's integrated browser is missing (the --web build)"
+  },
+  "edits": [
+    {
+      "file": "build/npm/dirs.ts",
+      "find": "\t'extensions/copilot',\n",
+      "replace": "",
+      "why": "the removed AI extension gets no dependency install"
+    },
+    {
+      "file": "package.json",
+      "find": "\"compile\": \"npm-run-all2 -lp compile-client compile-copilot\",",
+      "replace": "\"compile\": \"npm-run-all2 -lp compile-client\",",
+      "why": "compile without the removed AI extension"
+    },
+    {
+      "file": "package.json",
+      "find": "\"watch\": \"npm-run-all2 -lp watch-client-transpile watch-client watch-extensions watch-copilot\",",
+      "replace": "\"watch\": \"npm-run-all2 -lp watch-client-transpile watch-client watch-extensions\",",
+      "why": "watch without the removed AI extension"
+    },
+    {
+      "file": "package.json",
+      "find": "\"watch-transpile\": \"npm-run-all2 -lp watch-client-transpile watch-extensions watch-copilot\",",
+      "replace": "\"watch-transpile\": \"npm-run-all2 -lp watch-client-transpile watch-extensions\",",
+      "why": "watch without the removed AI extension"
+    },
+    {
+      "file": "package.json",
+      "find": "\"foundry-local-sdk@1.2.3\": true,",
+      "replace": "\"foundry-local-sdk@1.2.3\": false,",
+      "why": "the on-device AI dictation package may not run its install script, which downloads native AI libraries; AI stays off, upstream strips that payload from every package, and its runtime fetches it only on demand"
+    },
+    {
+      "file": "build/lib/copilot.ts",
+      "find": "export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string, builtInCopilotExtensionDir: string, appNodeModulesDir: string, options: PrepareBuiltInCopilotOptions = {}): void {\n",
+      "replace": "export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string, builtInCopilotExtensionDir: string, appNodeModulesDir: string, options: PrepareBuiltInCopilotOptions = {}): void {\n\tif (!fs.existsSync(builtInCopilotExtensionDir)) {\n\t\treturn;\n\t}\n",
+      "why": "packaging skips the removed AI extension instead of failing"
+    },
+    {
+      "file": "build/gulpfile.extensions.ts",
+      "find": "const compilations = [\n",
+      "replace": "const compilations = [\n\t'extensions/rapp/tsconfig.json',\n",
+      "why": "register the RAPP extension as a built-in compiled with the others"
+    },
+    {
+      "file": "build/npm/dirs.ts",
+      "find": "\t'extensions/vscode-api-tests',\n\t'extensions/vscode-colorize-tests',\n\t'extensions/vscode-colorize-perf-tests',\n\t'extensions/vscode-test-resolver',\n",
+      "replace": "",
+      "why": "the removed test-only extensions get no dependency install"
+    },
+    {
+      "file": "build/gulpfile.extensions.ts",
+      "find": "\t'extensions/vscode-api-tests/tsconfig.json',\n\t'extensions/vscode-colorize-tests/tsconfig.json',\n\t'extensions/vscode-colorize-perf-tests/tsconfig.json',\n\t'extensions/vscode-test-resolver/tsconfig.json',\n",
+      "replace": "",
+      "why": "the removed test-only extensions are not compiled"
+    },
+    {
+      "file": "build/lib/electron.ts",
+      "find": "\tcompanyName: 'Microsoft Corporation',\n\tcopyright: 'Copyright (C) 2026 Microsoft. All rights reserved',\n",
+      "replace": "\tcompanyName: 'Brainstem',\n\tcopyright: 'Brainstem. Includes Code - OSS, Copyright (C) Microsoft Corporation, MIT License',\n",
+      "why": "binary metadata names Brainstem and keeps the MIT attribution"
+    },
+    {
+      "file": "build/lib/electron.ts",
+      "find": "\tdarwinApplicationCategoryType: 'public.app-category.developer-tools',\n\tdarwinHelpBookFolder: 'VS Code HelpBook',\n\tdarwinHelpBookName: 'VS Code HelpBook',\n",
+      "replace": "\tdarwinApplicationCategoryType: 'public.app-category.productivity',\n\tdarwinHelpBookFolder: 'Brainstem HelpBook',\n\tdarwinHelpBookName: 'Brainstem HelpBook',\n",
+      "why": "macOS bundle metadata without the vendor product name"
+    },
+    {
+      "file": "resources/server/manifest.json",
+      "find": "\t\"name\": \"Code - OSS\",\n\t\"short_name\": \"Code- OSS\",\n",
+      "replace": "\t\"name\": \"Brainstem\",\n\t\"short_name\": \"Brainstem\",\n",
+      "why": "browser app manifest names Brainstem"
+    },
+    {
+      "file": "src/vs/workbench/browser/parts/paneCompositeBar.ts",
+      "find": "\t\treturn this.storageService.get(this.options.pinnedViewContainersKey, StorageScope.PROFILE, '[]');\n",
+      "replace": "\t\treturn this.storageService.get(this.options.pinnedViewContainersKey, StorageScope.PROFILE, this.options.pinnedViewContainersKey === 'workbench.activity.pinnedViewlets2' ? '[{\"id\":\"workbench.view.explorer\",\"pinned\":true,\"visible\":true,\"order\":0},{\"id\":\"workbench.view.extension.brainstem\",\"pinned\":true,\"visible\":true,\"order\":1},{\"id\":\"workbench.view.search\",\"pinned\":false,\"visible\":false,\"order\":2},{\"id\":\"workbench.view.scm\",\"pinned\":false,\"visible\":false,\"order\":3},{\"id\":\"workbench.view.debug\",\"pinned\":false,\"visible\":false,\"order\":4},{\"id\":\"workbench.view.extensions\",\"pinned\":false,\"visible\":false,\"order\":5},{\"id\":\"workbench.view.extension.test\",\"pinned\":false,\"visible\":false,\"order\":6},{\"id\":\"workbench.view.remote\",\"pinned\":false,\"visible\":false,\"order\":7}]' : '[]');\n",
+      "why": "a fresh profile shows only Explorer and Brainstem in the activity bar; no setting controls this, and people can still pin the others back"
+    },
+    {
+      "file": "src/vs/platform/telemetry/common/telemetryService.ts",
+      "find": "\t\t\t'markdownDescription': getTelemetryLevelSettingDescription(),\n\t\t\t'default': TelemetryConfiguration.ON,\n",
+      "replace": "\t\t\t'markdownDescription': getTelemetryLevelSettingDescription(),\n\t\t\t'default': TelemetryConfiguration.OFF,\n",
+      "why": "telemetry level defaults to off (application scope, so an extension cannot set it)"
+    },
+    {
+      "file": "src/vs/platform/telemetry/common/telemetryService.ts",
+      "find": "product.nameLong, product.privacyStatementUrl),\n\t\t\t'default': true,\n",
+      "replace": "product.nameLong, product.privacyStatementUrl),\n\t\t\t'default': false,\n",
+      "why": "the deprecated telemetry switch defaults to off too"
+    },
+    {
+      "file": "src/vs/workbench/electron-browser/desktop.contribution.ts",
+      "find": "This option requires restart to take effect.\"),\n\t\t\t\t'default': true,\n",
+      "replace": "This option requires restart to take effect.\"),\n\t\t\t\t'default': false,\n",
+      "why": "crash reporting defaults to off"
+    },
+    {
+      "file": "src/vs/workbench/services/assignment/common/assignmentService.ts",
+      "find": "\"Fetches experiments to run from a Microsoft online service.\"),\n\t\t\t'default': true,\n",
+      "replace": "\"Fetches experiments to run from a Microsoft online service.\"),\n\t\t\t'default': false,\n",
+      "why": "experiments default to off"
+    },
+    {
+      "file": "src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts",
+      "find": "The updates are fetched from a Microsoft online service.\"),\n\t\t\t\tdefault: 'on',\n",
+      "replace": "The updates are fetched from a Microsoft online service.\"),\n\t\t\t\tdefault: 'off',\n",
+      "why": "extension auto-update defaults to off"
+    },
+    {
+      "file": "src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts",
+      "find": "it is marked as outdated in the Extensions view. The updates are fetched from a Microsoft online service.\"),\n\t\t\t\tdefault: true,\n",
+      "replace": "it is marked as outdated in the Extensions view. The updates are fetched from a Microsoft online service.\"),\n\t\t\t\tdefault: false,\n",
+      "why": "extension update checks default to off"
+    },
+    {
+      "file": "src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.contribution.ts",
+      "find": "\t\t'workbench.welcomePage.walkthroughs.openOnInstall': {\n\t\t\tscope: ConfigurationScope.MACHINE,\n\t\t\ttype: 'boolean',\n\t\t\tdefault: true,\n",
+      "replace": "\t\t'workbench.welcomePage.walkthroughs.openOnInstall': {\n\t\t\tscope: ConfigurationScope.MACHINE,\n\t\t\ttype: 'boolean',\n\t\t\tdefault: false,\n",
+      "why": "no walkthroughs (machine scope, so an extension cannot set it)"
+    },
+    {
+      "file": "src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.contribution.ts",
+      "find": "\t\t'workbench.welcomePage.experimentalOnboarding': {\n\t\t\tscope: ConfigurationScope.APPLICATION,\n\t\t\ttype: 'boolean',\n\t\t\tdefault: true,\n",
+      "replace": "\t\t'workbench.welcomePage.experimentalOnboarding': {\n\t\t\tscope: ConfigurationScope.APPLICATION,\n\t\t\ttype: 'boolean',\n\t\t\tdefault: false,\n",
+      "why": "no first-launch onboarding (application scope, so an extension cannot set it)"
+    },
+    {
+      "file": "src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.contribution.ts",
+      "find": "\t\t\t'default': 'welcomePage',\n\t\t\t'description': localize('workbench.startupEditor', ",
+      "replace": "\t\t\t'default': 'none',\n\t\t\t'description': localize('workbench.startupEditor', ",
+      "why": "no startup welcome page; the host reads this before extension defaults arrive, so it is set here too"
+    },
+    {
+      "file": "src/vs/server/node/webClientServer.ts",
+      "find": "\t\t`frame-src 'self' https://*.vscode-cdn.net data:;`,\n",
+      "replace": "\t\t`frame-src 'self' https://*.vscode-cdn.net http://*.localhost:* data:;`,\n",
+      "why": "the browser development path serves its webviews from this device (*.localhost) instead of the vendor webview CDN"
+    },
+    {
+      "file": "src/vs/workbench/browser/workbench.contribution.ts",
+      "find": "\t\t\t\t'enum': ['hidden', 'visibleInWorkspace', 'visible', 'maximizedInWorkspace', 'maximized'],\n\t\t\t\t'default': 'visibleInWorkspace',\n",
+      "replace": "\t\t\t\t'enum': ['hidden', 'visibleInWorkspace', 'visible', 'maximizedInWorkspace', 'maximized'],\n\t\t\t\t'default': 'hidden',\n",
+      "why": "no secondary side bar; the layout reads this before extension defaults arrive"
+    },
+    {
+      "file": "src/vs/platform/theme/electron-main/themeMainServiceImpl.ts",
+      "find": "('workbench.secondarySideBar.defaultVisibility', 'visibleInWorkspace');",
+      "replace": "('workbench.secondarySideBar.defaultVisibility', 'hidden');",
+      "why": "the desktop main process uses the same default for a new window's first layout"
+    },
+    {
+      "file": "extensions/git/package.json",
+      "find": ",\n      {\n        \"view\": \"explorer\",\n        \"contents\": \"%view.workbench.learnMore%\",\n        \"when\": \"config.git.enabled && git.state == initialized && scm.providerCount == 0\",\n        \"group\": \"5_scm@10\"\n      }\n",
+      "replace": "\n",
+      "why": "the empty Explorer offers no link to the vendor's source-control docs; the Brainstem welcome stays, and so does Clone Repository whenever Git is turned on (it is off by default)"
+    },
+    {
+      "file": "extensions/git/src/main.ts",
+      "find": "\tif (!enabled) {\n\t\tconst onConfigChange = filterEvent(workspace.onDidChangeConfiguration, e => e.affectsConfiguration('git'));\n",
+      "replace": "\tif (!enabled) {\n\t\t// Brainstem: with Git off (the app's default), nothing Git saved for terminals' environment stays in them.\n\t\tcontext.environmentVariableCollection.clear();\n\t\tconst onConfigChange = filterEvent(workspace.onDidChangeConfiguration, e => e.affectsConfiguration('git'));\n",
+      "why": "with Git off (the app's default), the environment Git saved for terminals in earlier sessions (a sign-in helper that would now point at nothing) is cleared instead of restored into every terminal, the Brainstem's start terminal included"
+    },
+    {
+      "file": "src/vs/workbench/contrib/chat/browser/chat.shared.contribution.ts",
+      "find": "\t\t[ChatAIDisabledSettingId]: {\n\t\t\ttype: 'boolean',\n\t\t\tdescription: nls.localize('chat.disableAIFeatures', \"Disable and hide built-in AI features provided by GitHub Copilot, including chat and inline suggestions.\"),\n\t\t\tdefault: false,\n",
+      "replace": "\t\t[ChatAIDisabledSettingId]: {\n\t\t\ttype: 'boolean',\n\t\t\tdescription: nls.localize('chat.disableAIFeatures', \"Disable and hide built-in AI features provided by GitHub Copilot, including chat and inline suggestions.\"),\n\t\t\tdefault: true,\n",
+      "why": "AI features default to off in the host itself: it reads this before extension defaults arrive, and while it reads false its agent host starts the vendor's AI runtime"
+    },
+    {
+      "file": "src/vs/workbench/contrib/outline/browser/outline.contribution.ts",
+      "find": "\tcanToggleVisibility: true,\n\tcanMoveView: true,\n\thideByDefault: false,\n\tcollapsed: true,\n\torder: 2,\n",
+      "replace": "\tcanToggleVisibility: true,\n\tcanMoveView: true,\n\thideByDefault: true,\n\tcollapsed: true,\n\torder: 2,\n",
+      "why": "the Outline pane is hidden by default (less mess); the Explorer's view menu shows it again"
+    },
+    {
+      "file": "src/vs/workbench/contrib/timeline/browser/timeline.contribution.ts",
+      "find": "\treadonly canToggleVisibility = true;\n\treadonly hideByDefault = false;\n\treadonly canMoveView = true;\n",
+      "replace": "\treadonly canToggleVisibility = true;\n\treadonly hideByDefault = true;\n\treadonly canMoveView = true;\n",
+      "why": "the Timeline pane is hidden by default (less mess); the Explorer's view menu shows it again"
+    },
+    {
+      "file": "src/vs/workbench/contrib/browserView/electron-browser/features/browserTabManagementFeatures.ts",
+      "find": "\t\t\tif (matchingEditor) {\n\t\t\t\tif (options.url) {\n\t\t\t\t\tmatchingEditor.navigate(options.url);\n\t\t\t\t}\n",
+      "replace": "\t\t\tif (matchingEditor) {\n\t\t\t\t// Brainstem: a tab already on the same origin is shown as it is; navigating would reload it and lose\n\t\t\t\t// what lives only in the page, such as the Brainstem web UI's conversation. A tab whose last load\n\t\t\t\t// failed (nothing answered yet) holds nothing, and loads again.\n\t\t\t\tconst origin = (url: string | undefined) => { const uri = URI.parse(url || ''); return `${uri.scheme}://${uri.authority}`; };\n\t\t\t\tif (options.url && (origin(matchingEditor.url) !== origin(options.url) || matchingEditor.model?.error)) {\n\t\t\t\t\tmatchingEditor.navigate(options.url);\n\t\t\t\t}\n",
+      "why": "focusing the Brainstem's web UI tab (the reuse filter) never reloads it, so its in-page conversation stays; a tab that failed to load loads again"
+    },
+    {
+      "file": "src/vs/workbench/contrib/files/browser/views/explorerViewer.ts",
+      "find": "\t\tif (!target) {\n\t\t\ttarget = this.explorerService.roots[this.explorerService.roots.length - 1];\n\t\t\ttargetSector = ListViewTargetSector.BOTTOM;\n\t\t}\n",
+      "replace": "\t\tif (!target) {\n\t\t\t// Brainstem: a drop below the tree goes to the last root unless it is read-only (the RAPP Workspace's\n\t\t\t// Brainstem data), and then to the first writable root (its Agents).\n\t\t\tconst last = this.explorerService.roots[this.explorerService.roots.length - 1];\n\t\t\ttarget = last.isReadonly ? (this.explorerService.roots.find(root => !root.isReadonly) ?? last) : last;\n\t\t\ttargetSector = ListViewTargetSector.BOTTOM;\n\t\t}\n",
+      "why": "a drop on the empty space below the tree lands in Agents instead of vanishing into the read-only Brainstem data root"
+    },
+    {
+      "file": "src/vs/workbench/contrib/files/browser/fileActions.contribution.ts",
+      "find": "\tcommand: {\n\t\tid: MOVE_FILE_TO_TRASH_ID,\n\t\ttitle: MOVE_FILE_TO_TRASH_LABEL\n\t},\n\talt: {\n\t\tid: DELETE_FILE_ID,\n\t\ttitle: nls.localize('deleteFile', \"Delete Permanently\")\n\t},\n",
+      "replace": "\tcommand: {\n\t\tid: MOVE_FILE_TO_TRASH_ID,\n\t\ttitle: MOVE_FILE_TO_TRASH_LABEL,\n\t\tprecondition: ExplorerResourceWritableContext\n\t},\n\talt: {\n\t\tid: DELETE_FILE_ID,\n\t\ttitle: nls.localize('deleteFile', \"Delete Permanently\"),\n\t\tprecondition: ExplorerResourceWritableContext\n\t},\n",
+      "why": "the Explorer's Move to Trash and Delete Permanently are greyed out on a read-only item (basic_agent.py), as Rename already is"
+    },
+    {
+      "file": "src/vs/workbench/contrib/files/browser/fileActions.contribution.ts",
+      "find": "\tcommand: {\n\t\tid: DELETE_FILE_ID,\n\t\ttitle: nls.localize('deleteFile', \"Delete Permanently\")\n\t},\n\twhen: ContextKeyExpr.and(ExplorerRootContext.toNegated(), ExplorerResourceMoveableToTrash.toNegated())\n",
+      "replace": "\tcommand: {\n\t\tid: DELETE_FILE_ID,\n\t\ttitle: nls.localize('deleteFile', \"Delete Permanently\"),\n\t\tprecondition: ExplorerResourceWritableContext\n\t},\n\twhen: ContextKeyExpr.and(ExplorerRootContext.toNegated(), ExplorerResourceMoveableToTrash.toNegated())\n",
+      "why": "the read-only Brainstem data root offers no Delete Permanently: it is greyed out there, as Rename already is"
+    },
+    {
+      "file": "src/vs/workbench/contrib/files/browser/fileActions.ts",
+      "find": "\t// Handle dirty\n\tconst distinctElements = resources.distinctParents(elements, e => e.resource);\n",
+      "replace": "\t// Handle dirty\n\tconst distinctElements = resources.distinctParents(elements, e => e.resource);\n\t// Brainstem: a read-only item (the Brainstem's data, basic_agent.py), read-only as the Explorer's menus judge it,\n\t// is never deleted, from a menu or a key: it says so, before any other question, and deletes nothing.\n\tconst readonlyElements = distinctElements.filter(e => e.isReadonly);\n\tif (readonlyElements.length) {\n\t\tawait dialogService.info(distinctElements.length > 1\n\t\t\t? nls.localize('brainstemReadonlyFilesDelete', \"Some of these are read-only, so nothing was deleted.\")\n\t\t\t: nls.localize('brainstemReadonlyFileDelete', \"{0} is read-only, so it was not deleted.\", readonlyElements[0].name));\n\t\treturn;\n\t}\n",
+      "why": "a read-only item (the Brainstem's data, basic_agent.py) is never deleted, by menu or key: one plain note, before any other question, instead of an offer to override the protection"
+    }
+  ],
+  "builtin_extensions": {
+    "extensions/rapp": "the RAPP layer: Brainstem chat, Hives, References and Organism views"
+  },
+  "branding": {
+    "generated": {
+      "resources/darwin/code.icns": "icns",
+      "resources/win32/code.ico": "ico",
+      "resources/win32/code_70x70.png": "png:70",
+      "resources/win32/code_150x150.png": "png:150",
+      "resources/linux/code.png": "png:512",
+      "resources/server/favicon.ico": "favicon",
+      "resources/server/code-192.png": "png:192",
+      "resources/server/code-512.png": "png:512",
+      "src/vs/workbench/browser/media/code-icon.svg": "svg:icon",
+      "src/vs/workbench/browser/parts/editor/media/letterpress-light.svg": "svg:letterpress-light",
+      "src/vs/workbench/browser/parts/editor/media/letterpress-dark.svg": "svg:letterpress-dark",
+      "src/vs/workbench/browser/parts/editor/media/letterpress-hcLight.svg": "svg:letterpress-hcLight",
+      "src/vs/workbench/browser/parts/editor/media/letterpress-hcDark.svg": "svg:letterpress-hcDark"
+    }
+  }
+}
