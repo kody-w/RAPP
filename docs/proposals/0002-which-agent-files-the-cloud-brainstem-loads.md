@@ -17,7 +17,9 @@ owner (its Migration step 4, "Tier 2 decision"). It was requested for the
 owner as a draft he can accept or refuse, and the request named Option A as
 the recommendation. **As of 2026-09-25, the owner has not chosen.** He can
 accept Option A, pick Alternative B or C, or refuse the proposal. Nothing
-here governs until he merges it by hand (Article XXVIII.4, Article XXX.2).
+here governs until it is merged on his authorization: Article XXX.2 reserves
+the proposal merge for "deliberate human merge or human approval" (see also
+Article XXVIII.4).
 
 Article XXXIII.4 says: "AI assistants must not propose or apply changes to
 `brainstem.py`, `basic_agent.py`, or `function_app.py` as part of regular task
@@ -30,10 +32,10 @@ Option C needs none. It sets out the choice for the owner, changes no code,
 and leaves any edit to `function_app.py` to him (see Constraints under
 Migration).
 
-As of 2026-09-25, 0001 is under review in pull request #119 (branch
-`experimental/constitution-live-agents`), and no pull request is open for this
-draft, which lives on `experimental/proposal-0002-tier2-parity`. The assistant
-that drafted it merges nothing.
+Proposal 0001 was accepted in pull request #119 (squash-merged as `a879530`)
+and implemented in pull request #124 (squash-merged as `e045fc3`). As of
+2026-09-25, no pull request is open for this draft, which lives on
+`experimental/proposal-0002-tier2-parity`.
 
 **Numbering.** 0002 is the next number after 0001 in this repository's
 `docs/proposals/`. The "Proposal 0002" in the title of RAPP pull request #25
@@ -194,26 +196,30 @@ that leaves `function_app.py` untouched, which Articles I and XXXIII favor
 
 ## Migration
 
-Proposal 0001 goes first, in its own two PRs (pull request #119, then its
-amendment PR). Those are 0001's steps, not steps of this proposal. Each step
-below lands in one PR. If step 2's PR, or a later revert of it, is
-squash-merged rather than merged with a merge commit, a ledger-only commit
-on `main` must follow it (see Merge method in step 2).
+Proposal 0001 went first, in its own two PRs: pull request #119, which
+accepted it, then its amendment, pull request #124. Those are 0001's steps,
+not steps of this proposal. Each step below lands in one PR. If step 2's PR,
+or a later revert of it, is squash-merged rather than merged with a merge
+commit, a ledger-only commit on `main` must follow it (see Merge method in
+step 2).
 
-1. **Acceptance.** The owner merges this proposal, with the option he picks.
-   The proposal merge is his (Article XXX.2). Before a pull request is opened
-   for its branch, `experimental/proposal-0002-tier2-parity`, merge `main`
-   into that branch. After 0001's two squash merges, that merge conflicts on
-   proposal 0001 and on the receipts: keep `main`'s version of 0001 (its
-   Status then says it is implemented), and recompute the receipts. Before
-   merging this proposal, set its Status to `accepted`, and record the option
-   the owner picked in place of "the owner has not chosen" and, for A or B,
-   how he reads Article I for this change (see Constraints). Squash-merge it,
+1. **Acceptance.** This proposal is merged, with the option the owner picks,
+   only on his authorization: Article XXX.2 reserves the proposal merge for
+   "deliberate human merge or human approval". Before a pull request is
+   opened for its branch, `experimental/proposal-0002-tier2-parity`, merge
+   `main` into that branch and recompute the receipts. The first such merge,
+   on 2026-09-25 after 0001's two squash merges, conflicted on proposal 0001
+   and on the receipts; `main`'s version of 0001, whose Status says it is
+   implemented, was kept. Before merging this proposal, set its Status to
+   `accepted`, and record the option the owner picked in place of "the owner
+   has not chosen" and, for A or B, how he reads Article I for this change
+   (see Constraints). Squash-merge it,
    since that branch carries proposal 0001's pre-split commits.
 2. **One implementation PR.** It sets this proposal's Status to `implemented`
    and refreshes the receipts. For A and B, it also changes code in
-   `rapp_swarm/` and adds tests, and the owner approves and merges it (see
-   Constraints). For C, it adds only the README note.
+   `rapp_swarm/` and adds tests; it needs the owner's approval and is merged
+   only on his authorization (see Constraints). For C, it adds only the
+   README note.
    - `rapp_swarm/function_app.py` (A and B): require `*_agent.py` in the local
      branch, and load each local file from its path. For B, also bypass the
      cache. For A, also add a comment line just above
@@ -318,19 +324,19 @@ on `main` must follow it (see Merge method in step 2).
 - **After the proposal, before the implementation PR:** a later proposal can
   supersede this one (Article XXVIII.3). Nothing else needs undoing.
 - **After the implementation PR:** revert it. For A or B the revert changes
-  `function_app.py`, so the owner makes and merges it himself (see
-  Constraints). Regenerate the source ledger and refresh the receipts in the
-  same revert PR. Merge that revert with a merge commit, or regenerate the
-  ledger on `main` right after a squash merge, for the reason given under
-  Migration.
+  `function_app.py`, so the owner makes it himself, and it is merged only on
+  his authorization (see Constraints). Regenerate the source ledger and
+  refresh the receipts in the same revert PR. Merge that revert with a merge
+  commit, or regenerate the ledger on `main` right after a squash merge, for
+  the reason given under Migration.
 
 Tier 2 is contained, so no deployed behavior changes in either direction.
 
 ## References
 
 - [Proposal 0001](./0001-only-top-level-agents-are-live.md), the Tier 1 rule
-  and the open Tier 2 question (Migration step 4); under review in pull
-  request #119 as of 2026-09-25.
+  and the open Tier 2 question (Migration step 4); accepted in pull request
+  #119 and implemented in pull request #124.
 - [`CONSTITUTION.md`](../../CONSTITUTION.md): Article I, Article III.3,
   Article XV, Article XVII, Article XVIII, Article XX, Article XXVI,
   Article XXVIII (.3, .4), Article XXX.1, Article XXX.2, Article XXXII.1 and
