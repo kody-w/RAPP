@@ -1,0 +1,87 @@
+{
+	"nameShort": "Code - OSS",
+	"nameLong": "Code - OSS",
+	"applicationName": "code-oss",
+	"dataFolderName": ".vscode-oss",
+	"sharedDataFolderName": ".vscode-oss-shared",
+	"win32MutexName": "vscodeoss",
+	"licenseName": "MIT",
+	"licenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
+	"serverLicenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
+	"serverGreeting": [],
+	"serverApplicationName": "code-server-oss",
+	"serverDataFolderName": ".vscode-server-oss",
+	"tunnelApplicationName": "code-tunnel-oss",
+	"win32DirName": "Microsoft Code OSS",
+	"win32NameVersion": "Microsoft Code OSS",
+	"win32RegValueName": "CodeOSS",
+	"win32AppUserModelId": "Microsoft.CodeOSS",
+	"win32ShellNameShort": "C&ode - OSS",
+	"win32TunnelServiceMutex": "vscodeoss-tunnelservice",
+	"win32TunnelMutex": "vscodeoss-tunnel",
+	"darwinBundleIdentifier": "com.visualstudio.code.oss",
+	"linuxDesktopName": "com.visualstudio.CodeOSS",
+	"linuxIconName": "code-oss",
+	"licenseFileName": "LICENSE.txt",
+	"reportIssueUrl": "https://github.com/microsoft/vscode/issues/new",
+	"nodejsArtifactFeed": "",
+	"urlProtocol": "code-oss",
+	"agentsTelemetryAppName": "agents",
+	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/0000000000000000000000000000000000000000/out/vs/workbench/contrib/webview/browser/pre/",
+	"builtInExtensions": [
+		{
+			"name": "ms-vscode.js-debug",
+			"version": "1.0.0",
+			"repo": "https://github.com/microsoft/vscode-js-debug",
+			"metadata": {
+				"publisherDisplayName": "Microsoft"
+			}
+		}
+	],
+	"defaultChatAgent": {
+		"extensionId": "GitHub.copilot",
+		"chatExtensionId": "GitHub.copilot-chat",
+		"documentationUrl": "https://aka.ms/github-copilot-overview",
+		"provider": {
+			"default": {
+				"id": "github",
+				"name": "GitHub"
+			}
+		},
+		"entitlementUrl": "https://api.github.com/copilot_internal/user",
+		"tokenEntitlementUrl": "https://api.github.com/copilot_internal/v2/token"
+	},
+	"trustedExtensionAuthAccess": {
+		"github": [
+			"GitHub.copilot-chat"
+		]
+	},
+	"onboardingKeymaps": [
+		{
+			"id": "vscode",
+			"label": "VS Code"
+		}
+	],
+	"onboardingThemes": [],
+	"builtInExtensionsEnabledWithAutoUpdates": [
+		"GitHub.copilot-chat"
+	],
+	"sessionsWindowAllowedExtensions": [],
+	"voiceWsUrl": "wss://voice.example.invalid/realtime",
+	"enableTelemetry": true,
+	"aiConfig": {
+		"ariaKey": "0000"
+	},
+	"crashReporter": {
+		"companyName": "Microsoft",
+		"productName": "VSCode"
+	},
+	"tasConfig": {
+		"endpoint": "https://experiments.example.invalid"
+	},
+	"extensionsGallery": {
+		"serviceUrl": "https://marketplace.example.invalid/_apis/public/gallery"
+	},
+	"documentationUrl": "https://go.microsoft.com/fwlink/?LinkID=533484#vscode",
+	"updateUrl": "https://update.example.invalid"
+}

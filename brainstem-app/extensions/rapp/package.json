@@ -1,0 +1,350 @@
+{
+	"name": "rapp",
+	"displayName": "Brainstem",
+	"description": "The one surface you talk to, with your Hives and references beside it (newest channel, not part of RAPP/1).",
+	"version": "0.1.0",
+	"publisher": "rapp",
+	"license": "PolyForm-Small-Business-1.0.0",
+	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kody-w/RAPP.git",
+		"directory": "brainstem-app/extensions/rapp"
+	},
+	"engines": {
+		"vscode": "^1.100.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"capabilities": {
+		"virtualWorkspaces": {
+			"supported": "limited",
+			"description": "In a workspace whose only folder is the Brainstem data root, which this extension serves, the Brainstem views and Open your Brainstem still work."
+		},
+		"untrustedWorkspaces": {
+			"supported": true
+		}
+	},
+	"activationEvents": [
+		"onStartupFinished",
+		"onFileSystem:brainstem-data"
+	],
+	"enabledApiProposals": [
+		"contribViewsWelcome",
+		"workspaceTrust"
+	],
+	"main": "./out/extension",
+	"scripts": {
+		"compile": "gulp compile-extension:rapp",
+		"watch": "gulp watch-extension:rapp"
+	},
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "brainstem",
+					"title": "Brainstem",
+					"icon": "media/brainstem.svg"
+				}
+			]
+		},
+		"views": {
+			"brainstem": [
+				{
+					"type": "webview",
+					"id": "rapp.brainstem",
+					"name": "Brainstem",
+					"initialSize": 8
+				},
+				{
+					"id": "rapp.hives",
+					"name": "Hives",
+					"initialSize": 3
+				},
+				{
+					"id": "rapp.references",
+					"name": "References",
+					"initialSize": 2,
+					"visibility": "collapsed"
+				},
+				{
+					"type": "webview",
+					"id": "rapp.organism",
+					"name": "Organism",
+					"initialSize": 3,
+					"visibility": "collapsed"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "explorer",
+				"contents": "Your Brainstem is the one surface you talk to. Its RAPP Workspace holds your agents.\n[Open your Brainstem](command:rapp.openBrainstem)\n[Start my Brainstem](command:rapp.startBrainstem)",
+				"when": "workbenchState == empty",
+				"group": "1_brainstem@1"
+			}
+		],
+		"commands": [
+			{
+				"command": "rapp.ask",
+				"title": "Ask",
+				"category": "Brainstem",
+				"icon": "$(comment-discussion)"
+			},
+			{
+				"command": "rapp.hive.check",
+				"title": "Check",
+				"category": "Hive",
+				"icon": "$(verified)"
+			},
+			{
+				"command": "rapp.hive.reveal",
+				"title": "Reveal in Finder/Explorer",
+				"category": "Hive",
+				"icon": "$(folder-opened)"
+			},
+			{
+				"command": "rapp.hive.save",
+				"title": "Save changes (asks your Brainstem)",
+				"category": "Hive",
+				"icon": "$(save)"
+			},
+			{
+				"command": "rapp.hives.refresh",
+				"title": "Refresh",
+				"category": "Hive",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "rapp.organism.open",
+				"title": "Open the organism one-page view",
+				"category": "Brainstem",
+				"icon": "$(type-hierarchy)"
+			},
+			{
+				"command": "rapp.openBrainstem",
+				"title": "Open your Brainstem",
+				"category": "Brainstem",
+				"icon": "$(folder-opened)"
+			},
+			{
+				"command": "rapp.startBrainstem",
+				"title": "Start my Brainstem",
+				"category": "Brainstem",
+				"icon": "$(play)"
+			},
+			{
+				"command": "rapp.openBrainstemUI",
+				"title": "Show the Brainstem web UI",
+				"category": "Brainstem",
+				"icon": "$(globe)"
+			},
+			{
+				"command": "rapp.agentCard.show",
+				"title": "Show agent card",
+				"category": "Brainstem",
+				"icon": "$(preview)"
+			}
+		],
+		"customEditors": [
+			{
+				"viewType": "rapp.agentCard",
+				"displayName": "Agent card",
+				"selector": [
+					{
+						"filenamePattern": "**/*_agent.py"
+					}
+				],
+				"priority": "default"
+			},
+			{
+				"viewType": "rapp.memoryCard",
+				"displayName": "Memory card",
+				"selector": [
+					{
+						"filenamePattern": "**/.brainstem_data/**/memory.json"
+					},
+					{
+						"filenamePattern": "**/.brainstem_data/**/user_memory.json"
+					}
+				],
+				"priority": "default"
+			},
+			{
+				"viewType": "rapp.collectionsCard",
+				"displayName": "Agent collections card",
+				"selector": [
+					{
+						"filenamePattern": "**/.brainstem_data/rar_collections/collections.json"
+					}
+				],
+				"priority": "default"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "rapp.ask",
+					"when": "view == rapp.brainstem",
+					"group": "navigation@1"
+				},
+				{
+					"command": "rapp.openBrainstemUI",
+					"when": "view == rapp.brainstem",
+					"group": "navigation@2"
+				},
+				{
+					"command": "rapp.hives.refresh",
+					"when": "view == rapp.hives || view == rapp.references",
+					"group": "navigation@1"
+				},
+				{
+					"command": "rapp.organism.open",
+					"when": "view == rapp.organism",
+					"group": "navigation@1"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "rapp.hive.check",
+					"when": "view == rapp.hives && viewItem == rapp.hive",
+					"group": "inline@1"
+				},
+				{
+					"command": "rapp.hive.save",
+					"when": "view == rapp.hives && viewItem == rapp.hive",
+					"group": "inline@2"
+				},
+				{
+					"command": "rapp.hive.check",
+					"when": "view == rapp.hives && viewItem == rapp.hive",
+					"group": "hive@1"
+				},
+				{
+					"command": "rapp.hive.save",
+					"when": "view == rapp.hives && viewItem == rapp.hive",
+					"group": "hive@2"
+				},
+				{
+					"command": "rapp.hive.reveal",
+					"when": "view == rapp.hives && viewItem == rapp.hive",
+					"group": "hive@3"
+				}
+			],
+			"editor/title": [
+				{
+					"command": "rapp.agentCard.show",
+					"when": "activeEditor == workbench.editors.files.textFileEditor && resourceFilename =~ /_agent\\.py$/i && !(resourceFilename =~ /^basic_agent\\.py$/i)",
+					"group": "navigation@1"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "rapp.agentCard.show",
+					"when": "activeEditor == workbench.editors.files.textFileEditor && resourceFilename =~ /_agent\\.py$/i && !(resourceFilename =~ /^basic_agent\\.py$/i)"
+				}
+			]
+		},
+		"configuration": {
+			"title": "Brainstem",
+			"properties": {
+				"rapp.brainstemUrl": {
+					"type": "string",
+					"default": "http://127.0.0.1:7071",
+					"scope": "machine",
+					"markdownDescription": "Your Brainstem on this device. Only `127.0.0.1`, `localhost` and `[::1]` are accepted."
+				},
+				"rapp.brainstemFolder": {
+					"type": "string",
+					"default": "",
+					"scope": "machine",
+					"markdownDescription": "The global Brainstem folder, the one holding `brainstem.py`. Empty: the folder your running Brainstem reports, else the installer's default `~/.brainstem/src/rapp_brainstem`. A leading `~` is your home folder. It must be a full local path and may not be inside a Hive or a reference."
+				},
+				"rapp.agentsFolder": {
+					"type": "string",
+					"default": "",
+					"scope": "machine",
+					"markdownDescription": "The RAPP Workspace's Agents root: the agents/ folder your Brainstem loads agents from. Empty: `agents/` in your Brainstem folder. A leading `~` is your home folder. It must be a full local path and may not be inside a Hive or a reference."
+				},
+				"rapp.openBrainstemOnStartup": {
+					"type": "boolean",
+					"default": true,
+					"scope": "machine",
+					"description": "Open the RAPP Workspace (your Brainstem's agents/ folder and its data) in an empty window while no other window shows it, as when the app starts or is opened again after its windows were closed, and when a window opens on the Brainstem's own folder."
+				},
+				"rapp.showBrainstemUI": {
+					"type": "boolean",
+					"default": true,
+					"scope": "machine",
+					"description": "When the RAPP Workspace is open, show the Brainstem's own web UI in an editor tab, or its offline card when it is not running."
+				},
+				"rapp.chat.wire": {
+					"type": "string",
+					"enum": [
+						"grail",
+						"rapp1"
+					],
+					"enumDescriptions": [
+						"The Brainstem's own /chat: it also receives the conversation so far, so a Hive proposal can be confirmed in your next message.",
+						"Exactly RAPP/1 section 8: user_input and session_id only."
+					],
+					"default": "grail",
+					"scope": "machine",
+					"description": "How messages are sent to your Brainstem."
+				},
+				"rapp.hiveAgentPath": {
+					"type": "string",
+					"default": "",
+					"scope": "machine",
+					"markdownDescription": "Full path to the Hive agent file (`hive_agent.py`). Its checker (`check <hive>`) verifies each Hive. Empty: the Hives view says the checker is not configured. It may not live inside a Hive or a reference."
+				},
+				"rapp.pythonPath": {
+					"type": "string",
+					"default": "python3",
+					"scope": "machine",
+					"description": "The Python that runs the Hive agent's checker, and that reads agent cards when your Brainstem's own Python (~/.brainstem/venv) is not there: a command name (looked up on PATH) or a full path; a full path may not be inside a Hive or a reference."
+				}
+			}
+		},
+		"configurationDefaults": {
+			"workbench.startupEditor": "none",
+			"workbench.tips.enabled": false,
+			"workbench.colorTheme": "Quiet Light",
+			"workbench.secondarySideBar.defaultVisibility": "hidden",
+			"workbench.layoutControl.enabled": false,
+			"workbench.navigationControl.enabled": false,
+			"workbench.editor.empty.hint": "hidden",
+			"workbench.settings.enableNaturalLanguageSearch": false,
+			"workbench.commandPalette.experimental.enableNaturalLanguageSearch": false,
+			"window.commandCenter": false,
+			"editor.minimap.enabled": false,
+			"breadcrumbs.enabled": false,
+			"extensions.ignoreRecommendations": true,
+			"git.autoRepositoryDetection": false,
+			"git.openRepositoryInParentFolders": "never",
+			"git.enabled": false,
+			"git.terminalAuthentication": false,
+			"chat.disableAIFeatures": true,
+			"chat.plugins.enabled": false,
+			"chat.mcp.access": "none",
+			"files.exclude": {
+				"basic_agent.py": true,
+				"**/__pycache__": true,
+				"**/*.pyc": true,
+				"**/.pytest_cache": true,
+				"**/.DS_Store": true
+			},
+			"explorer.confirmDragAndDrop": false,
+			"terminal.integrated.confirmOnExit": "hasChildProcesses",
+			"terminal.integrated.hideOnStartup": "whenEmpty",
+			"workbench.editor.decorations.badges": false,
+			"files.readonlyInclude": {
+				"basic_agent.py": true
+			},
+			"workbench.editorAssociations": {
+				"basic_agent.py": "default"
+			}
+		}
+	}
+}

@@ -27,6 +27,7 @@ defaults:
 
 exclude:
   - .github
+  - brainstem-app
   - tests
   - tools
   - scripts
