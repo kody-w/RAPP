@@ -3,6 +3,8 @@
 Verifies:
 - Generated JSON is well-formed and matches schema.
 - Inventory contains every anchor repo we know must exist.
+- The live ancestor identity matches the generator in both dated snapshots.
+- Ancestor-only regeneration is offline and preserves unrelated snapshot data.
 - Every edge endpoint resolves to a known node.
 - Every category in nodes is declared in `categories`.
 - HTML viz is syntactically valid, embeds the data, references D3, and
@@ -14,6 +16,7 @@ Run:  python3 -m pytest tests/test_ecosystem_graph.py -v
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import subprocess
@@ -25,6 +28,10 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "pages" / "about" / "ecosystem.json"
 HTML = ROOT / "pages" / "about" / "ecosystem.html"
 GENERATOR = ROOT / "tools" / "ecosystem_graph.py"
+ANCESTOR_ID = "Rapid-Agent-Prototype-Platform-RAPP"
+LEGACY_ANCESTOR_ID = "Rapid-Agent-Prototyping-Platform-RAPP-"
+ANCESTOR_DESCRIPTION = "Rapid Agent Prototype Platform (RAPP)"
+DATA_BLOCK = r'(<script id="ecosystem-data" type="application/json">)(.*?)(</script>)'
 
 ANCHOR_REPOS = {
     # Core platform
@@ -233,6 +240,173 @@ def test_html_has_controls(html_text):
 def test_html_safe_no_script_in_descriptions(data, html_text):
     # The inventory renders descriptions; ensure escapeHtml exists in source.
     assert "escapeHtml" in html_text
+
+
+# ---------------------------------------------------------------- ancestor
+
+@pytest.fixture(scope="module")
+def generator():
+    spec = importlib.util.spec_from_file_location("ecosystem_graph", GENERATOR)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def ancestor_node(graph):
+    nodes = [node for node in graph["nodes"] if node["id"].startswith("Rapid-Agent-")]
+    assert len(nodes) == 1
+    return nodes[0]
+
+
+def embedded_graph(html):
+    match = re.search(DATA_BLOCK, html, re.DOTALL)
+    assert match, "no embedded data block found"
+    return json.loads(match.group(2))
+
+
+@pytest.mark.parametrize("surface", ["source", "json", "html"])
+def test_ancestor_identity_and_link(generator, data, html_text, monkeypatch, surface):
+    expected = {
+        "id": ANCESTOR_ID,
+        "category": "ancestor",
+        "description": ANCESTOR_DESCRIPTION,
+        "private": True,
+        "stars": 1,
+        "pushedAt": "2025-10-07T16:53:13Z",
+        "url": f"https://github.com/kody-w/{ANCESTOR_ID}",
+        "language": "HTML",
+        "degree": 0,
+    }
+    monkeypatch.setattr(generator, "fetch_repos", lambda: [{
+        "name": ANCESTOR_ID,
+        "description": ANCESTOR_DESCRIPTION,
+        "isFork": False,
+        "isPrivate": expected["private"],
+        "stargazerCount": expected["stars"],
+        "pushedAt": expected["pushedAt"],
+        "primaryLanguage": {"name": expected["language"]},
+    }])
+    monkeypatch.setattr(generator, "grep_local_outbound", lambda: {})
+    monkeypatch.setattr(
+        generator.subprocess, "check_output", lambda *args, **kwargs: "fixture-date\n"
+    )
+    source = ancestor_node(generator.build_graph())
+    graph = {"source": {"nodes": [source]}, "json": data,
+             "html": embedded_graph(html_text)}[surface]
+    node = ancestor_node(graph)
+    assert "prototyping" not in json.dumps(node).lower()
+    assert node == expected
+    assert node == source
+
+
+@pytest.fixture
+def ancestor_snapshots(generator, data, html_text, tmp_path, monkeypatch):
+    monkeypatch.setattr(generator, "ROOT", tmp_path)
+    monkeypatch.setattr(generator, "DATA_FILE", tmp_path / "ecosystem.json")
+    monkeypatch.setattr(generator, "HTML_FILE", tmp_path / "ecosystem.html")
+    generator.DATA_FILE.write_text(
+        (json.dumps(data, indent=2) + "\n").replace(LEGACY_ANCESTOR_ID, ANCESTOR_ID)
+    )
+    generator.HTML_FILE.write_text(html_text.replace(LEGACY_ANCESTOR_ID, ANCESTOR_ID))
+
+    def no_subprocess(*args, **kwargs):
+        pytest.fail("ancestor-only modes must not query GitHub or scan repositories")
+
+    monkeypatch.setattr(generator.subprocess, "check_output", no_subprocess)
+    return generator.DATA_FILE, generator.HTML_FILE
+
+
+@pytest.mark.parametrize("surface", [0, 1], ids=["json", "html"])
+@pytest.mark.parametrize("field", ["id", "url"])
+def test_ancestor_check_rejects_stale_field(
+    generator, ancestor_snapshots, surface, field, capsys,
+):
+    path = ancestor_snapshots[surface]
+    value = ANCESTOR_ID if field == "id" else f"https://github.com/kody-w/{ANCESTOR_ID}"
+    path.write_text(path.read_text().replace(
+        f'"{field}": "{value}"',
+        f'"{field}": "{value.replace(ANCESTOR_ID, LEGACY_ANCESTOR_ID)}"',
+    ))
+    before = [path.read_bytes() for path in ancestor_snapshots]
+    assert generator.main(["--check"]) == 1
+    assert path.name in capsys.readouterr().err
+    assert [path.read_bytes() for path in ancestor_snapshots] == before
+
+
+def test_ancestor_regeneration_is_scoped_and_idempotent(generator, ancestor_snapshots):
+    for path in ancestor_snapshots:
+        path.write_text(path.read_text().replace(ANCESTOR_ID, LEGACY_ANCESTOR_ID))
+    before = [path.read_text() for path in ancestor_snapshots]
+    assert generator.main(["--refresh-ancestor"]) == 0
+    after = [path.read_text() for path in ancestor_snapshots]
+    assert after == [text.replace(LEGACY_ANCESTOR_ID, ANCESTOR_ID) for text in before]
+    assert generator.main(["--check"]) == 0
+    assert generator.main(["--refresh-ancestor"]) == 0
+    assert [path.read_text() for path in ancestor_snapshots] == after
+
+
+@pytest.mark.parametrize("endpoint", ["source", "target"])
+def test_ancestor_regeneration_preserves_edges_and_history(
+    generator, ancestor_snapshots, endpoint,
+):
+    data_path, html_path = ancestor_snapshots
+    graph = json.loads(data_path.read_text())
+    ancestor = ancestor_node(graph)
+    ancestor["id"] = LEGACY_ANCESTOR_ID
+    ancestor["url"] = f"https://github.com/kody-w/{LEGACY_ANCESTOR_ID}"
+    ancestor["degree"] += 1
+    other = next(node for node in graph["nodes"] if node["id"] == "RAPP")
+    other["degree"] += 1
+    other["description"] += f" Historical reference: {LEGACY_ANCESTOR_ID}."
+    edge = {"source": "RAPP", "target": "RAPP", "kind": "references"}
+    edge[endpoint] = LEGACY_ANCESTOR_ID
+    graph["edges"].append(edge)
+    graph["stats"]["total_edges"] += 1
+    graph["stats"]["isolated_repos"] -= 1
+    data_path.write_text(json.dumps(graph, indent=2) + "\n")
+    html_before = html_path.read_bytes()
+
+    assert generator.main(["--refresh-ancestor"]) == 0
+    ancestor["id"] = ANCESTOR_ID
+    ancestor["url"] = f"https://github.com/kody-w/{ANCESTOR_ID}"
+    edge[endpoint] = ANCESTOR_ID
+    assert json.loads(data_path.read_text()) == graph
+    assert html_path.read_bytes() == html_before
+    assert generator.main(["--check"]) == 0
+
+
+@pytest.mark.parametrize(
+    "problem", ["missing-node", "duplicate-node", "missing-block", "duplicate-block"],
+)
+def test_ancestor_regeneration_refuses_incomplete_snapshots(
+    generator, ancestor_snapshots, problem, capsys,
+):
+    data_path, html_path = ancestor_snapshots
+    data_path.write_text(data_path.read_text().replace(ANCESTOR_ID, LEGACY_ANCESTOR_ID))
+    html = html_path.read_text()
+    graph = embedded_graph(html)
+    if problem == "missing-node":
+        graph["nodes"].remove(ancestor_node(graph))
+    elif problem == "duplicate-node":
+        graph["nodes"].append(ancestor_node(graph).copy())
+    elif problem == "missing-block":
+        html = re.sub(DATA_BLOCK, "", html, flags=re.DOTALL)
+    else:
+        html += re.search(DATA_BLOCK, html, re.DOTALL).group(0)
+    if problem in {"missing-node", "duplicate-node"}:
+        html = re.sub(
+            DATA_BLOCK,
+            lambda match: match.group(1) + "\n" + json.dumps(graph, indent=2)
+            + "\n" + match.group(3),
+            html,
+            flags=re.DOTALL,
+        )
+    html_path.write_text(html)
+    before = [path.read_bytes() for path in ancestor_snapshots]
+    assert generator.main(["--refresh-ancestor"]) == 1
+    assert capsys.readouterr().err
+    assert [path.read_bytes() for path in ancestor_snapshots] == before
 
 
 # ---------------------------------------------------------------- generator
