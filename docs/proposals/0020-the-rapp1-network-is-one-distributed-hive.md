@@ -160,10 +160,10 @@ manifest, and lists all 743 published files with their SHA-256. It holds:
 
 The convention and the Hive agent side are already drafted, on
 `kody-w/rapp-model-hive`, branch `experimental/hive-md-distributed`, commit
-`2142d52`:
-[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/2142d529c78eafcf2b33f8134237faebb7c58043/DISTRIBUTED-HIVE.md),
+`19bbb85`:
+[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/19bbb85e95d8e220484e6a2bb1560771d32a0ed9/DISTRIBUTED-HIVE.md),
 the single source of truth for everything below, and
-[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/2142d529c78eafcf2b33f8134237faebb7c58043/HIVE-MD.md#remote-member-spaces),
+[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/19bbb85e95d8e220484e6a2bb1560771d32a0ed9/HIVE-MD.md#remote-member-spaces),
 what the Hive agent does with it.
 
 ### RAPP/1 is drafting the same idea from the other side
@@ -707,9 +707,9 @@ stays the same apart from its heading.
   `tests/fixtures/rapp1-doc-scope.json`;
   `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §4.5.
 - The convention, on `kody-w/rapp-model-hive`, branch
-  `experimental/hive-md-distributed`, at `2142d52`:
-  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/2142d529c78eafcf2b33f8134237faebb7c58043/DISTRIBUTED-HIVE.md)
-  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/2142d529c78eafcf2b33f8134237faebb7c58043/HIVE-MD.md#remote-member-spaces).
+  `experimental/hive-md-distributed`, at `19bbb85`:
+  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/19bbb85e95d8e220484e6a2bb1560771d32a0ed9/DISTRIBUTED-HIVE.md)
+  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/19bbb85e95d8e220484e6a2bb1560771d32a0ed9/HIVE-MD.md#remote-member-spaces).
 - The rev-17 draft of RAPP/1 (experimental, not in force):
   [`kody-w/rapp-1` `SPEC.md` at `619eb2e`](https://github.com/kody-w/rapp-1/blob/619eb2e5ee4ed47f66e732480db63cab71f3ffbf/SPEC.md),
   §13.5, §13.6 and §13.7, and its design record
