@@ -15,9 +15,9 @@
   },
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
-    "generated_at": "2026-09-24",
-    "tracked_path_count": 794,
-    "tracked_path_set_sha256": "26a9befcf4c0d84ada234552497e3f1cf6c74d37a79b467e2cf978d2118735e1",
+    "generated_at": "2026-09-26",
+    "tracked_path_count": 796,
+    "tracked_path_set_sha256": "4c1c1e947d28ec4c83f8e5fab4ed3f09a444b9cb6c7681514ab7944b267adfc7",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 794,
-      "path_set_sha256": "26a9befcf4c0d84ada234552497e3f1cf6c74d37a79b467e2cf978d2118735e1"
+      "expected_count": 796,
+      "path_set_sha256": "4c1c1e947d28ec4c83f8e5fab4ed3f09a444b9cb6c7681514ab7944b267adfc7"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
@@ -133,8 +133,8 @@
         "type": "git-prefix",
         "prefix": "tools/"
       },
-      "expected_count": 28,
-      "path_set_sha256": "207c2256bb83ed3c001a655967e49bd7684c3e2949f8d1cfc35efab847597114"
+      "expected_count": 29,
+      "path_set_sha256": "03ce679d24fe3b50ffbd7fde87deb23b6b1ae60d82072ec6b0042650f7fa8133"
     },
     {
       "id": "PS-PAGES",
