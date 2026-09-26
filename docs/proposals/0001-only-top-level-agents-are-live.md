@@ -9,8 +9,10 @@
 
 ## Status
 
-**Draft until the maintainer merges pull request #119, then accepted**
-(Article XXX.2).
+**Implemented when the amendment PR from the branch
+`experimental/amendment-0001-live-agents` is merged.** Pull request #119
+accepted this proposal: it was squash-merged into `main` on the maintainer's
+authorization, as `a879530` (Articles XXVIII.4 and XXX.2).
 
 The maintainer (@kody-w) approved the substance in conversation on
 2026-09-24. It had been pointed out to him that the constitution says agents
@@ -23,15 +25,16 @@ confirmed that the grail is right:
 > "then its just drag and drop for agents hotloaded in and out"
 
 That approval is not a merge. An AI agent drafted this proposal on the
-branch `experimental/constitution-live-agents`. As of 2026-09-25 it is under
-review in pull request #119, and the agent merges nothing.
+branch `experimental/constitution-live-agents`, and the fixes from its
+independent review rounds are commits in pull requests #119 and #124.
 
 **Order.** Article XXVIII.6 has a proposal precede the amendment PR, so pull
 request #119 holds only this proposal and its receipts. The amendment it
 describes was prepared on the branch `experimental/amendment-0001-live-agents`,
-for a separate PR after #119 is merged; that PR also sets this Status to
-`implemented`. Both merges are the maintainer's (Articles XXVIII.4 and
-XXX.2). Squash-merge both: the history of
+for a separate PR, #124, after #119 is merged; that PR also sets this Status
+to `implemented`. Article XXX.2 reserves both merges for "deliberate human
+merge or human approval" (see also Article XXVIII.4), and both are made on
+the maintainer's authorization. Squash-merge both: the history of
 `experimental/constitution-live-agents`, which the amendment branch builds
 on, includes commits that added and then removed the notes before the split,
 and a squash merge keeps them off `main`.
@@ -300,22 +303,25 @@ Steps 1 to 3 each land in one PR. Step 4 is a decision for the owner, not a
 PR under this proposal.
 
 1. **Accept the proposal.** Pull request #119: this file and its receipts.
-   The maintainer's deliberate squash merge accepts it (Articles XXVIII.4 and
-   XXX.2). Until then, nothing here governs.
-2. **Apply the amendment.** A separate PR from the branch
+   A squash merge on the maintainer's authorization accepts it (Articles
+   XXVIII.4 and XXX.2). Until then, nothing here governs.
+2. **Apply the amendment.** A separate PR, #124, from the branch
    `experimental/amendment-0001-live-agents`: the three in-place notes, the
    section after Article LVII, the SPEC.md note, the receipts, and this
    Status set to `implemented`. It cites this proposal (Article XXVIII.6).
    Before opening it, merge `main` into that branch. After a squash merge of
    #119 that merge conflicts on this file and on
    `tests/fixtures/rapp1-doc-scope.json`: keep that branch's version of this
-   file, and recompute the receipts. The maintainer
-   squash-merges it by hand (Article XXX.2).
+   file, and recompute the receipts. Article XXX.2 requires "human review and
+   merge" for a constitutional amendment; this one is squash-merged on the
+   maintainer's authorization.
 3. **Follow-up docs (optional, the owner's call).** Additive notes or
    corrections, in one PR. A change to `rapp_brainstem/CONSTITUTION.md` is a
-   constitution change, so the maintainer merges that PR himself. Article
-   LIII.1 says a Constitution amendment is not "done" until the retired form
-   has been hunted ecosystem-wide and every hit carries a `drift()` issue.
+   constitution change, so Article XXX.2's gate ("human review and merge")
+   applies to that PR, and it is merged only on the maintainer's
+   authorization. Article LIII.1 says a Constitution amendment is not "done"
+   until the retired form has been hunted ecosystem-wide and every hit
+   carries a `drift()` issue.
    The list below is that sweep for this repository; when the amendment
    merges, each item needs such an issue, and other repositories need the
    same sweep.
@@ -381,5 +387,5 @@ back.
   `KERNEL_TREE.md`).
 - Tier 2: `rapp_swarm/function_app.py` lines 266, 525-542, 562 and 616-660;
   `rapp_swarm/build.sh` lines 62-93 and 112-130; `rapp_swarm/.funcignore`.
-- Review: pull request #119; the amendment was prepared on the branch
-  `experimental/amendment-0001-live-agents`.
+- Review: pull request #119, and pull request #124 for the amendment, which
+  was prepared on the branch `experimental/amendment-0001-live-agents`.
