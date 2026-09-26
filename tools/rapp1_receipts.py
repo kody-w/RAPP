@@ -23,7 +23,8 @@ dispositions, exclusions, and the dated audit evidence stay hand-authored and
 are validated by their own checks. Stage added and removed files first
 (``git add``), because the checks read the index.
 
-Exit codes: 0 current (or written), 1 stale, 2 refused.
+Exit codes: 0 current (or written), 1 stale, 2 refused (nothing is written:
+a write stages both files first and restores the old bytes if a move fails).
 """
 
 from __future__ import annotations
@@ -293,18 +294,45 @@ def changed_fields(before: bytes, after: bytes, name: str) -> list[str]:
     return lines or ["layout differs from the committed two-space rendering"]
 
 
-def _replace(path: Path, data: bytes) -> None:
+def _stage(path: Path, data: bytes) -> str:
+    """Write `data` to a new file beside `path`, with `path`'s mode; return its name."""
     mode = path.stat().st_mode & 0o7777
     handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
     try:
         with os.fdopen(handle, "wb") as stream:
             stream.write(data)
         os.chmod(temporary, mode)
-        os.replace(temporary, path)
     except BaseException:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+        os.unlink(temporary)
         raise
+    return temporary
+
+
+def write_receipts(root: Path, result: Refresh) -> list[str]:
+    """Write every stale receipt, all or nothing.
+
+    Each new file is staged beside its receipt first, then moved into place;
+    when a move fails, the receipts already moved get their old bytes back.
+    """
+    stale = result.stale()
+    staged: list[tuple[str, str]] = []
+    try:
+        for name in stale:
+            staged.append((name, _stage(root / name, result.expected[name])))
+        moved: list[str] = []
+        try:
+            for name, temporary in staged:
+                os.replace(temporary, root / name)
+                moved.append(name)
+        except OSError:
+            for name in moved:
+                os.replace(_stage(root / name, result.current[name]), root / name)
+            raise
+    finally:
+        for _, temporary in staged:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+    return stale
 
 
 def _date(text: str) -> str:
@@ -338,7 +366,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         result = compute(ROOT, args.date)
-    except (ReceiptError, subprocess.CalledProcessError) as exc:
+    except (ReceiptError, subprocess.CalledProcessError, OSError) as exc:
         print(f"rapp1_receipts: refused: {exc}", file=sys.stderr)
         return 2
 
@@ -357,8 +385,12 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.flush()
         print("run: python3 tools/rapp1_receipts.py --write", file=sys.stderr)
         return 1
-    for name in stale:
-        _replace(ROOT / name, result.expected[name])
+    try:
+        written = write_receipts(ROOT, result)
+    except OSError as exc:
+        print(f"rapp1_receipts: refused: nothing written ({exc})", file=sys.stderr)
+        return 2
+    for name in written:
         print(f"wrote {name}")
     print(f"RAPP/1 receipts are current: {summary}")
     return 0

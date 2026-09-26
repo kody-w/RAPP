@@ -268,3 +268,141 @@ def test_command_line_rejects_a_bad_date():
     )
     assert completed.returncode == 2
     assert "YYYY-MM-DD" in completed.stderr
+
+
+def _recorded(result) -> int:
+    return json.loads(result.expected[rr.DOC_SCOPE])["audit"]["current_inventory"][
+        "stable_tracked_bytes"
+    ]
+
+
+def test_stable_bytes_is_a_fixed_point_across_a_digit_boundary():
+    new_path = "zz-synthetic-large.bin"
+    tracked = _tracked() + [new_path]
+    empty = rr.compute(ROOT, FUTURE, tracked, _sizes({new_path: 0}))
+    size = 10**8 - _recorded(empty)  # a one-pass sum would record exactly 10**8
+    result = rr.compute(ROOT, FUTURE, tracked, _sizes({new_path: size}))
+    written = result.expected
+    others = sum(
+        (ROOT / path).stat().st_size
+        for path in tracked
+        if path not in rr.RECEIPTS and path != new_path
+    )
+    total = others + size + len(written[rr.INVENTORY]) + len(written[rr.DOC_SCOPE])
+    assert _recorded(result) == total == 10**8 + 1
+
+
+def test_stable_bytes_counts_the_receipts_at_their_new_sizes():
+    new_paths = [f"zz-synthetic/{index:03d}.txt" for index in range(300)]
+    tracked = _tracked() + new_paths
+    result = rr.compute(ROOT, FUTURE, tracked, _sizes(dict.fromkeys(new_paths, 1)))
+    written = result.expected
+    for name in rr.RECEIPTS:  # 796 -> 1096 paths: both receipts grow
+        assert len(written[name]) != len(result.current[name]), name
+    others = sum(
+        (ROOT / path).stat().st_size
+        for path in tracked
+        if path not in rr.RECEIPTS and path not in new_paths
+    )
+    total = others + 300 + len(written[rr.INVENTORY]) + len(written[rr.DOC_SCOPE])
+    assert _recorded(result) == total
+
+
+def test_explicit_path_sets_are_recomputed_duplicates_included():
+    tracked = _tracked()
+    inventory = json.loads((ROOT / rr.INVENTORY).read_text(encoding="utf-8"))
+    index = _path_set_index("PS-IMMUTABLE-GRAIL")
+    paths = inventory["path_sets"][index]["selector"]["paths"]
+    paths.extend([paths[0], "README.md"])
+    refreshed = rr.refresh_inventory(inventory, tracked, FUTURE)["path_sets"][index]
+    assert refreshed["expected_count"] == len(paths)
+    assert refreshed["path_set_sha256"] == rr.path_digest(sorted(paths))
+
+
+def test_document_suffixes_match_in_any_case():
+    new_paths = ["zz-synthetic/UPPER.MD", "zz-synthetic/Page.HTML", "zz-synthetic/notes.txt"]
+    result = rr.compute(
+        ROOT, FUTURE, _tracked() + new_paths, _sizes(dict.fromkeys(new_paths, 1))
+    )
+    before = json.loads(result.current[rr.DOC_SCOPE])["derived_document_scope"]
+    after = json.loads(result.expected[rr.DOC_SCOPE])["derived_document_scope"]
+    assert (
+        after["expected_tracked_document_count"]
+        == before["expected_tracked_document_count"] + 2
+    )
+
+
+def test_refuses_an_index_with_unmerged_paths(monkeypatch):
+    def fake_git(command, cwd):
+        return b"100644 " + b"0" * 40 + b" 1\tREADME.md\0" if "-u" in command else b""
+
+    monkeypatch.setattr(rr.subprocess, "check_output", fake_git)
+    with pytest.raises(rr.ReceiptError, match="unmerged paths"):
+        rr.git_tracked_paths(ROOT)
+
+
+def _stale_result():
+    new_path = "zz-synthetic.txt"
+    return rr.compute(ROOT, FUTURE, _tracked() + [new_path], _sizes({new_path: 1}))
+
+
+def test_exit_codes_and_what_gets_written(monkeypatch, capsys):
+    stale, current, writes = _stale_result(), rr.compute(ROOT, FUTURE), []
+    assert current.stale() == []
+    monkeypatch.setattr(rr, "compute", lambda root, today: stale)
+    def record(root, result):
+        writes.append(result)
+        return result.stale()
+
+    monkeypatch.setattr(rr, "write_receipts", record)
+    assert rr.main(["--check"]) == 1 and rr.main([]) == 1 and writes == []
+    out = capsys.readouterr().out
+    assert "stale: RAPP1_ADAPTATION_INVENTORY.json $.snapshot.tracked_path_count" in out
+    assert rr.main(["--write"]) == 0 and writes == [stale]
+
+    monkeypatch.setattr(rr, "compute", lambda root, today: current)
+    assert rr.main(["--write"]) == 0 and writes == [stale]  # a current tree writes nothing
+
+    for failure in (rr.ReceiptError("bad receipt"), FileNotFoundError("git")):
+        def refuse(root, today, failure=failure):
+            raise failure
+
+        monkeypatch.setattr(rr, "compute", refuse)
+        assert rr.main(["--write"]) == 2
+    monkeypatch.setattr(rr, "compute", lambda root, today: stale)
+
+    def unwritable(root, result):
+        raise PermissionError("read-only")
+
+    monkeypatch.setattr(rr, "write_receipts", unwritable)
+    assert rr.main(["--write"]) == 2
+
+
+def test_a_write_is_all_or_nothing(monkeypatch):
+    stale, calls = _stale_result(), []
+    staged = iter(f"staged-{index}" for index in range(10))
+    def stage(path, data):
+        calls.append(("stage", path.name, data))
+        return next(staged)
+
+    monkeypatch.setattr(rr, "_stage", stage)
+    monkeypatch.setattr(rr.os.path, "exists", lambda path: False)
+
+    def replace(source, target):
+        calls.append(("replace", source, Path(target).name))
+        if source == "staged-1":
+            raise PermissionError("read-only")
+
+    monkeypatch.setattr(rr.os, "replace", replace)
+    with pytest.raises(PermissionError):
+        rr.write_receipts(ROOT, stale)
+    inventory, doc_scope = Path(rr.INVENTORY).name, Path(rr.DOC_SCOPE).name
+    assert calls == [
+        ("stage", inventory, stale.expected[rr.INVENTORY]),
+        ("stage", doc_scope, stale.expected[rr.DOC_SCOPE]),
+        ("replace", "staged-0", inventory),
+        ("replace", "staged-1", doc_scope),
+        # the first receipt gets its old bytes back
+        ("stage", inventory, stale.current[rr.INVENTORY]),
+        ("replace", "staged-2", inventory),
+    ]
