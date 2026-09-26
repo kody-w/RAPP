@@ -218,7 +218,8 @@ step 2).
 2. **One implementation PR.** It sets this proposal's Status to `implemented`
    and refreshes the receipts. For A and B, it also changes code in
    `rapp_swarm/` and adds tests; it needs the owner's approval and is merged
-   only on his authorization (see Constraints). For C, it adds only the
+   only on his explicit authorization for that PR, not Article XXX.1's
+   standing authorization (see Constraints). For C, it adds only the
    README note.
    - `rapp_swarm/function_app.py` (A and B): require `*_agent.py` in the local
      branch, and load each local file from its path. For B, also bypass the
@@ -325,7 +326,8 @@ step 2).
   supersede this one (Article XXVIII.3). Nothing else needs undoing.
 - **After the implementation PR:** revert it. For A or B the revert changes
   `function_app.py`, so the owner makes it himself, and it is merged only on
-  his authorization (see Constraints). Regenerate the source ledger and
+  his explicit authorization for that PR, not Article XXX.1's standing
+  authorization (see Constraints). Regenerate the source ledger and
   refresh the receipts in the same revert PR. Merge that revert with a merge
   commit, or regenerate the ledger on `main` right after a squash merge, for
   the reason given under Migration.
