@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-26",
-    "tracked_path_count": 797,
-    "tracked_path_set_sha256": "2d548dc853f52c3bd2f64891143f8461bbd40fa9886e5faf7c4c102aa0b39ce6",
+    "tracked_path_count": 798,
+    "tracked_path_set_sha256": "e962635d93f1a75111b290a0000779870fbcaeced964612ad256fb69ccbd561d",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 797,
-      "path_set_sha256": "2d548dc853f52c3bd2f64891143f8461bbd40fa9886e5faf7c4c102aa0b39ce6"
+      "expected_count": 798,
+      "path_set_sha256": "e962635d93f1a75111b290a0000779870fbcaeced964612ad256fb69ccbd561d"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
