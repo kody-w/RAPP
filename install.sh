@@ -1263,7 +1263,9 @@ with open(sys.argv[2], 'w') as f: json.dump(out, f)
 # ── Project-local helpers (--here mode) ──────────────────────────────
 
 find_free_port() {
-    local start="${1:-7072}" p="$start" lim=$((start + 50))
+    local start="${1:-7072}"
+    local p="$start"
+    local lim=$((start + 50))
     while [ "$p" -lt "$lim" ]; do
         if ! lsof -ti ":$p" >/dev/null 2>&1 && \
            ! (exec 3<>/dev/tcp/127.0.0.1/$p) 2>/dev/null; then
@@ -1272,7 +1274,8 @@ find_free_port() {
         fi
         p=$((p + 1))
     done
-    echo "$start"
+    printf 'Error: no free port available in range %s-%s.\n' "$start" "$((lim - 1))" >&2
+    return 1
 }
 
 write_local_launcher() {
@@ -1325,7 +1328,7 @@ main_local() {
     create_env
 
     local port
-    port=$(find_free_port 7072)
+    port=$(find_free_port 7072) || return 1
     write_local_launcher "$port"
     ensure_project_gitignore
 

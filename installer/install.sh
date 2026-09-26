@@ -2148,7 +2148,9 @@ find_free_port() {
     #      (~/.config/rapp/peers.json — set by previous installs that
     #      haven't started yet, so two back-to-back --here installs don't
     #      both claim 7072 and crash on first start.)
-    local start="${1:-7072}" p="$start" lim=$((start + 50))
+    local start="${1:-7072}"
+    local p="$start"
+    local lim=$((start + 50))
     local registry_helper="$BRAINSTEM_HOME/src/rapp_brainstem/utils/peer_registry.py"
     local claimed=""
     if [ -f "$registry_helper" ]; then
@@ -2163,7 +2165,8 @@ find_free_port() {
         fi
         p=$((p + 1))
     done
-    echo "$start"
+    printf 'Error: no free port available in range %s-%s.\n' "$start" "$((lim - 1))" >&2
+    return 1
 }
 
 register_in_peers() {
@@ -2294,7 +2297,7 @@ main_local() {
     create_env
 
     local port
-    port=$(find_free_port 7072)
+    port=$(find_free_port 7072) || return 1
     write_local_launcher "$port"
     ensure_project_gitignore
     register_in_peers "$BRAINSTEM_HOME/src/rapp_brainstem" "$port"
