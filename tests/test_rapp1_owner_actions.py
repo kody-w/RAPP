@@ -2,6 +2,7 @@ import ast
 import hashlib
 import json
 import re
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -379,6 +380,21 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         )
         self.assertEqual(invite["retired_target_url_status"], 404)
         self.assertEqual(invite["required_target_url_status"], 200)
+        self.assertEqual(invite["retired_target_state"], "removed-from-tree")
+        self.assertEqual(
+            invite["retired_target_bytes_commit"],
+            "b824965a0297b133d04bd556f6d9726de9a2fefa",
+        )
+        self.assertEqual(
+            invite["retired_by_proposal"],
+            "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md",
+        )
+        self.assertTrue((ROOT / invite["retired_by_proposal"]).is_file())
+        self.assertFalse(COMMONS_PATH.exists())
+        self.assertNotIn(
+            invite["retired_target_path"],
+            self.ledger["current_evidence"]["current_path_hashes"],
+        )
         continuity = invite["target_identity_continuity"]
         self.assertEqual(
             continuity["historical_provisional_tail"],
@@ -611,7 +627,21 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
         )
 
     def test_commons_addresses_are_reproducible(self):
-        manifest = json.loads(COMMONS_PATH.read_text(encoding="utf-8"))
+        invite = self.ledger["known_evidence"]["commons_invite"]
+        retired = subprocess.check_output(
+            (
+                "git",
+                "show",
+                f"{invite['retired_target_bytes_commit']}:"
+                f"{invite['retired_target_path']}",
+            ),
+            cwd=ROOT,
+        )
+        self.assertEqual(len(retired), invite["retired_target_size"])
+        self.assertEqual(
+            hashlib.sha256(retired).hexdigest(), invite["retired_target_sha256"]
+        )
+        manifest = json.loads(retired.decode("utf-8"))
         manifest.pop("sig")
 
         def address(value):

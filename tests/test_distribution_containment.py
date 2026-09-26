@@ -8,7 +8,10 @@ import shutil
 import stat
 import subprocess
 import sys
+from html import unescape as html_unescape
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import unquote
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -238,11 +241,122 @@ def test_retired_archive_manifest_pins_bytes_without_active_publication():
         *manifest["power_archive"]["copies"],
         *manifest["immutable_eggs"],
     ]
-    assert len(records) == 7
+    assert len(records) == 6
     for record in records:
         path = ROOT / record["path"]
         assert path.stat().st_size == record["bytes"]
         assert _sha256(path) == record["sha256"]
+
+
+PROPOSAL_0003 = "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md"
+REFRAMED_CUBBY_EGGS = (
+    "cave/rapplications/rapp-installer/cubby-rapp-installer.egg",
+    "cave/cubbies/kody-w/eggs/cubby-rapp-installer.egg",
+)
+
+
+def _zip_flag_high_bytes(blob: bytes) -> tuple[int, set[int]]:
+    """Return the entry count and each local/central flag high-byte offset."""
+    eocd = len(blob) - 22
+    assert blob[eocd : eocd + 4] == b"PK\x05\x06"
+    entries = int.from_bytes(blob[eocd + 10 : eocd + 12], "little")
+    cursor = int.from_bytes(blob[eocd + 16 : eocd + 20], "little")
+    offsets: set[int] = set()
+    for _ in range(entries):
+        assert blob[cursor : cursor + 4] == b"PK\x01\x02"
+        local = int.from_bytes(blob[cursor + 42 : cursor + 46], "little")
+        assert blob[local : local + 4] == b"PK\x03\x04"
+        offsets.update((local + 7, cursor + 9))
+        name_length = int.from_bytes(blob[cursor + 28 : cursor + 30], "little")
+        extra_length = int.from_bytes(blob[cursor + 30 : cursor + 32], "little")
+        comment_length = int.from_bytes(blob[cursor + 32 : cursor + 34], "little")
+        cursor += 46 + name_length + extra_length + comment_length
+    return entries, offsets
+
+
+def test_proposal_0003_reframing_exception_is_exact_and_identity_preserving():
+    import io
+    import zipfile
+
+    from rapp1_core.hashing import EGG_MANIFEST_SPACE, hash_value
+
+    manifest = json.loads(
+        (ROOT / "installer/RETIRED_ARTIFACTS.json").read_text(encoding="utf-8")
+    )
+    assert manifest["repacking_allowed"] is False
+    (exception,) = manifest["repacking_exceptions"]
+    assert exception["proposal"] == PROPOSAL_0003
+    assert (ROOT / PROPOSAL_0003).is_file()
+    assert exception["scope"] == "zip-framing-only"
+    assert exception["other_artifacts_covered"] is False
+    assert exception["packer"] == {
+        "repository": "kody-w/rapp-1",
+        "commit": "591e014ad39e223b00ab343ae26e5d9a867ebeee",
+        "path": "rapp.py",
+        "function": "pack_egg",
+    }
+    assert tuple(exception["paths"]) == REFRAMED_CUBBY_EGGS
+    assert exception["id"] == "proposal-0003-part-a"
+    snapshot = manifest["prepared_snapshot"]
+    assert snapshot["modification_allowed"] is False
+    assert snapshot["modification_exceptions"] == [exception["id"]]
+    assert REFRAMED_CUBBY_EGGS[0].startswith(snapshot["path"] + "/")
+    ledger = (ROOT / "RAPP1_OWNER_ACTIONS.md").read_text(encoding="utf-8")
+    residual = ledger.split("\n## Issue-ready immutable Cave residual", 1)[1]
+    residual = residual.split("\n## ", 1)[0]
+    for marker in (
+        "waive",
+        PROPOSAL_0003,
+        exception["id"],
+        exception["before_sha256"],
+        exception["after_sha256"],
+    ):
+        assert marker in residual, marker
+    records = {record["path"]: record for record in manifest["immutable_eggs"]}
+    for relative in REFRAMED_CUBBY_EGGS:
+        assert records[relative]["sha256"] == exception["after_sha256"]
+        assert records[relative]["bytes"] == exception["bytes"]
+        current = (ROOT / relative).read_bytes()
+        before = subprocess.check_output(
+            ("git", "show", f"{exception['before_bytes_commit']}:{relative}"),
+            cwd=ROOT,
+        )
+        assert hashlib.sha256(before).hexdigest() == exception["before_sha256"]
+        assert hashlib.sha256(current).hexdigest() == exception["after_sha256"]
+        assert len(before) == len(current) == exception["bytes"]
+
+        entries, flag_high_bytes = _zip_flag_high_bytes(current)
+        assert entries == exception["zip_entries"] == exception["members"] + 1
+        assert _zip_flag_high_bytes(before) == (entries, flag_high_bytes)
+        changed = {
+            offset
+            for offset, (old, new) in enumerate(zip(before, current))
+            if old != new
+        }
+        assert changed == flag_high_bytes
+        assert len(changed) == exception["changed_bytes_per_copy"] == 2 * entries
+        for offset in changed:
+            assert (before[offset - 1], before[offset]) == (0x00, 0x00)
+            assert (current[offset - 1], current[offset]) == (0x00, 0x08)
+
+        with zipfile.ZipFile(io.BytesIO(before)) as old_zip, zipfile.ZipFile(
+            io.BytesIO(current)
+        ) as new_zip:
+            names = new_zip.namelist()
+            assert names == old_zip.namelist()
+            assert names[0] == "manifest.json"
+            assert len(names) - 1 == exception["members"]
+            for name in names:
+                assert new_zip.read(name) == old_zip.read(name), name
+            egg_manifest = json.loads(new_zip.read("manifest.json"))
+        assert egg_manifest["schema"] == "rapp/1-egg"
+        assert egg_manifest["sig"] is None
+        address_value = {
+            key: value for key, value in egg_manifest.items() if key != "sig"
+        }
+        assert (
+            hash_value(EGG_MANIFEST_SPACE, address_value) == exception["egg_address"]
+        )
 
 
 def test_owned_distribution_pages_publish_neither_tier2_nor_power_archive():
@@ -355,3 +469,216 @@ def test_cave_check_rejects_mutated_protected_headers():
             index.write_bytes(original)
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
+
+
+# Proposal 0003 Part B keeps its own names, apart from Part A's, so that either
+# part can be reverted without the other.
+COMMONS_RETIREMENT_PROPOSAL = (
+    "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md"
+)
+RETIRED_COMMONS_INVITE = "pages/tutorials/commons.egg"
+COMMONS_RETIREMENT_RECORDS = frozenset(
+    {
+        COMMONS_RETIREMENT_PROPOSAL,
+        "installer/RETIRED_ARTIFACTS.json",
+        "RAPP1_OWNER_ACTIONS.json",
+        "RAPP1_OWNER_ACTIONS.md",
+    }
+)
+# These two tests name the retired path on purpose, to prove it is gone.
+COMMONS_RETIREMENT_TESTS = frozenset(
+    {
+        "tests/test_distribution_containment.py",
+        "tests/test_rapp1_owner_actions.py",
+    }
+)
+COMMONS_PAGES_GUARD = f"  - {RETIRED_COMMONS_INVITE}"
+RETIRED_COMMONS_NAME = re.compile(
+    r"(?<![\w.-])commons\.egg(?![\w-])", flags=re.IGNORECASE
+)
+# Across joined lines only the exact (case-sensitive) Pages path counts, so prose
+# such as "the Commons." at a line end before "Eggs are..." is not a reference.
+RETIRED_COMMONS_PATH = re.compile(r"(?<![\w.-])commons\.egg(?![\w-])")
+HTML_SUFFIXES = frozenset({".htm", ".html", ".xhtml"})
+HTML_URL_ATTRIBUTES = frozenset(
+    {
+        "action",
+        "background",
+        "cite",
+        "data",
+        "formaction",
+        "href",
+        "imagesrcset",
+        "longdesc",
+        "manifest",
+        "ping",
+        "poster",
+        "src",
+        "srcdoc",
+        "srcset",
+        "style",
+        "xlink:href",
+    }
+)
+
+
+def _names_retired_commons(text: str, name: re.Pattern = RETIRED_COMMONS_NAME) -> bool:
+    """As written, and as a browser or server may resolve it: HTML entities and
+    percent-encoding decoded (twice, for double encoding), then tabs and line
+    breaks removed, as URL parsing removes them."""
+    decoded = text
+    for _ in range(2):
+        decoded = unquote(html_unescape(decoded))
+    return any(
+        name.search(candidate)
+        for candidate in (text, decoded, re.sub(r"[\t\r\n]", "", decoded))
+    )
+
+
+class _LiveHtmlValues(HTMLParser):
+    """What a browser may follow or run: URL attributes (quoted or not),
+    srcdoc, <param> values, event handlers, every <meta> content (a refresh
+    redirect is one), and inline scripts and styles. Text and data-*
+    attributes stay inert."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.values: list[str] = []
+        self._raw_text_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        for name, value in attrs:
+            if value and (
+                name in HTML_URL_ATTRIBUTES
+                or name.startswith("on")
+                or (tag == "meta" and name == "content")
+                or (tag == "param" and name == "value")
+            ):
+                self.values.append(value)
+        if tag in {"script", "style"}:
+            self._raw_text_depth += 1
+
+    def handle_endtag(self, tag):
+        if tag in {"script", "style"} and self._raw_text_depth:
+            self._raw_text_depth -= 1
+
+    def handle_data(self, data):
+        if self._raw_text_depth:
+            self.values.append(data)
+
+
+def test_proposal_0003_retired_commons_invite_survives_only_in_history():
+    from rapp1_core.hashing import EGG_MANIFEST_SPACE, hash_value
+
+    manifest = json.loads(
+        (ROOT / "installer/RETIRED_ARTIFACTS.json").read_text(encoding="utf-8")
+    )
+    assert RETIRED_COMMONS_INVITE not in {
+        record["path"] for record in manifest["immutable_eggs"]
+    }
+    (removed,) = manifest["removed_eggs"]
+    assert removed["path"] == RETIRED_COMMONS_INVITE
+    assert removed["state"] == "retired-removed-from-tree"
+    assert removed["preserved_by"] == ["path", "sha256", "git-history"]
+    assert removed["proposal"] == COMMONS_RETIREMENT_PROPOSAL
+    assert (ROOT / COMMONS_RETIREMENT_PROPOSAL).is_file()
+    assert not (ROOT / RETIRED_COMMONS_INVITE).exists()
+    assert (
+        subprocess.check_output(
+            ("git", "ls-files", "--", RETIRED_COMMONS_INVITE), cwd=ROOT, text=True
+        )
+        == ""
+    )
+
+    retired = subprocess.check_output(
+        ("git", "show", f"{removed['bytes_commit']}:{RETIRED_COMMONS_INVITE}"),
+        cwd=ROOT,
+    )
+    assert len(retired) == removed["bytes"]
+    assert hashlib.sha256(retired).hexdigest() == removed["sha256"]
+    invite = json.loads(retired)
+    assert invite["variant"] == "invite"
+    assert (
+        hash_value(
+            EGG_MANIFEST_SPACE,
+            {key: value for key, value in invite.items() if key != "sig"},
+        )
+        == removed["egg_address"]
+    )
+
+    ledger = json.loads((ROOT / removed["owner_ledger"]).read_text(encoding="utf-8"))
+    evidence = ledger["known_evidence"]["commons_invite"]
+    assert evidence["retired_target_path"] == RETIRED_COMMONS_INVITE
+    assert evidence["retired_target_sha256"] == removed["sha256"]
+    assert evidence["retired_target_size"] == removed["bytes"]
+    assert evidence["retired_egg_address"] == removed["egg_address"]
+    assert evidence["retired_target_bytes_commit"] == removed["bytes_commit"]
+    assert RETIRED_COMMONS_INVITE not in ledger["current_evidence"]["current_path_hashes"]
+    (action,) = [
+        action
+        for action in ledger["actions"]
+        if action["id"] == removed["open_owner_action"]
+    ]
+    assert action["status"] == "owner-action-required"
+    assert all(value is None for value in action["owner_inputs"].values())
+
+
+def _pages_exclude_guard_lines(config: str) -> set[int]:
+    section = None
+    guards = set()
+    for number, line in enumerate(config.splitlines(), 1):
+        key = re.match(r"^([A-Za-z_][\w-]*):", line)
+        if key:
+            section = key.group(1)
+        elif section == "exclude" and line == COMMONS_PAGES_GUARD:
+            guards.add(number)
+    return guards
+
+
+def test_proposal_0003_retired_commons_invite_has_no_live_reference():
+    tracked = [
+        relative
+        for relative in subprocess.check_output(("git", "ls-files", "-z"), cwd=ROOT)
+        .decode("utf-8")
+        .split("\0")
+        if relative
+    ]
+    assert COMMONS_RETIREMENT_RECORDS <= set(tracked)
+    assert COMMONS_RETIREMENT_TESTS <= set(tracked)
+    guards = _pages_exclude_guard_lines(
+        (ROOT / "_config.yml").read_text(encoding="utf-8")
+    )
+    assert len(guards) == 1, "_config.yml must keep excluding the retired path"
+
+    findings = []
+    for relative in tracked:
+        if relative in COMMONS_RETIREMENT_RECORDS | COMMONS_RETIREMENT_TESTS:
+            continue
+        data = (ROOT / relative).read_bytes()
+        if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+            source = data.decode("utf-16", errors="replace")
+        elif b"\0" in data:
+            continue  # binary: archives, eggs, images
+        else:
+            source = data.decode("utf-8", errors="replace")
+        if Path(relative).suffix.lower() in HTML_SUFFIXES:
+            parser = _LiveHtmlValues()
+            parser.feed(source)
+            parser.close()
+            for value in parser.values:
+                if _names_retired_commons(value):
+                    findings.append((relative, value.strip()[:160]))
+        else:
+            allowed = guards if relative == "_config.yml" else set()
+            kept = []
+            for number, line in enumerate(source.splitlines(), 1):
+                if number in allowed:
+                    continue
+                kept.append(line)
+                if _names_retired_commons(line):
+                    findings.append((f"{relative}:{number}", line.strip()[:160]))
+            # A name split across lines, as in a wrapped Markdown or HTML link.
+            if not any(found[0].startswith(f"{relative}:") for found in findings):
+                if _names_retired_commons("".join(kept), RETIRED_COMMONS_PATH):
+                    findings.append((relative, "names the retired invite across lines"))
+    assert findings == []
