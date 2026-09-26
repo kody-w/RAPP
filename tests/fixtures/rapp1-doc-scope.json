@@ -10,8 +10,8 @@
     "integrated_tracked_bytes": 7938989,
     "mutable_generated_paths": [],
     "current_inventory": {
-      "tracked_paths": 793,
-      "stable_tracked_bytes": 15176520
+      "tracked_paths": 797,
+      "stable_tracked_bytes": 15299462
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -492,7 +492,7 @@
       "sha256": {
         "pages/index.html": "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289",
         "cave/rar/index.json": "0243ca6318e4ca6176326ee9d1eee70cba4bfb2cf737f329c0525ad309c3eb04",
-        "cave/super-rar/index.json": "929bd95215e8346f8c29aa6aa76c91302b142382f472065507761344437f7071"
+        "cave/super-rar/index.json": "3fdb030dc301d4c6596729e4c795ad79054ffb376caa2bb8a5b87e86767c8a99"
       },
       "paths": [
         "pages/index.html",
@@ -527,7 +527,7 @@
       ".md",
       ".html"
     ],
-    "expected_tracked_document_count": 299,
+    "expected_tracked_document_count": 302,
     "excluded_prefixes": {
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
       "pages/vault/Blog Drafts/": "explicitly unpublished draft archive",
@@ -541,6 +541,7 @@
       "tools/": "developer-tool documentation and templates outside the published protocol scope"
     },
     "excluded_paths": {
+      ".rapp/member.md": "RAPP/1 network member card generated from the RAPP Hive portfolio and validated by the network's resolver, not protocol guidance",
       "404.html": "static not-found shell",
       "COMMERCIAL.md": "commercial terms, not protocol guidance",
       "docs/rapp-work.md": "current subordinate business-profile documentation governed by the RAPP Work profile",
@@ -629,6 +630,8 @@
       "TEMPLATE.md",
       "cave/index.html",
       "cave/specs/SUPER_RAR.md",
+      "docs/proposals/0001-only-top-level-agents-are-live.md",
+      "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md",
       "installer/shortcuts/README.md",
       "installer/shortcuts/brainstem-voice/README.md",
       "installer/shortcuts/protocol.md",

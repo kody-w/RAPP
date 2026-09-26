@@ -15,9 +15,9 @@
   },
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
-    "generated_at": "2026-09-14",
-    "tracked_path_count": 793,
-    "tracked_path_set_sha256": "c8a0d50c75d0391d55c325e3090d7747db8e93cbad4332c097979d5d5a7a00d3",
+    "generated_at": "2026-09-26",
+    "tracked_path_count": 797,
+    "tracked_path_set_sha256": "2d548dc853f52c3bd2f64891143f8461bbd40fa9886e5faf7c4c102aa0b39ce6",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 793,
-      "path_set_sha256": "c8a0d50c75d0391d55c325e3090d7747db8e93cbad4332c097979d5d5a7a00d3"
+      "expected_count": 797,
+      "path_set_sha256": "2d548dc853f52c3bd2f64891143f8461bbd40fa9886e5faf7c4c102aa0b39ce6"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
@@ -133,8 +133,8 @@
         "type": "git-prefix",
         "prefix": "tools/"
       },
-      "expected_count": 28,
-      "path_set_sha256": "207c2256bb83ed3c001a655967e49bd7684c3e2949f8d1cfc35efab847597114"
+      "expected_count": 29,
+      "path_set_sha256": "03ce679d24fe3b50ffbd7fde87deb23b6b1ae60d82072ec6b0042650f7fa8133"
     },
     {
       "id": "PS-PAGES",
@@ -142,8 +142,8 @@
         "type": "git-prefix",
         "prefix": "pages/"
       },
-      "expected_count": 212,
-      "path_set_sha256": "1811cdae52865c1afa5dd18fc743c4d5cf566146d43ead20c59cf01cd10c6689"
+      "expected_count": 211,
+      "path_set_sha256": "e9e6f613d72f78e67e394ac5d66bded44fd9535be6d3e10303da905b5de8a966"
     },
     {
       "id": "PS-ADAPTED-PAGES",
@@ -260,7 +260,6 @@
             "rapp1_core/egg.py",
             "tests/rapp1_core/test_eggs.py",
             "tools/import_peer_egg.py",
-            "pages/tutorials/commons.egg",
             "pages/tutorials/sample-session.egg",
             "installer/hatchling",
             "rapp_swarm/twin-egg.sh",
@@ -394,6 +393,7 @@
           "type": "explicit",
           "paths": [
             ".well-known/rapp-network-seed.json",
+            ".rapp/member.md",
             "tools/sniff_network.py",
             "tools/lan_advertise.py",
             "tools/ecosystem_audit.py",
@@ -774,7 +774,6 @@
       "paths": [
         "rapp1_core/egg.py",
         "tools/import_peer_egg.py",
-        "pages/tutorials/commons.egg",
         "pages/tutorials/sample-session.egg",
         "installer/hatchling",
         "rapp_swarm/twin-egg.sh",
@@ -785,7 +784,7 @@
         "identity_rappid": "Signer and variant identity are not authenticated.",
         "exact_chat_wire": "Not applicable.",
         "frames": "No accepted frame is implied by an egg.",
-        "eggs": "Actual JWS verification and acceptance receipts remain incomplete; the Commons invite is invalid legacy evidence.",
+        "eggs": "Actual JWS verification and acceptance receipts remain incomplete; the invalid placeholder Commons invite is retired (path, SHA-256, and git history only) and its signed reissue remains owner-only.",
         "registry_trust_freshness": "Variant registration, signer tenure, revocation, and freshness require the authenticated registry.",
         "grail_installer_pin": "Historical installer eggs cannot override KERNEL_PIN.json.",
         "side_effects": "Inspection is read-only; accepted extraction must stage bytes and never execute them."
@@ -1214,7 +1213,7 @@
         "frames": "Catalog provenance is not a signed frame.",
         "eggs": "Legacy eggs are retained but not accepted.",
         "registry_trust_freshness": "No catalog, GitHub listing, URL, or hash establishes registry acceptance.",
-        "grail_installer_pin": "Installer context points to KERNEL_PIN.json; the prepared Cave snapshot remains immutable and non-distributable.",
+        "grail_installer_pin": "Installer context points to KERNEL_PIN.json; the prepared Cave snapshot remains immutable, apart from the one ZIP-framing exception proposal-0003-part-a recorded in installer/RETIRED_ARTIFACTS.json, and non-distributable.",
         "side_effects": "Steward and builder default to local read-only analyze/check/plan/render. Moving refs, install, stream, execute, publish, and issue filing are disabled."
       },
       "next_local_adaptation": "Inject identity, frame, egg, and registry verifiers; read the Grail pin directly; preserve every rejected and absent historical record.",
@@ -1318,7 +1317,8 @@
         "tools/ecosystem_contract.py",
         "tools/holo_card_generator.py",
         "tests/mirror-drift.sh",
-        ".well-known/rapp-network-seed.json"
+        ".well-known/rapp-network-seed.json",
+        ".rapp/member.md"
       ],
       "gap_matrix": {
         "canonicalization_addressing": "Observed payloads and generated profiles have explicit source labels.",
@@ -1503,12 +1503,12 @@
         "identity_rappid": "Predecessor identities remain evidence, never silently upgraded.",
         "exact_chat_wire": "Legacy wire tests remain quarantined or adapted into negative/safe replay tests.",
         "frames": "Legacy frame kinds remain historical.",
-        "eggs": "Legacy archives and eggs remain exact and unaccepted.",
+        "eggs": "Legacy archives and eggs remain exact and unaccepted, apart from the one ZIP-framing exception proposal-0003-part-a recorded in installer/RETIRED_ARTIFACTS.json; the earlier bytes stay in git history at b824965.",
         "registry_trust_freshness": "Historical results cannot become current authority.",
         "grail_installer_pin": "The v0.6.0 latest alias remains archive history, not the v0.6.9 pin.",
         "side_effects": "Historical fixtures and removed runtime sources are retained as non-executable, non-importable bytes and never published as active Pages content."
       },
-      "next_local_adaptation": "Keep every removed or adapted source pinned by commit/blob/hash/byte count and port useful predecessor behavior into safe negative or local replay tests without altering archived bytes.",
+      "next_local_adaptation": "Keep every removed or adapted source pinned by commit/blob/hash/byte count and port useful predecessor behavior into safe negative or local replay tests without altering archived bytes (the one ZIP-framing exception proposal-0003-part-a recorded in installer/RETIRED_ARTIFACTS.json is the one recorded exception).",
       "data_exhaust": {
         "preserve": true,
         "fidelity": "exact-bytes"
@@ -1516,7 +1516,7 @@
       "owner_dependencies": [],
       "acceptance_tests": [
         "Every historical selector resolves and hashes match.",
-        "All archive and retired-test bytes remain exact.",
+        "All archive and retired-test bytes remain exact, apart from the one ZIP-framing exception proposal-0003-part-a recorded in installer/RETIRED_ARTIFACTS.json, whose earlier bytes stay in git history at b824965.",
         "Removed runtime sources remain present under non-executable Pages-excluded archive paths.",
         "Historical fixtures cannot be returned as current authority or executed as live tests."
       ],
