@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-26",
-    "tracked_path_count": 795,
-    "tracked_path_set_sha256": "5f8aca1730893aa9763312d2683ec7509e8b8949a376780f761235a6a8e9be1d",
+    "tracked_path_count": 798,
+    "tracked_path_set_sha256": "837d4d025f83b4a0b081f8e00b6c39bd0eb1153daf1338a2ce098933e8ef07e3",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 795,
-      "path_set_sha256": "5f8aca1730893aa9763312d2683ec7509e8b8949a376780f761235a6a8e9be1d"
+      "expected_count": 798,
+      "path_set_sha256": "837d4d025f83b4a0b081f8e00b6c39bd0eb1153daf1338a2ce098933e8ef07e3"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
@@ -133,8 +133,8 @@
         "type": "git-prefix",
         "prefix": "tools/"
       },
-      "expected_count": 28,
-      "path_set_sha256": "207c2256bb83ed3c001a655967e49bd7684c3e2949f8d1cfc35efab847597114"
+      "expected_count": 29,
+      "path_set_sha256": "03ce679d24fe3b50ffbd7fde87deb23b6b1ae60d82072ec6b0042650f7fa8133"
     },
     {
       "id": "PS-PAGES",
@@ -393,6 +393,7 @@
           "type": "explicit",
           "paths": [
             ".well-known/rapp-network-seed.json",
+            ".rapp/member.md",
             "tools/sniff_network.py",
             "tools/lan_advertise.py",
             "tools/ecosystem_audit.py",
@@ -1316,7 +1317,8 @@
         "tools/ecosystem_contract.py",
         "tools/holo_card_generator.py",
         "tests/mirror-drift.sh",
-        ".well-known/rapp-network-seed.json"
+        ".well-known/rapp-network-seed.json",
+        ".rapp/member.md"
       ],
       "gap_matrix": {
         "canonicalization_addressing": "Observed payloads and generated profiles have explicit source labels.",

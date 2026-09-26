@@ -25,13 +25,14 @@ request refreshes only the two receipts that count tracked files
 It does not edit `CONSTITUTION.md`. The amendment text near the end is for a
 later pull request, after acceptance (Article XXVIII.6).
 
-**Numbering.** This workstream numbers its drafts from 0020, and the other
-drafts use 0001 to 0019: 0001 merged as pull request #119, 0002 is on the
-branch `experimental/proposal-0002-tier2-parity`, and 0003 merged as pull
-request #121 (`aeb0d7e`). Article XXVIII.3 asks for monotonic numbers, so if
-this merges before the lower numbers are used, the owner may renumber it
-first. HIVE-MD's "Remote
-member spaces" and `DISTRIBUTED-HIVE.md` already cite it as RAPP proposal 0020.
+**Numbering.** Each drafting workstream numbers its own drafts. As of 13:30Z
+on 2026-09-26: 0001 merged as pull request #119 and 0003 as #121 (`aeb0d7e`);
+0002 and 0010 are drafts on the branches `experimental/proposal-0002-tier2-parity`
+and `experimental/gap-g22-workspace-names`; this is 0020; and 0030 is pull
+request #135. Article XXVIII.3 asks for monotonic numbers, so if this merges
+while a lower number is unused, or after a higher one merges, the owner
+renumbers it first, and the citations of RAPP proposal 0020 in HIVE-MD's
+"Remote member spaces" and `DISTRIBUTED-HIVE.md` follow the new number.
 
 Line numbers are for `main` at commit `aeb0d7e`. The files they point into are
 the same there as at `e045fc3`, and as at `8afc973`, where this draft began,
@@ -118,8 +119,8 @@ proposal's acceptance, as Hive files under the Hive's own rules. No
 `estate.json` on `main` pins that copy, so no walk from the live seed reaches
 them; a walk started at the root does, and the network tooling's resolver reads
 all 317 and checks the 4 LTS stations' files against their pointers' hashes. At
-`HEAD` it also reads the 11 station cards merged on 2026-09-26 (Migration
-step 4).
+`HEAD` it also reads the 12 station cards merged by 13:00Z on 2026-09-26
+(Migration step 4).
 
 ### What falls short
 
@@ -166,8 +167,10 @@ step 4).
    575–576). So station repositories carry no frames.
 6. **Some repositories pin their own file list.** RAPP pins its tracked path
    count and digest in `RAPP1_ADAPTATION_INVENTORY.json`, and its document and
-   byte counts in `tests/fixtures/rapp1-doc-scope.json`. A new file there needs
-   a hand-made change that refreshes both receipts, as this branch does.
+   byte counts in `tests/fixtures/rapp1-doc-scope.json`. A new file there
+   changes both receipts: RAPP's receipt writer (`tools/rapp1_receipts.py`,
+   pull request #131) refreshes the counts, and a new document's disposition
+   in the documentation scope is still set by hand, as this branch does.
 7. **A keyless rappid stays keyless.** RAPP/1 §6.2 allows a re-anchor in
    exactly three cases: a 128→256-bit provisional upgrade, §10 key rotation or
    compromise, and a pre-rev-3 keyed tail. None makes a keyless identity keyed,
@@ -607,21 +610,19 @@ branches and change nothing live (step 3 by the estate kit, on `kody-w/rapp-esta
    all 317 pointers.
 4. **Cards** (network lead; wave 2 after D1 and D4). The wave-1
    `rapp1/network-header` pull requests merged on 2026-09-26 (RAPP's own, #120,
-   as `1feed67`); only `kody-w/rapp-installer` #48 is still open. Cards for
-   11 of the 15 wave-1 stations followed the same day, each its own pull
-   request under the card schema (`DISTRIBUTED-HIVE.md` section 8): 8 made
-   with the card generator's `card` command (section 18), for `RAR`,
+   as `1feed67`); only `kody-w/rapp-installer` #48 is still open. By 13:00Z
+   that day, cards for 12 of the 15 wave-1 stations had merged, each its own
+   pull request under the card schema (`DISTRIBUTED-HIVE.md` section 8): 8
+   made with the card generator's `card` command (section 18), for `RAR`,
    `rapp-1`, `rapp-model-hive`, `hive-hub-mcp`, `hive-hub-join`,
-   `rapp-hive-hub-join`, `rapp-drift-lint` and `lisppy`, and 3 made by hand
+   `rapp-hive-hub-join`, `rapp-drift-lint` and `lisppy`; and 4 made by hand
    because those repositories pin their tracked path sets, for `rapp-work`,
-   `hive-hub` and `rapp-hive-hub`. RAPP's own card is pull request #132,
-   stacked on #131, a writer for its two receipts; `rapp-installer`'s waits
-   with #48, and `rapp-workspace` (whose header is
-   held) and `rapp-hive-public` have none yet. Then wave 2, one pull request
-   per repository. Held repositories get hand-made pull requests. RAPP is one of
-   them: its card changes RAPP's path set and adds a tracked document, so its
-   pull request also refreshes both receipts and gives `.rapp/member.md` a
-   disposition in the documentation scope.
+   `hive-hub`, `rapp-hive-hub` and RAPP itself (#132, `4afb635`, after #131
+   added RAPP's receipt writer, `5f02919`; it refreshed both receipts and gave
+   `.rapp/member.md` a disposition in the documentation scope).
+   `rapp-installer`'s card waits with #48, and `rapp-workspace` (whose header
+   is held) and `rapp-hive-public` have none yet. Then wave 2, one pull
+   request per repository; held repositories get hand-made pull requests.
 5. **Pointers and publish** (network lead). The 317 pointers in the
    contract's version 2 are published (from `b684d17`, 4 with `lts`). With the
    estate kit's LTS pins,
