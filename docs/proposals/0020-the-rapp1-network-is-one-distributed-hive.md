@@ -16,9 +16,11 @@ An AI assistant drafted this proposal for the distributed-Hive workstream.
 decisions (D1 to D4 below), change any of them, or refuse it. Nothing here
 governs until he merges it by hand (Article XXVIII.4, Article XXX.2).
 
-The draft lives on the branch `experimental/proposal-0020-distributed-hive`.
-No pull request is open for it; the AI opens none and merges nothing. Besides
-this file, the branch refreshes only the two receipts that count tracked files
+The draft lives on the branch `experimental/proposal-0020-distributed-hive`,
+and the AI assistant opened a pull request from it. The AI merges nothing:
+merging that pull request is the owner's acceptance, made by him or on his
+authorization (Articles XXVIII.4 and XXX.2). Besides this file, the pull
+request refreshes only the two receipts that count tracked files
 (`RAPP1_ADAPTATION_INVENTORY.json` and `tests/fixtures/rapp1-doc-scope.json`).
 It does not edit `CONSTITUTION.md`. The amendment text near the end is for a
 later pull request, after acceptance (Article XXVIII.6).
@@ -114,7 +116,8 @@ and `rapp-work`) and 313 on the newest channel. They were published before this
 proposal's acceptance, as Hive files under the Hive's own rules. No
 `estate.json` pins that copy, so no walk from the seed reaches them; a walk
 started at the root does, and the network tooling's resolver reads all 317 and
-verifies the 4 LTS stations' files.
+verifies the 4 LTS stations' files. At `HEAD` it also reads the first 8 station
+cards, merged on 2026-09-26 (Migration step 4).
 
 ### What falls short
 
@@ -170,16 +173,16 @@ verifies the 4 LTS stations' files.
 
 The convention and the Hive agent side are already drafted, on
 `kody-w/rapp-model-hive`, branch `experimental/hive-md-distributed`, commit
-`19bbb85`:
-[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/19bbb85e95d8e220484e6a2bb1560771d32a0ed9/DISTRIBUTED-HIVE.md),
+`fb26867`:
+[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/fb268678bccf466188df3a3b71ff1aea7532aa2a/DISTRIBUTED-HIVE.md),
 the single source of truth for everything below, and
-[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/19bbb85e95d8e220484e6a2bb1560771d32a0ed9/HIVE-MD.md#remote-member-spaces),
+[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/fb268678bccf466188df3a3b71ff1aea7532aa2a/HIVE-MD.md#remote-member-spaces),
 what the Hive agent does with it.
 
 ### RAPP/1 is drafting the same idea from the other side
 
 The rev-17 draft of RAPP/1 (experimental, not in force: `kody-w/rapp-1`,
-branch `experimental/rapp1-core-rev17`, commit `619eb2e`) adds three
+branch `experimental/rapp1-core-rev17`, commit `65a35c1`) adds three
 owner-signed registry entries. A `release-pin` names a release manifest that
 pins every component file of one release by SHA-256 and length at an immutable
 commit, and binds each organism's door of record (§13.5); a component may have
@@ -332,8 +335,11 @@ reports a pointer or a Hive root that disagrees with it as drift
 (`DISTRIBUTED-HIVE.md` section 11.4). The network tooling's resolver already
 does this as a rehearsal of §13.5 steps 2 and 3. Step 1, verifying the signed
 registry, stays with RAPP/1's reference implementation, so such a result is
-still unverified. Nothing in this proposal depends on rev-17: without it, the
-pointers carry the LTS commits.
+still unverified. On 2026-09-26, against the estate kit's prepared and unsigned
+LTS candidate (release `rapp-1-lts-2026.09`), it checked all 124 files the
+candidate pins and reported 251 of the 317 pointers as drift, since the Hive's
+pointers do not carry those pins yet. Nothing in this proposal depends on
+rev-17: without it, the pointers carry the LTS commits.
 
 ### 6. One optional array
 
@@ -545,7 +551,8 @@ Each step is its own pull request, or one per repository where it says so, and
 names the workstream that owns it. Steps 1 to 3 are drafted on experimental
 branches and change nothing live (step 3 by the estate kit, on `kody-w/rapp-estate`
 `experimental/rapp1-distributed-hive` and RAPP
-`experimental/rapp1-network-seed-acceptance`). Step 5 has begun (Context).
+`experimental/rapp1-network-seed-acceptance`). Steps 4 and 5 have begun
+(Context).
 
 0. **Accept** (the owner). Merge this file with its receipts, refreshed on the
    `main` of that day, because other open pull requests change the same counts.
@@ -573,22 +580,32 @@ branches and change nothing live (step 3 by the estate kit, on `kody-w/rapp-esta
    seed's `estate_url` at `main`: `cave/tests/test_catalog_containment.py`
    (line 126) expects it, and the beacon's `estate_url` wins anyway. That pull
    request also refreshes `tests/fixtures/rapp1-doc-scope.json` and runs the
-   `cave-super-rar` workflow, which watches the seed's path.
-4. **Cards** (network lead, after D1 and D4). The wave-1
+   `cave-super-rar` workflow, which watches the seed's path. The drafts read
+   end to end: a walk started at the draft beacon (`26a501c`) reads the
+   `estate.json` it pins and the Hive root that `estate.json` pins, anchored by
+   its `published_sha256`. They still pin `a8f4cd8`, which lists no pointer
+   (step 5).
+4. **Cards** (network lead; wave 2 after D1 and D4). The wave-1
    `rapp1/network-header` pull requests merged on 2026-09-26 (RAPP's own, #120,
-   as `1feed67`); only `kody-w/rapp-installer` #48 is still open. So each
-   wave-1 card is a new pull request (for `rapp-installer`, #48 may carry it),
-   made with the card generator's `card` command and schema
-   (`DISTRIBUTED-HIVE.md` sections 8 and 18); then wave 2, one pull request per
+   as `1feed67`); only `kody-w/rapp-installer` #48 is still open. The first 8
+   wave-1 cards followed the same day, each its own pull request made with the
+   card generator's `card` command and schema (`DISTRIBUTED-HIVE.md` sections
+   8 and 18): `RAR`, `rapp-1`, `rapp-model-hive`, `hive-hub-mcp`,
+   `hive-hub-join`, `rapp-hive-hub-join`, `rapp-drift-lint` and `lisppy`. The
+   rest of wave 1 waits: `rapp-installer`'s card with #48, and `RAPP`,
+   `rapp-work`, `hive-hub` and `rapp-hive-hub`, which pin their tracked path
+   sets, for hand-made pull requests. Then wave 2, one pull request per
    repository. Held repositories get hand-made pull requests. RAPP is one of
    them: its card changes RAPP's path set and adds a tracked document, so its
    pull request also refreshes both receipts and gives `.rapp/member.md` a
    disposition in the documentation scope.
 5. **Pointers and publish** (network lead). The first 317 pointers are
-   published (from `b684d17`, 4 with `lts`). With the estate kit's LTS pins, add
-   `lts` to the rest by signed commits, approve the manifest, and publish the
-   public copy. Then the estate kit pins `hives[]`, and the beacon and seed pins
-   above it, to that copy, and not to `a8f4cd8`, which lists no pointer.
+   published (from `b684d17`, 4 with `lts`). With the estate kit's LTS pins,
+   move each pinned station to `rapp1-lts` in the portfolio and add its `lts`
+   by signed commits (the generator refuses a pin whose portfolio channel says
+   `newest`), approve the manifest, and publish the public copy. Then the
+   estate kit pins `hives[]`, and the beacon and seed pins above it, to that
+   copy, and not to `a8f4cd8`, which lists no pointer.
 6. **Optional `sniff_network.py` stage** (network tooling, a RAPP pull request,
    after acceptance). When an estate has `hives[]`, record each entry, and
    optionally fetch its `PUBLISHED.md` and check the hash. Keep everything else:
@@ -730,13 +747,13 @@ same.
   `tests/fixtures/rapp1-doc-scope.json`;
   `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §4.5.
 - The convention, on `kody-w/rapp-model-hive`, branch
-  `experimental/hive-md-distributed`, at `19bbb85`:
-  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/19bbb85e95d8e220484e6a2bb1560771d32a0ed9/DISTRIBUTED-HIVE.md)
-  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/19bbb85e95d8e220484e6a2bb1560771d32a0ed9/HIVE-MD.md#remote-member-spaces).
+  `experimental/hive-md-distributed`, at `fb26867`:
+  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/fb268678bccf466188df3a3b71ff1aea7532aa2a/DISTRIBUTED-HIVE.md)
+  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/fb268678bccf466188df3a3b71ff1aea7532aa2a/HIVE-MD.md#remote-member-spaces).
 - The rev-17 draft of RAPP/1 (experimental, not in force):
-  [`kody-w/rapp-1` `SPEC.md` at `619eb2e`](https://github.com/kody-w/rapp-1/blob/619eb2e5ee4ed47f66e732480db63cab71f3ffbf/SPEC.md),
+  [`kody-w/rapp-1` `SPEC.md` at `65a35c1`](https://github.com/kody-w/rapp-1/blob/65a35c145a9a74c047f32661cde307158a913f77/SPEC.md),
   §13.5, §13.6 and §13.7, and its design record
-  [`REV-17-DESIGN.md`](https://github.com/kody-w/rapp-1/blob/619eb2e5ee4ed47f66e732480db63cab71f3ffbf/REV-17-DESIGN.md),
+  [`REV-17-DESIGN.md`](https://github.com/kody-w/rapp-1/blob/65a35c145a9a74c047f32661cde307158a913f77/REV-17-DESIGN.md),
   on the branch `experimental/rapp1-core-rev17`.
 - The RAPP Hive's public copy at `a8f4cd8`:
   [`PUBLISHED.md`](https://github.com/kody-w/rapp-hive-public/blob/a8f4cd86f6248d07f98ce2c38d1a3c0f97307a31/PUBLISHED.md),
