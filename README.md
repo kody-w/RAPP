@@ -27,9 +27,11 @@ installer or hosted product. The historical port-7071 application remains
 only as immutable, directly invoked test evidence; its target-owned launchers
 return HTTP 410 semantics without starting a process. The RAPP/1 façade is a
 local, pre-acceptance boundary at `127.0.0.1:7073` and defaults to
-`inference-refused` until a safe adapter is explicitly injected. No public
-one-line install, browser brainstem, Tier 2 service, downloadable egg catalog,
-or Shortcut is currently offered.
+`inference-refused` until a safe adapter is explicitly injected. This
+repository ships no installer itself: no public one-line install, browser
+brainstem, Tier 2 service, downloadable egg catalog, or Shortcut is offered
+from it. For installation, start from the installer repo's
+[Start here](https://github.com/kody-w/rapp-installer#start-here) anchor.
 
 > **Historical strategy:** [The Brainstem Mandate](./BRAINSTEM_MANDATE.md)
 > preserves an earlier product direction. It is not current onboarding.
@@ -50,6 +52,17 @@ or Shortcut is currently offered.
 > **First-time visitor?** Read the [status](./RAPP1_STATUS.md) and
 > [authority pin](./RAPP1_AUTHORITY.json). Other hubs, trees, and vault paths
 > are historical context, not current operational navigation.
+
+## Brainstem app (newest channel, not part of RAPP/1)
+
+The Brainstem app is the one surface you talk to, with your Hives and
+references beside it: a minimal desktop app built from
+[`brainstem-app/`](./brainstem-app/) on a pinned Code - OSS fork. It is a
+frontier canary, not part of RAPP/1, and it joins RAPP/1 only when the owner
+graduates it. This repository ships no installer itself; start from the
+installer repo's [Start here](https://github.com/kody-w/rapp-installer#start-here)
+anchor. Build the app from source with `brainstem-app/scripts/build.sh`
+(`build.ps1` on Windows).
 
 ## What an "agent" is here
 
@@ -125,16 +138,20 @@ a current federation or acceptance source.
 
 ## Distribution status
 
-The former shell, PowerShell, project-local, version-pin, and LLM-assisted
-installation instructions are retired. Files retained under `installer/` are
-contained historical artifacts unless a future authenticated release
-explicitly re-enables them. Do not pipe repository content into a shell.
+This repository's own former installation instructions (shell, PowerShell,
+project-local, version-pin, and LLM-assisted) are retired. Files retained under
+`installer/` are contained historical artifacts unless a future authenticated
+release explicitly re-enables them. Do not pipe repository content into a
+shell. The grail Brainstem installs from its own repository,
+`kody-w/rapp-installer`; start from the installer repo's
+[Start here](https://github.com/kody-w/rapp-installer#start-here) anchor.
 
 ## Repo layout
 
 | Path | What |
 |---|---|
 | `rapp_brainstem/` | The engine — Flask server, agent loader, auth chain |
+| `brainstem-app/` | The Brainstem app (newest channel, not part of RAPP/1): a minimal desktop app on a pinned Code - OSS fork, built as an overlay |
 | `rapp_brainstem/agents/` | Live agents: only the top-level `*_agent.py` files load (`context_memory_agent.py`, `hacker_news_agent.py`, `manage_memory_agent.py`, plus the `basic_agent.py` base class). Every subfolder, such as `experimental/`, is organization and is parked; move a file to the top to load it |
 | `rapp_swarm/` | Retired Tier 2 tombstone and historical evidence |
 | `worker/` | Retired Cloudflare auth/proxy source |
@@ -192,9 +209,11 @@ Start with [`pages/vault/Foundations/The Platform in 90 Seconds.md`](./pages/vau
 
 ## Versioning & rollback
 
-Historical releases used `brainstem-v<X.Y.Z>` tags. No current installer or
-rollback command is advertised. RAPP/1 authority is pinned by exact commit and
-SHA-256 in `RAPP1_AUTHORITY.json`, not by a moving branch or `latest` tag.
+Historical releases used `brainstem-v<X.Y.Z>` tags. This repository advertises
+no installer or rollback command of its own; start from the installer repo's
+[Start here](https://github.com/kody-w/rapp-installer#start-here) anchor.
+RAPP/1 authority is pinned by exact commit and SHA-256 in
+`RAPP1_AUTHORITY.json`, not by a moving branch or `latest` tag.
 
 ## History
 

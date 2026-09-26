@@ -78,6 +78,7 @@ are not accepted protocol objects.
 | HISTORY-001 | Source/archive/test corpus | Preserved evidence plus exact inert copies of removed runtimes | Keep every source receipt and port useful behavior into safe replay tests | None |
 | TEST-001 | Canonical gate | Structural, preservation, mutation, and safety coverage | Maintain source-retention and pre-effect authorization tests as adapters evolve | Owner fixtures remain external |
 | MIRROR-001 | External mirrors | Historical observations | Require immutable provenance and byte identity for any republication | Optional owner publication |
+| APP-001 | Brainstem app (newest channel, not part of RAPP/1) | Frontier canary on a pinned Code - OSS fork; adds no wire forms | Stay in the newest channel until the owner graduates it; keep its tests and channel labels synchronized | Owner graduation decision |
 
 The exact paths, gap matrix, and acceptance tests are machine-readable in the
 inventory.
