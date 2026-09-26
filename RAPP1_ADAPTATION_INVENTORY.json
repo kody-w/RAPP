@@ -16,8 +16,8 @@
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-26",
-    "tracked_path_count": 796,
-    "tracked_path_set_sha256": "4c1c1e947d28ec4c83f8e5fab4ed3f09a444b9cb6c7681514ab7944b267adfc7",
+    "tracked_path_count": 797,
+    "tracked_path_set_sha256": "b85fe50748908865675b40dc4e264398c53471cbda9b598919e298750e0cd21a",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -61,8 +61,8 @@
         "type": "git-prefix",
         "prefix": ""
       },
-      "expected_count": 796,
-      "path_set_sha256": "4c1c1e947d28ec4c83f8e5fab4ed3f09a444b9cb6c7681514ab7944b267adfc7"
+      "expected_count": 797,
+      "path_set_sha256": "b85fe50748908865675b40dc4e264398c53471cbda9b598919e298750e0cd21a"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
@@ -394,6 +394,7 @@
           "type": "explicit",
           "paths": [
             ".well-known/rapp-network-seed.json",
+            ".rapp/member.md",
             "tools/sniff_network.py",
             "tools/lan_advertise.py",
             "tools/ecosystem_audit.py",
@@ -1318,7 +1319,8 @@
         "tools/ecosystem_contract.py",
         "tools/holo_card_generator.py",
         "tests/mirror-drift.sh",
-        ".well-known/rapp-network-seed.json"
+        ".well-known/rapp-network-seed.json",
+        ".rapp/member.md"
       ],
       "gap_matrix": {
         "canonicalization_addressing": "Observed payloads and generated profiles have explicit source labels.",
