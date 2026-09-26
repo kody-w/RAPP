@@ -10,8 +10,8 @@
     "integrated_tracked_bytes": 7938989,
     "mutable_generated_paths": [],
     "current_inventory": {
-      "tracked_paths": 796,
-      "stable_tracked_bytes": 15281204
+      "tracked_paths": 797,
+      "stable_tracked_bytes": 15286227
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -527,7 +527,7 @@
       ".md",
       ".html"
     ],
-    "expected_tracked_document_count": 301,
+    "expected_tracked_document_count": 302,
     "excluded_prefixes": {
       "cave/rapplications/rapp-installer/": "immutable prepared-clone and mirror subtree",
       "pages/vault/Blog Drafts/": "explicitly unpublished draft archive",
@@ -541,6 +541,7 @@
       "tools/": "developer-tool documentation and templates outside the published protocol scope"
     },
     "excluded_paths": {
+      ".rapp/member.md": "RAPP/1 network member card generated from the RAPP Hive portfolio and validated by the network's resolver, not protocol guidance",
       "404.html": "static not-found shell",
       "COMMERCIAL.md": "commercial terms, not protocol guidance",
       "docs/rapp-work.md": "current subordinate business-profile documentation governed by the RAPP Work profile",
