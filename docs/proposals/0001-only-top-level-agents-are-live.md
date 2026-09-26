@@ -25,8 +25,8 @@ confirmed that the grail is right:
 > "then its just drag and drop for agents hotloaded in and out"
 
 That approval is not a merge. An AI agent drafted this proposal on the
-branch `experimental/constitution-live-agents`, and it was reviewed in pull
-request #119.
+branch `experimental/constitution-live-agents`, and the fixes from its
+independent review rounds are commits in pull request #119.
 
 **Order.** Article XXVIII.6 has a proposal precede the amendment PR, so pull
 request #119 holds only this proposal and its receipts. The amendment it
