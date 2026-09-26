@@ -9,10 +9,15 @@ collects edges from:
 Writes pages/about/ecosystem.json (machine-readable inventory) and refreshes
 the data block embedded in pages/about/ecosystem.html.
 
-Run:  python3 tools/ecosystem_graph.py
+Run:  python3 tools/ecosystem_graph.py  (refresh the live GitHub inventory)
+
+Offline ancestor-only maintenance, preserving each served file's dated snapshot:
+  python3 tools/ecosystem_graph.py --refresh-ancestor
+  python3 tools/ecosystem_graph.py --check
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import subprocess
@@ -24,6 +29,8 @@ ROOT = Path(__file__).resolve().parent.parent
 PAGES = ROOT / "pages" / "about"
 DATA_FILE = PAGES / "ecosystem.json"
 HTML_FILE = PAGES / "ecosystem.html"
+ANCESTOR_REPO = "Rapid-Agent-Prototype-Platform-RAPP"
+LEGACY_ANCESTOR_REPO = "Rapid-Agent-Prototyping-Platform-RAPP-"
 
 # ---------------------------------------------------------------- categorize
 
@@ -98,7 +105,7 @@ CATEGORIES = [
         }
     )),
     ("ancestor", "Ancestor / pre-RAPP", "#bcd4a4", lambda n, d: n in {
-        "RAP", "Rapid-Agent-Prototyping-Platform-RAPP-",
+        "RAP", ANCESTOR_REPO,
         "agentbookfactory", "openrapp", "RAPPagent", "RAPPtools",
         "RAPP_Hub", "rapphub", "rappbook-admin", "RappterNest",
         "rappverse", "RAPP_Desktop", "RAPPsquared",
@@ -350,7 +357,77 @@ def write_outputs(data: dict) -> None:
                       file=sys.stderr)
 
 
-def main() -> None:
+def refresh_ancestor_outputs(*, check: bool = False) -> int:
+    """Correct only the ancestor reference; do not merge dated inventories."""
+    html = HTML_FILE.read_text(encoding="utf-8")
+    blocks = list(re.finditer(
+        r'<script id="ecosystem-data" type="application/json">(.*?)</script>',
+        html, re.DOTALL,
+    ))
+    if len(blocks) != 1:
+        raise ValueError(f"{HTML_FILE.name}: expected one ecosystem-data block")
+    block = blocks[0]
+    sidecar = DATA_FILE.read_text(encoding="utf-8")
+    snapshots = (
+        (DATA_FILE, sidecar, json.loads(sidecar)),
+        (HTML_FILE, html, json.loads(block.group(1))),
+    )
+    outputs = {}
+    for path, current, graph in snapshots:
+        ancestors = [
+            node for node in graph["nodes"]
+            if node["id"] in {ANCESTOR_REPO, LEGACY_ANCESTOR_REPO}
+        ]
+        if len(ancestors) != 1:
+            raise ValueError(f"{path.name}: expected one RAPP ancestor node")
+        ancestor = ancestors[0]
+        previous_id = ancestor["id"]
+        ancestor["id"] = ANCESTOR_REPO
+        ancestor["url"] = f"https://github.com/kody-w/{ANCESTOR_REPO}"
+        for edge in graph["edges"]:
+            for endpoint in ("source", "target"):
+                if edge[endpoint] == previous_id:
+                    edge[endpoint] = ANCESTOR_REPO
+        rendered = json.dumps(graph, indent=2) + "\n"
+        if path == HTML_FILE:
+            rendered = html[:block.start(1)] + "\n" + rendered + html[block.end(1):]
+        if rendered != current:
+            outputs[path] = rendered
+
+    if check:
+        for path in outputs:
+            print(f"{path.relative_to(ROOT)}: stale ancestor output", file=sys.stderr)
+        if outputs:
+            return 1
+        print("RAPP ecosystem ancestor is current")
+        return 0
+
+    for path, rendered in outputs.items():
+        path.write_text(rendered, encoding="utf-8")
+        print(f"refreshed ancestor in {path.relative_to(ROOT)}", file=sys.stderr)
+    print("RAPP ecosystem ancestor refreshed")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--refresh-ancestor", action="store_true",
+        help="correct the ancestor in both checked-in snapshots without network access",
+    )
+    mode.add_argument(
+        "--check", action="store_true",
+        help="check ancestor-only regeneration without writing or querying GitHub",
+    )
+    args = parser.parse_args(argv)
+    if args.refresh_ancestor or args.check:
+        try:
+            return refresh_ancestor_outputs(check=args.check)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            print(f"Cannot refresh ecosystem ancestor: {exc}", file=sys.stderr)
+            return 1
+
     data = build_graph()
     write_outputs(data)
     s = data["stats"]
@@ -359,7 +436,8 @@ def main() -> None:
     print("By category:")
     for k, v in sorted(s["by_category"].items(), key=lambda kv: -kv[1]):
         print(f"  {k:18s} {v}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
