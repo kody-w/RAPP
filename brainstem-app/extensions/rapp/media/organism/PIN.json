@@ -1,0 +1,18 @@
+{
+  "schema": "brainstem-app-pin/1",
+  "repository": "https://github.com/kody-w/rapp-work",
+  "commit": "ef740309c57e1062b40455a93a14ed8d0ca6248c",
+  "files": {
+    "one-page.html": {
+      "source": "organism/views/one-page.html",
+      "sha256": "df3eca8e5230d292564f8bd7b744d80bf1ecd920e6ca82007d1f850bc6493b8d",
+      "bytes": 15554
+    },
+    "organism.svg": {
+      "source": "organism/views/organism.svg",
+      "sha256": "58caa08eaa6d2f4f32507d7f7476aa31fd7bb20de8c95da9e42b3245c3c665bf",
+      "bytes": 16140
+    }
+  },
+  "use": "Verbatim copies shown read-only in the Organism view. To refresh, copy both files from a newer commit and update this pin; the tests check the hashes."
+}

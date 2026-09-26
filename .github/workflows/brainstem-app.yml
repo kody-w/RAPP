@@ -1,0 +1,69 @@
+name: Brainstem app
+# Light checks of the Brainstem app, which is newest-channel work and not part of RAPP/1: its overlay and
+# build-script tests and the RAPP extension's unit tests on macOS, Linux and Windows, without a full Code - OSS
+# build. No third-party action runs here: the checkout is plain git, and Node, Python and PowerShell are the
+# runner's own. The extension tests fetch only the pinned fork's typings and JSON reader (checked by digest) and
+# the fork's TypeScript from a lockfile with integrity hashes.
+on:
+  push:
+    paths:
+      - 'brainstem-app/**'
+      - '.github/workflows/brainstem-app.yml'
+  pull_request:
+    paths:
+      - 'brainstem-app/**'
+      - '.github/workflows/brainstem-app.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out the commit
+        env:
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          git init --quiet .
+          git config core.autocrlf false
+          git config core.eol lf
+          git fetch --quiet --depth 1 --no-tags "https://github.com/$REPOSITORY" "$SHA"
+          git -c advice.detachedHead=false checkout --quiet FETCH_HEAD
+          git log -1 --format='%H %s'
+
+      - name: Tools
+        run: |
+          node --version
+          npm --version
+          git --version
+          (python3 --version || python --version) 2>&1
+
+      - name: Overlay and build-script tests
+        run: node --test brainstem-app/tests/overlay.test.mjs brainstem-app/tests/build-dry-run.test.mjs
+
+      - name: Extension unit tests
+        run: node brainstem-app/scripts/test-extension.mjs
+
+      - name: Build scripts parse
+        shell: pwsh
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'brainstem-app/scripts/build.ps1'), [ref]$null, [ref]$errors)
+          if ($errors) { $errors | ForEach-Object { Write-Error $_.ToString() }; exit 1 }
+          Write-Host 'build.ps1 parses'
+          if (-not $IsWindows) {
+            bash -n brainstem-app/scripts/build.sh
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            Write-Host 'build.sh parses'
+          }
