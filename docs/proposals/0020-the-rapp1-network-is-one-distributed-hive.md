@@ -174,10 +174,10 @@ step 4).
 
 The convention and the Hive agent side are already drafted, on
 `kody-w/rapp-model-hive`, branch `experimental/hive-md-distributed`, commit
-`fb26867`:
-[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/fb268678bccf466188df3a3b71ff1aea7532aa2a/DISTRIBUTED-HIVE.md),
+`f05aef5`:
+[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/f05aef5906b4c0831c6090074f9b826111c90894/DISTRIBUTED-HIVE.md),
 the single source of truth for everything below, and
-[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/fb268678bccf466188df3a3b71ff1aea7532aa2a/HIVE-MD.md#remote-member-spaces),
+[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/f05aef5906b4c0831c6090074f9b826111c90894/HIVE-MD.md#remote-member-spaces),
 what the Hive agent does with it.
 
 ### RAPP/1 is drafting the same idea from the other side
@@ -760,9 +760,9 @@ same.
   `tests/fixtures/rapp1-doc-scope.json`;
   `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §4.5.
 - The convention, on `kody-w/rapp-model-hive`, branch
-  `experimental/hive-md-distributed`, at `fb26867`:
-  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/fb268678bccf466188df3a3b71ff1aea7532aa2a/DISTRIBUTED-HIVE.md)
-  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/fb268678bccf466188df3a3b71ff1aea7532aa2a/HIVE-MD.md#remote-member-spaces).
+  `experimental/hive-md-distributed`, at `f05aef5`:
+  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/f05aef5906b4c0831c6090074f9b826111c90894/DISTRIBUTED-HIVE.md)
+  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/f05aef5906b4c0831c6090074f9b826111c90894/HIVE-MD.md#remote-member-spaces).
 - The rev-17 draft of RAPP/1 (experimental, not in force):
   [`kody-w/rapp-1` `SPEC.md` at `65a35c1`](https://github.com/kody-w/rapp-1/blob/65a35c145a9a74c047f32661cde307158a913f77/SPEC.md),
   §13.5, §13.6 and §13.7, and its design record
