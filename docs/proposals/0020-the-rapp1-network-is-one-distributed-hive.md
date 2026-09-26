@@ -174,10 +174,10 @@ step 4).
 
 The convention and the Hive agent side are already drafted, on
 `kody-w/rapp-model-hive`, branch `experimental/hive-md-distributed`, commit
-`e322226`:
-[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/e3222268bf751dadc61bbf25c698bc592af346cc/DISTRIBUTED-HIVE.md),
+`a5467d7`:
+[`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/a5467d76c7cf578a674604fe8fc136a76cf5d14e/DISTRIBUTED-HIVE.md),
 the single source of truth for everything below, and
-[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/e3222268bf751dadc61bbf25c698bc592af346cc/HIVE-MD.md#remote-member-spaces),
+[HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/a5467d76c7cf578a674604fe8fc136a76cf5d14e/HIVE-MD.md#remote-member-spaces),
 what the Hive agent does with it.
 
 ### RAPP/1 is drafting the same idea from the other side
@@ -467,8 +467,9 @@ that must sign as itself.**
   rappid is a door of the estate kit's draft `estate.json` (`bb2b9ce`), among
   them RAPP (keyless: its tail is the tagged upgrade of its legacy UUID, still
   waiting for the owner-signed §13.3 record), `rapp-work` (keyed,
-  `owner-anchor.json`) and `rapp-map`; and so does the portfolio's body stream
-  `rapp1-network` (keyless, 2026-09-25). That stream never signs as
+  `owner-anchor.json`) and `rapp-map`. The portfolio's body stream
+  `rapp1-network` (keyless, 2026-09-25) is minted too, though it is not a door
+  of that `estate.json`. That stream never signs as
   itself, but its frames can still carry a registered key's signature (§10),
   and the rev-17 draft adds the entry that says which key speaks for it. Cards
   mirror existing rappids; no tool re-mints them.
@@ -498,7 +499,8 @@ a verified entry of the estate's signed registry covers it. Keep
   (lines 206–225) holds at their observation-only values, so it is its own
   RAPP pull request that changes that test on purpose. The estate kit drafts
   it, owner-gated, on RAPP's `experimental/rapp1-network-seed-acceptance`
-  (`ec59b24`).
+  (`ec59b24`), stacked on step 3's pin (`ceb7115`) on the same branch, so a
+  pull request from that branch's head would carry both.
 
 **Alternative:** accept once the beacon is real and pinned, before the estate's
 signed registry covers it. That is sooner, but acceptance would rest on a GitHub account
@@ -709,8 +711,9 @@ same.
 >   exactly `{hive, name, root, commit, published_sha256}`: `root` is the raw
 >   base of the public copy, `commit` its full 40-hex commit, and
 >   `published_sha256` the hash of its `PUBLISHED.md` at that commit. Door
->   entries keep XLVI.3's shape. The chain needs no new seed or beacon field,
->   and readers ignore an operator entry's other members. `hives[]` is
+>   entries keep XLVI.3's shape. The chain needs no new seed or beacon field:
+>   readers read an operator entry's handle, `beacon_url` and `estate_url`,
+>   and ignore its other members. `hives[]` is
 >   the one part of `estate.json` that XLVI.6's rebuild does not recompute.
 > - **LTS** (`rapp1-lts`) reads each curated station at the full commit its
 >   pointer pins and checks every file against the pointer's hash; a station
@@ -773,9 +776,9 @@ same.
   `tests/fixtures/rapp1-doc-scope.json`;
   `pages/docs/PUBLIC_PRIVATE_BOUNDARY.md` §4.5.
 - The convention, on `kody-w/rapp-model-hive`, branch
-  `experimental/hive-md-distributed`, at `e322226`:
-  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/e3222268bf751dadc61bbf25c698bc592af346cc/DISTRIBUTED-HIVE.md)
-  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/e3222268bf751dadc61bbf25c698bc592af346cc/HIVE-MD.md#remote-member-spaces).
+  `experimental/hive-md-distributed`, at `a5467d7`:
+  [`DISTRIBUTED-HIVE.md`](https://github.com/kody-w/rapp-model-hive/blob/a5467d76c7cf578a674604fe8fc136a76cf5d14e/DISTRIBUTED-HIVE.md)
+  and [HIVE-MD, "Remote member spaces"](https://github.com/kody-w/rapp-model-hive/blob/a5467d76c7cf578a674604fe8fc136a76cf5d14e/HIVE-MD.md#remote-member-spaces).
 - The rev-17 draft of RAPP/1 (experimental, not in force):
   [`kody-w/rapp-1` `SPEC.md` at `65a35c1`](https://github.com/kody-w/rapp-1/blob/65a35c145a9a74c047f32661cde307158a913f77/SPEC.md),
   §13.5, §13.6 and §13.7, and its design record
