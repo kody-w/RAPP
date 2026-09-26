@@ -567,6 +567,13 @@ bootstrap operations, catalogs, and historical `rapp-mcp-spec/1.0` /
 `rapp-static-mcp/1.0` profiles remain adapter concerns and may not expand that
 wire contract.
 
+> **Note (2026-09-26):** rapp-mcp's current profile is `rapp-mcp-spec/2.0`
+> ([kody-w/rapp-mcp#6](https://github.com/kody-w/rapp-mcp/pull/6)). It changes
+> only which agent files `rapp_mcp.py` serves, the top-level `*_agent.py` files
+> of its agents folder (proposal 0001), and keeps the 1.0 text in rapp-mcp's
+> `SPEC-1.0.md`. Like 1.0, it is an adapter concern and does not expand the wire
+> contract above.
+
 ### PeerJS public broker
 Historical WebRTC dependency for a retired browser tether; no pairing service
 is currently offered.
