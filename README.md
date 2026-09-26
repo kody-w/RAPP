@@ -54,26 +54,15 @@ from it. The grail Brainstem installs from `kody-w/rapp-installer` at
 > [authority pin](./RAPP1_AUTHORITY.json). Other hubs, trees, and vault paths
 > are historical context, not current operational navigation.
 
-## Get your Brainstem
+## Brainstem app (newest channel, not part of RAPP/1)
 
-The grail Brainstem installs from `kody-w/rapp-installer` at `brainstem-v0.6.9`,
-the kernel release [`KERNEL_PIN.json`](./KERNEL_PIN.json) pins; this repository
-ships no installer itself. On macOS or Linux:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/brainstem-v0.6.9/install.sh | bash -s -- --version brainstem-v0.6.9
-```
-
-There is no pinned Windows one-liner yet: the installer's Windows script at that
-tag takes no version pin and follows the installer's `main` branch, the newest
-channel, instead of installing exactly `brainstem-v0.6.9`, so it is not offered
-here. Review a script before you pipe it into a shell.
-
-**Brainstem app (newest channel, not part of RAPP/1).** The one surface you
-talk to, with your Hives and references beside it: a minimal desktop app built
-from [`brainstem-app/`](./brainstem-app/) on a pinned Code - OSS fork. It is a
-frontier canary with no installer, and it joins RAPP/1 only when the owner
-graduates it. Build it from source with `brainstem-app/scripts/build.sh`
+The Brainstem app is the one surface you talk to, with your Hives and
+references beside it: a minimal desktop app built from
+[`brainstem-app/`](./brainstem-app/) on a pinned Code - OSS fork. It is a
+frontier canary, not part of RAPP/1, and it joins RAPP/1 only when the owner
+graduates it. This repository ships no installer itself; start from the
+installer repo's [Start here](https://github.com/kody-w/rapp-installer#start-here)
+anchor. Build the app from source with `brainstem-app/scripts/build.sh`
 (`build.ps1` on Windows).
 
 ## What an "agent" is here
