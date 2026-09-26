@@ -224,6 +224,32 @@ class CaveCatalogRetentionTests(unittest.TestCase):
             "A PR or federation hint is a reviewable observation draft only"
         ))
 
+    def test_network_seed_pins_the_operator_beacon(self) -> None:
+        seed = _read_json(ROOT / ".well-known/rapp-network-seed.json")
+        policy = seed["source_policy"]
+        self.assertIs(policy["full_commit_pin_required"], True)
+        self.assertIs(policy["sha256_required"], True)
+        operator = seed["operators"][0]
+        state = operator["reference_state"]
+        self.assertEqual(state["beacon_url"], "commit-pinned-observation")
+        self.assertRegex(state["commit_pin"], r"^[0-9a-f]{40}$")
+        self.assertRegex(state["sha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual(
+            operator["beacon_url"],
+            "https://raw.githubusercontent.com/kody-w/rapp-estate/"
+            f"{state['commit_pin']}/.well-known/rapp-network.json",
+        )
+        # The moving URL recorded before the pin is kept as data exhaust.
+        self.assertEqual(
+            operator["historical_beacon_url"],
+            "https://raw.githubusercontent.com/kody-w/rapp-estate/main/"
+            ".well-known/rapp-network.json",
+        )
+        # The beacon's commit-pinned estate_url wins over this moving one.
+        self.assertEqual(state["estate_url"], "moving-branch-observation")
+        self.assertIn("not used for acceptance", state["_note"])
+        self.assertIn("reachable from kody-w/rapp-estate main", state["_note"])
+
 
 class RarStewardSafetyTests(unittest.TestCase):
     @classmethod

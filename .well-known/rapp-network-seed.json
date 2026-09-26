@@ -22,7 +22,8 @@
     {
       "github": "kody-w",
       "estate_url": "https://raw.githubusercontent.com/kody-w/rapp-estate/main/estate.json",
-      "beacon_url": "https://raw.githubusercontent.com/kody-w/rapp-estate/main/.well-known/rapp-network.json",
+      "beacon_url": "https://raw.githubusercontent.com/kody-w/rapp-estate/674776841610f9b4b1c23dafacc4314897a22e4c/.well-known/rapp-network.json",
+      "historical_beacon_url": "https://raw.githubusercontent.com/kody-w/rapp-estate/main/.well-known/rapp-network.json",
       "grail_url": "https://kody-w.github.io/rapp-estate/",
       "role": "species-root-operator",
       "added_at": "2026-05-09T00:00:00Z",
@@ -32,11 +33,12 @@
       "trust": "not-established",
       "reference_state": {
         "estate_url": "moving-branch-observation",
-        "beacon_url": "moving-branch-observation",
+        "beacon_url": "commit-pinned-observation",
         "grail_url": "unverified-public-observation",
-        "commit_pin": null,
-        "sha256": null,
-        "usable_for_acceptance": false
+        "commit_pin": "674776841610f9b4b1c23dafacc4314897a22e4c",
+        "sha256": "9767eface056c9ded683636a1162a7bb492d625bdea62dcce715a7d99dbdca51",
+        "usable_for_acceptance": false,
+        "_note": "commit_pin and sha256 pin the beacon at beacon_url. A reader follows the beacon's own commit-pinned estate_url, which tools/sniff_network.py lets win over estate_url here; estate_url and grail_url stay moving observations and are not used for acceptance. The pinned commit must be reachable from kody-w/rapp-estate main (its draft branch experimental/rapp1-distributed-hive merged without rewriting). historical_beacon_url keeps the moving URL recorded before the pin."
       }
     }
   ],
@@ -68,5 +70,5 @@
   "provenance": {
     "operator_context_restored_from": "27aaf55dbb5ad1d940c701a7b0796ec52d603897"
   },
-  "updated_at": "2026-05-09T00:00:00Z"
+  "updated_at": "2026-09-26T07:45:00Z"
 }
