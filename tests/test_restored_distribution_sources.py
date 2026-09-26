@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -20,6 +21,7 @@ FROZEN = {
     "rapp_brainstem/agents/basic_agent.py": "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb",
     "rapp_brainstem/VERSION": "13eb74b44be6e3a85a0efa0dedf56aec05e9e50140e1c8bbc0d0fbd8097b0717",
 }
+PORT_INSTALLERS = ("install.sh", "installer/install.sh")
 
 SOURCES = {
     "install.sh": (
@@ -309,6 +311,13 @@ def _historical_bytes(relative: str) -> bytes:
         start = data.index(start_marker)
         end = data.index(end_marker, start) + len(end_marker)
         data = data[:start] + data[end:]
+    if relative in PORT_INSTALLERS:
+        ledger = json.loads((ROOT / "HISTORICAL_SOURCE_LEDGER.json").read_bytes())
+        record = next(item for item in ledger["artifacts"] if item["current_path"] == relative)
+        for replacement in reversed(record["preservation_check"].get("replacements", [])):
+            adapted = replacement["adapted"].encode("utf-8")
+            assert adapted and data.count(adapted) == 1, relative
+            data = data.replace(adapted, replacement["original"].encode("utf-8"), 1)
     return data
 
 
@@ -330,6 +339,199 @@ def test_recovered_source_matches_recorded_commit_and_blob(relative):
     historical_text = recovered.decode("utf-8")
     for marker in markers:
         assert marker in historical_text, f"{relative} lost substantive marker {marker!r}"
+
+
+def _installer_function(relative: str, name: str) -> str:
+    source = (ROOT / relative).read_text(encoding="utf-8")
+    matches = re.findall(
+        rf"^{name}\(\) \{{\n.*?^\}}$", source, flags=re.MULTILINE | re.DOTALL
+    )
+    assert len(matches) == 1, (relative, name)
+    return matches[0] + "\n"
+
+
+def _port_scan_fixture(
+    relative, tmp_path, lsof_busy=(), tcp_busy=(), claimed=(), registry_exists=True
+):
+    helper = _installer_function(relative, "find_free_port")
+    # Stub only the inline TCP probe; never source or execute the installer.
+    tcp_probe = "(exec 3<>/dev/tcp/127.0.0.1/$p)"
+    assert helper.count(tcp_probe) == 1
+    helper = helper.replace(tcp_probe, 'tcp_probe "$p"')
+    assert "/dev/tcp/" not in helper
+
+    home = tmp_path / "home"
+    home.mkdir()
+    brainstem = home / "project-brainstem"
+    source_dir = brainstem / "src/rapp_brainstem"
+    source_dir.mkdir(parents=True)
+    (source_dir / "VERSION").write_text("fixture\n", encoding="utf-8")
+    if registry_exists:
+        registry = source_dir / "utils/peer_registry.py"
+        registry.parent.mkdir()
+        registry.write_text("# Never executed: python3 is stubbed.\n", encoding="utf-8")
+    environment = {
+        "PATH": "/usr/bin:/bin",
+        "HOME": os.fspath(home),
+        "BRAINSTEM_HOME": os.fspath(brainstem),
+        "LC_ALL": "C",
+        "LOCAL_MODE": "1",
+        "PROBE_LOG": os.fspath(tmp_path / "probes"),
+        "EFFECT_LOG": os.fspath(tmp_path / "effects"),
+        "LSOF_BUSY": " ".join(map(str, lsof_busy)),
+        "TCP_BUSY": " ".join(map(str, tcp_busy)),
+        "CLAIMED_PORTS": " ".join(map(str, claimed)),
+    }
+    stubs = r"""
+lsof() {
+    printf 'lsof %s\n' "${2#:}" >> "$PROBE_LOG"
+    case " $LSOF_BUSY " in
+        *" ${2#:} "*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+tcp_probe() {
+    printf 'tcp %s\n' "$1" >> "$PROBE_LOG"
+    case " $TCP_BUSY " in
+        *" $1 "*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+python3() {
+    printf 'registry %s\n' "$2" >> "$PROBE_LOG"
+    [ "$#" -eq 2 ] &&
+        [ "$1" = "$BRAINSTEM_HOME/src/rapp_brainstem/utils/peer_registry.py" ] &&
+        [ "$2" = "claimed-ports" ] || return 99
+    printf '%s\n' "$CLAIMED_PORTS"
+}
+"""
+    return stubs + helper, environment
+
+
+def _run_port_fixture(tmp_path, script, environment):
+    fixture = tmp_path / "port-case.sh"
+    fixture.write_text("#!/bin/bash\n" + script, encoding="utf-8")
+    subprocess.run(
+        ("/bin/bash", "-n", os.fspath(fixture)),
+        env=environment, cwd=tmp_path, check=True, capture_output=True, timeout=5,
+    )
+    return subprocess.run(
+        ("/bin/bash", os.fspath(fixture)),
+        env=environment, cwd=tmp_path, text=True, capture_output=True, timeout=5,
+        check=False,
+    )
+
+
+@pytest.mark.parametrize("relative", PORT_INSTALLERS)
+@pytest.mark.parametrize(
+    ("requested", "lsof_busy", "tcp_busy", "claimed", "registry_exists", "expected"),
+    [
+        pytest.param(None, (), (), (), True, (7072, 7072), id="default"),
+        pytest.param(8100, (), (), (), True, (8100, 8100), id="custom"),
+        pytest.param(None, (7072,), (), (), True, (7073, 7073), id="first-lsof"),
+        pytest.param(None, (), (7072,), (), True, (7073, 7073), id="first-tcp"),
+        pytest.param(None, (7072, 7074), (7073,), (), True, (7075, 7075), id="multiple"),
+        pytest.param(None, range(7072, 7121), (), (), True, (7121, 7121), id="last"),
+        pytest.param(None, range(7072, 7122), (), (), True, (None, None), id="lsof-full"),
+        pytest.param(None, (), range(7072, 7122), (), True, (None, None), id="tcp-full"),
+        pytest.param(8100, range(8100, 8150), (), (), True, (None, None), id="custom-full"),
+        pytest.param(None, (), (), (7072, 7073), True, (7072, 7074), id="claimed"),
+        pytest.param(None, (), (), range(7072, 7122), True, (7072, None), id="claims-full"),
+        pytest.param(None, (), (), (7072,), False, (7072, 7072), id="no-registry"),
+    ],
+)
+def test_project_local_free_port_scan(
+    relative, requested, lsof_busy, tcp_busy, claimed, registry_exists, expected,
+    tmp_path,
+):
+    script, environment = _port_scan_fixture(
+        relative, tmp_path, lsof_busy, tcp_busy, claimed, registry_exists
+    )
+    invocation = "find_free_port" if requested is None else f"find_free_port {requested}"
+    result = _run_port_fixture(tmp_path, script + invocation + "\n", environment)
+    selected = expected[PORT_INSTALLERS.index(relative)]
+    first = 7072 if requested is None else requested
+    if selected is None:
+        assert result.returncode == 1, (result.stdout, result.stderr)
+        assert result.stdout == ""
+        assert f"{first}-{first + 49}" in result.stderr
+    else:
+        assert result.returncode == 0, result.stderr
+        assert result.stdout == f"{selected}\n"
+        assert result.stderr == ""
+
+    expected_probes = []
+    if relative == "installer/install.sh" and registry_exists:
+        expected_probes.append("registry claimed-ports")
+    last = first + 49 if selected is None else selected
+    for port in range(first, last + 1):
+        expected_probes.append(f"lsof {port}")
+        if port not in lsof_busy:
+            expected_probes.append(f"tcp {port}")
+    assert (tmp_path / "probes").read_text().splitlines() == expected_probes
+
+
+def _project_local_fixture(relative, tmp_path, lsof_busy):
+    script, environment = _port_scan_fixture(relative, tmp_path, lsof_busy)
+    script += _installer_function(relative, "main_local")
+    script += _installer_function(relative, "main")
+    script += r"""
+print_banner() { :; }
+check_prereqs() { :; }
+install_brainstem() { :; }
+setup_venv() { :; }
+setup_deps() { :; }
+create_env() { :; }
+write_local_launcher() { printf 'launcher %s\n' "$1" >> "$EFFECT_LOG"; }
+ensure_project_gitignore() { printf 'gitignore\n' >> "$EFFECT_LOG"; }
+register_in_peers() { printf 'peer %s\n' "$2" >> "$EFFECT_LOG"; }
+register_project() { printf 'project %s\n' "$1" >> "$EFFECT_LOG"; }
+"""
+    return script, environment
+
+
+@pytest.mark.parametrize("relative", PORT_INSTALLERS)
+@pytest.mark.parametrize("entrypoint", ("main_local", "main"))
+@pytest.mark.parametrize("mode", ("no-errexit", "errexit", "conditional"))
+def test_project_local_free_port_failure_stops_callers(relative, entrypoint, mode, tmp_path):
+    script, environment = _project_local_fixture(relative, tmp_path, range(7072, 7122))
+    if mode == "conditional":
+        script += f"set -e\nif {entrypoint}; then exit 0; else exit $?; fi\n"
+    else:
+        option = "+e" if mode == "no-errexit" else "-e"
+        script += f"set {option}\n{entrypoint}\n"
+    result = _run_port_fixture(tmp_path, script, environment)
+    assert result.returncode == 1, (result.stdout, result.stderr)
+    assert "7072-7121" in result.stderr
+    assert not (tmp_path / "effects").exists()
+    assert "installed (project-local)" not in result.stdout
+    assert "It'll run at" not in result.stdout
+
+
+@pytest.mark.parametrize("relative", PORT_INSTALLERS)
+def test_project_local_free_port_success_reaches_callers(relative, tmp_path):
+    script, environment = _project_local_fixture(relative, tmp_path, (7072, 7073, 7074))
+    result = _run_port_fixture(tmp_path, script + "set -e\nmain\n", environment)
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+    effects = ["launcher 7075", "gitignore"]
+    if relative == "installer/install.sh":
+        effects += ["peer 7075", "project 7075"]
+    assert (tmp_path / "effects").read_text().splitlines() == effects
+    assert "installed (project-local)" in result.stdout
+    assert "http://localhost:7075" in result.stdout
+
+
+def test_project_local_free_port_ledger_is_reproducible():
+    result = subprocess.run(
+        (sys.executable, "tools/build_historical_source_ledger.py", "--check"),
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 @pytest.mark.parametrize("relative", tuple(DESCRIPTOR_SOURCES))

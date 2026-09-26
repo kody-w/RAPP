@@ -392,6 +392,15 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
 
         check = record["preservation_check"]
         if check["type"] == "line-subsequence":
+            preserved_bytes = current_bytes
+            for replacement in reversed(check.get("replacements", [])):
+                assert set(replacement) == {"original", "adapted"}, relative
+                adapted = replacement["adapted"].encode("utf-8")
+                assert adapted and preserved_bytes.count(adapted) == 1, relative
+                assert replacement["original"], relative
+                preserved_bytes = preserved_bytes.replace(
+                    adapted, replacement["original"].encode("utf-8"), 1
+                )
             source_lines = [
                 line.rstrip()
                 for line in old_bytes.decode("utf-8").splitlines()
@@ -399,7 +408,7 @@ def test_historical_source_ledger_verifies_old_and_restored_bytes():
             ]
             restored_lines = [
                 line.rstrip()
-                for line in current_bytes.decode("utf-8").splitlines()
+                for line in preserved_bytes.decode("utf-8").splitlines()
             ]
             offset = 0
             for line in restored_lines:

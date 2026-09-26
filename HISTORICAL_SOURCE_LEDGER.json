@@ -1280,14 +1280,28 @@
         }
       },
       "restored": {
-        "commit": "43bd9e2372a378686cc92267041f9af26415617b",
-        "sha256": "222afb5de591f2413203fe7842e68df3659b82dbe34fe0d52e876c5b9fde6eec",
-        "bytes": 56526
+        "commit": "79cd9895a5daa7f360cf6097c10c7b1882e8eee4",
+        "sha256": "56dea060b09dfc71f9fcdb7e787f9fca425b47104f2688930fac7ce80a1c0ec9",
+        "bytes": 56642
       },
       "preservation_check": {
-        "type": "line-subsequence"
+        "type": "line-subsequence",
+        "replacements": [
+          {
+            "original": "    local start=\"${1:-7072}\" p=\"$start\" lim=$((start + 50))\n",
+            "adapted": "    local start=\"${1:-7072}\"\n    local p=\"$start\"\n    local lim=$((start + 50))\n"
+          },
+          {
+            "original": "    echo \"$start\"\n",
+            "adapted": "    printf 'Error: no free port available in range %s-%s.\\n' \"$start\" \"$((lim - 1))\" >&2\n    return 1\n"
+          },
+          {
+            "original": "    port=$(find_free_port 7072)\n",
+            "adapted": "    port=$(find_free_port 7072) || return 1\n"
+          }
+        ]
       },
-      "safety_adaptation": "Restore the exact historical implementation after a target-owned plan/refusal boundary. Default execution emits local provenance; active effects remain unavailable without exact Grail binding, reviewed dependency injection, owner approval, and authenticated fresh section-13 evidence.",
+      "safety_adaptation": "Preserve the historical implementation after its unchanged plan/refusal boundary, with exact reversible fixes for project-local port initialization, bounded exhaustion, and caller failure propagation. The original source capsule remains byte-identical; active effects remain unavailable without exact Grail binding, reviewed dependency injection, owner approval, and authenticated fresh section-13 evidence.",
       "trust_state": {
         "observed": true,
         "structurally_valid": true,
@@ -1577,14 +1591,28 @@
         }
       },
       "restored": {
-        "commit": "43bd9e2372a378686cc92267041f9af26415617b",
-        "sha256": "38c9515c4271fbd30b9e583ab6e6b5559347f196d2c729602b51f6f0bd4d474f",
-        "bytes": 100009
+        "commit": "79cd9895a5daa7f360cf6097c10c7b1882e8eee4",
+        "sha256": "66f462e59e6010ecc10d026758b686606aec398cbe3c16e2dc79e9e05b2191fa",
+        "bytes": 100125
       },
       "preservation_check": {
-        "type": "line-subsequence"
+        "type": "line-subsequence",
+        "replacements": [
+          {
+            "original": "    local start=\"${1:-7072}\" p=\"$start\" lim=$((start + 50))\n",
+            "adapted": "    local start=\"${1:-7072}\"\n    local p=\"$start\"\n    local lim=$((start + 50))\n"
+          },
+          {
+            "original": "    echo \"$start\"\n",
+            "adapted": "    printf 'Error: no free port available in range %s-%s.\\n' \"$start\" \"$((lim - 1))\" >&2\n    return 1\n"
+          },
+          {
+            "original": "    port=$(find_free_port 7072)\n",
+            "adapted": "    port=$(find_free_port 7072) || return 1\n"
+          }
+        ]
       },
-      "safety_adaptation": "Restore the exact historical implementation after a target-owned plan/refusal boundary. Default execution emits local provenance; active effects remain unavailable without exact Grail binding, reviewed dependency injection, owner approval, and authenticated fresh section-13 evidence.",
+      "safety_adaptation": "Preserve the historical implementation after its unchanged plan/refusal boundary, with exact reversible fixes for project-local port initialization, bounded exhaustion, and caller failure propagation. The original source capsule remains byte-identical; active effects remain unavailable without exact Grail binding, reviewed dependency injection, owner approval, and authenticated fresh section-13 evidence.",
       "trust_state": {
         "observed": true,
         "structurally_valid": true,
