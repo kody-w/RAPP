@@ -4204,9 +4204,9 @@
         }
       },
       "restored": {
-        "commit": "3ed9a2b2f2e54355af854d01c6248622b69ae55b",
-        "sha256": "8235c125e33134b51b1aebbc33e27eaa4920e0361a37b6d9915c6dfbb57ea56d",
-        "bytes": 14566
+        "commit": "adcf78f64c1dbd5f6120b79e7cc23e32dbb3016e",
+        "sha256": "3c14a01910576e88401c5b534e364b8cd2d2a9532ec71df421ae6c3334538feb",
+        "bytes": 15086
       },
       "preservation_check": {
         "type": "normalized-line-coverage",

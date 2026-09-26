@@ -120,6 +120,7 @@ When a post moves from "planned" to "drafting," its working copy lives at `pages
 - **Hook.** An `experimental_agents/` folder the auto-loader explicitly skips. The rule that produces it. Memorial-not-deletion as institutional memory.
 - **Draft.** [[the-experimental-graveyard]] · [[The experimental Graveyard]].
 - **Status.** Draft written 2026-04-24.
+- **Note (2026-09-24).** The hook describes a loader that skipped `experimental_agents/` by name. The local Brainstem hot-loads only the top-level `agents/*_agent.py` files, and every folder under `agents/` is organization only, whatever its name; see the note at the top of the unpublished draft `pages/vault/Blog Drafts/the-experimental-graveyard.md` and `docs/proposals/0001-only-top-level-agents-are-live.md`.
 
 ### 33. Code Earns a Directory; Artifacts Don't
 

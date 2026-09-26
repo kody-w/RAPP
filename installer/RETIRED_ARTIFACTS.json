@@ -3,6 +3,37 @@
   "status": "retired",
   "publication_allowed": false,
   "repacking_allowed": false,
+  "repacking_exceptions": [
+    {
+      "id": "proposal-0003-part-a",
+      "date": "2026-09-25",
+      "proposal": "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md",
+      "authority": "maintainer acceptance of proposal 0003 (Constitution Article XXVIII.4)",
+      "scope": "zip-framing-only",
+      "paths": [
+        "cave/rapplications/rapp-installer/cubby-rapp-installer.egg",
+        "cave/cubbies/kody-w/eggs/cubby-rapp-installer.egg"
+      ],
+      "before_sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+      "before_bytes_commit": "b824965a0297b133d04bd556f6d9726de9a2fefa",
+      "after_sha256": "01468b160d6b96f92fe05f98169498db47592385ce7a6dd4930fd0ba016aa105",
+      "bytes": 526007,
+      "egg_address": "21289721de93122c5ad504175de75aa27052e253b521470dd0461252bc4f86c2",
+      "zip_entries": 45,
+      "members": 44,
+      "manifest_bytes_identical": true,
+      "members_byte_identical": true,
+      "changed_bytes_per_copy": 90,
+      "changed_field": "bit 11 (UTF-8 names) of the general-purpose flag in every local and central-directory header, 0x0000 to 0x0800",
+      "packer": {
+        "repository": "kody-w/rapp-1",
+        "commit": "591e014ad39e223b00ab343ae26e5d9a867ebeee",
+        "path": "rapp.py",
+        "function": "pack_egg"
+      },
+      "other_artifacts_covered": false
+    }
+  ],
   "power_archive": {
     "signature_status": "unsigned",
     "active_download_allowed": false,
@@ -31,26 +62,43 @@
       "bytes": 481
     },
     {
-      "path": "pages/tutorials/commons.egg",
-      "sha256": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
-      "bytes": 443
-    },
-    {
       "path": "cave/rapplications/rapp-installer/cubby-rapp-installer.egg",
-      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+      "sha256": "01468b160d6b96f92fe05f98169498db47592385ce7a6dd4930fd0ba016aa105",
       "bytes": 526007
     },
     {
       "path": "cave/cubbies/kody-w/eggs/cubby-rapp-installer.egg",
-      "sha256": "38ce5e8f1236b584eb3c6d4a6663ce46a0ff73c06599628d87fe610e035fb18b",
+      "sha256": "01468b160d6b96f92fe05f98169498db47592385ce7a6dd4930fd0ba016aa105",
       "bytes": 526007
+    }
+  ],
+  "removed_eggs": [
+    {
+      "path": "pages/tutorials/commons.egg",
+      "sha256": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
+      "bytes": 443,
+      "egg_address": "a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7",
+      "state": "retired-removed-from-tree",
+      "preserved_by": [
+        "path",
+        "sha256",
+        "git-history"
+      ],
+      "bytes_commit": "b824965a0297b133d04bd556f6d9726de9a2fefa",
+      "date": "2026-09-25",
+      "proposal": "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md",
+      "owner_ledger": "RAPP1_OWNER_ACTIONS.json",
+      "open_owner_action": "owner-reissue-commons-invite"
     }
   ],
   "prepared_snapshot": {
     "path": "cave/rapplications/rapp-installer",
     "classification": "immutable-prepared-external-snapshot",
     "active_distribution": false,
-    "modification_allowed": false
+    "modification_allowed": false,
+    "modification_exceptions": [
+      "proposal-0003-part-a"
+    ]
   },
   "guidance": "../RAPP1_STATUS.md"
 }

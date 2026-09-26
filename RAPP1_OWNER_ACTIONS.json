@@ -61,7 +61,6 @@
     "status_state": "Owner-action ledger links, dated and current path counts, restored target-owned launch boundaries, exact inert copies of removed runtimes, the direct immutable brainstem.py limitation, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
     "current_path_hashes": {
       "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
-      "pages/tutorials/commons.egg": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
       "specs/ecosystem-spec.json": "147179baae2021272c5dce6f426eaf6d168df20f863027ca9e8ab51e64d87e5d",
       "rapp_kernel/manifest.json": "a2826eb8820f4487948bfdb1bf3f80b4ca8ccdf902553d5d109cb8de3bb85889",
       "rapp_kernel/latest/brainstem.py": "f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa",
@@ -98,6 +97,9 @@
       "retired_target_sha256": "2731c02f187701c1d07b3a7f5eed5e2073c203ffb4f6c08d00292894e3319a5d",
       "retired_target_size": 443,
       "retired_egg_address": "a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7",
+      "retired_target_state": "removed-from-tree",
+      "retired_target_bytes_commit": "b824965a0297b133d04bd556f6d9726de9a2fefa",
+      "retired_by_proposal": "docs/proposals/0003-reframe-cubby-eggs-and-retire-commons-invite.md",
       "retired_reason": "The value in the signature member is a non-JWS migration placeholder and the payload URL names the wrong Pages project.",
       "retired_target_url": "https://kody-w.github.io/commons/",
       "retired_target_url_status": 404,
@@ -549,8 +551,8 @@
       "title": "Reissue and retire the Commons invite",
       "issue_title": "[Owner action] Reissue the signed RAPP/1 Commons invite and retire the placeholder",
       "status": "owner-action-required",
-      "why": "pages/tutorials/commons.egg is a 443-byte RAPP/1 invite at address a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7, but it carries a non-JWS migration placeholder and its Pages URL returns 404. The external .well-known invite is still a retired legacy schema with the superseded 32-hex identity. Neither can authenticate membership.",
-      "what": "The estate owner must authorize the Commons identity continuity, issue a new canonical rapp/1-egg invite for the current Commons rappid and live Pages URL, authenticate it under the owner tenure in effect at created_utc, record its new artifact path and address, publish it at the Commons well-known path and an approved target-owned path, then remove the placeholder artifact from all live use.",
+      "why": "pages/tutorials/commons.egg was a 443-byte RAPP/1 invite at address a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7, but it carried a non-JWS migration placeholder and its Pages URL returns 404; proposal 0003 retired it from the tree, preserved by path, SHA-256, and git history. The external .well-known invite is still a retired legacy schema with the superseded 32-hex identity. Neither can authenticate membership, so no valid Commons invite exists until the owner issues one.",
+      "what": "The estate owner must authorize the Commons identity continuity, issue a new canonical rapp/1-egg invite for the current Commons rappid and live Pages URL, authenticate it under the owner tenure in effect at created_utc, record its new artifact path and address, and publish it at the Commons well-known path and an approved target-owned path. The placeholder artifact is already removed from all live use (proposal 0003), and the replacement never reuses its path.",
       "where": {
         "retired_target_path": "pages/tutorials/commons.egg",
         "retired_egg_address": "a03fa90289eaefcf1a6521cdc10ee17bc706a0bb353e688ad84135d684380fb7",
@@ -561,7 +563,7 @@
         "url_fixed_unsigned_candidate_address": "d15305a25cbe6c9aab51a4ed2ab5514345772023a95d658b37fc19303e5778bc",
         "approved_target_owned_path": null
       },
-      "when": "Issue only after the authenticated Commons upgrade re-anchor and owner succession are available; retire the placeholder and switch tutorial links atomically only after both published replacement copies pass every acceptance test.",
+      "when": "Issue only after the authenticated Commons upgrade re-anchor and owner succession are available. Proposal 0003 re-sequenced the retirement: the placeholder is retired first, and tutorial links switch to the replacement only after both published replacement copies pass every acceptance test.",
       "how": [
         "Build an exact seven-member rapp/1-egg manifest with variant invite, contents [], the current Commons rappid, owner-selected created_utc, and payload containing target_rappid, target_url, and target_kind only.",
         "Set payload.target_rappid to rappid:@kody-w/rapp-commons:fea3bd6e80bbac79efc22c4c1185c276d1833925a037ce120330be35e2afc3c7, target_url to https://kody-w.github.io/rapp-commons/, and target_kind to neighborhood.",
@@ -569,7 +571,7 @@
         "Have the estate owner in effect at created_utc authenticate canonical(manifest without the signature member) outside automation; verify through the fresh registry succession rather than repository authorship.",
         "Compute and record the section 9 egg address from the manifest without the signature member. If the URL is the only changed unsigned member, require d15305a25cbe6c9aab51a4ed2ab5514345772023a95d658b37fc19303e5778bc; signing alone cannot change the address.",
         "Publish canonical JSON bytes at kody-w/rapp-commons:.well-known/neighborhood.egg and the approved target-owned path.",
-        "Update the tutorial to the approved path or canonical well-known URL, remove pages/tutorials/commons.egg from live distribution, and preserve its path and SHA-256 only in this ledger and git history.",
+        "Update the tutorial to the approved path or canonical well-known URL. pages/tutorials/commons.egg is already removed from live distribution (proposal 0003); its path and SHA-256 are preserved only as records in this ledger and installer/RETIRED_ARTIFACTS.json, and its bytes only in git history.",
         "Do not copy, normalize, or bless the currently observed external legacy invite as the replacement."
       ],
       "prerequisites": [

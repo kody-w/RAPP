@@ -363,6 +363,12 @@
       "gate": "python-offline"
     },
     {
+      "path": "tests/test_rapp1_receipts.py",
+      "disposition": "canonical-direct",
+      "reason": "Verifies the receipts' write mode (tools/rapp1_receipts.py) recomputes only the derived tracked-tree fields, in memory.",
+      "gate": "python-offline"
+    },
+    {
       "path": "tests/test_rapp1_runner.py",
       "disposition": "canonical-direct",
       "reason": "Collected explicitly by the offline pytest gate.",

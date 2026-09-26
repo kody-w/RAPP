@@ -12,6 +12,8 @@ class: evergreen
 decay: high
 ---
 
+> **Note (2026-09-24):** the local Brainstem (Tier 1) hot-loads only the top-level `agents/*_agent.py` files. Every folder under `agents/` is organization only and never loads, whatever its name, so `experimental_agents/` is not a reserved name the loader skips: it is a folder like any other, and moving a file into any folder parks it, while moving it back to the top of `agents/` loads it again. The loader this post describes, which walked `agents/` recursively and skipped folders by name, is the one RAPP's own copy shipped from 2026-04-21 to 2026-05-01 (tags `brainstem-v0.10.0` to `brainstem-v0.12.1`); every grail release loads only the top level. The path under Receipts, `rapp_brainstem/agents/workspace_agents/experimental_agents/`, is not in the grail's tree, whose one folder is `experimental/`. The graveyard practice still works; only the reason differs. See `CONSTITUTION.md` Article XVII (2026-09-24 amendment) and `docs/proposals/0001-only-top-level-agents-are-live.md`.
+
 # The experimental graveyard — what we tried, what we cut, and why we kept the bones
 
 Most projects delete failed experiments and pretend they didn't happen. The git history holds the bones, technically, but only someone who already knows the file existed will go looking. The next contributor walks past the gap entirely, oblivious — and often re-creates the same experiment, because the lesson it taught was never carried forward.
