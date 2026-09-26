@@ -51,6 +51,26 @@ or Shortcut is currently offered.
 > [authority pin](./RAPP1_AUTHORITY.json). Other hubs, trees, and vault paths
 > are historical context, not current operational navigation.
 
+## Owner decision: LTS installer one-liners (G23)
+
+For the owner: this is the README copy for the G23 installer-pin decision.
+For the owner: it links to `kody-w/rapp-installer#49` and should merge only if
+that installer pin is accepted.
+For the owner: until then, the Start-here anchor remains the onboarding source.
+
+The grail Brainstem installs from `kody-w/rapp-installer` at
+`brainstem-v0.6.9`, the kernel release [`KERNEL_PIN.json`](./KERNEL_PIN.json)
+pins. On macOS or Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kody-w/rapp-installer/brainstem-v0.6.9/install.sh | bash -s -- --version brainstem-v0.6.9
+```
+
+There is no pinned Windows one-liner yet: the installer's Windows script at that
+tag takes no version pin and follows the installer's `main` branch, the newest
+channel, instead of installing exactly `brainstem-v0.6.9`, so it is not offered
+here. Review a script before you pipe it into a shell.
+
 ## What an "agent" is here
 
 ```python
