@@ -1,5 +1,9 @@
 # RAPP
 
+<!-- rapp1:network-header:start -->
+[![RAPP/1](https://kody-w.github.io/rapp-hive-public/portfolio/badges/RAPP.svg)](https://github.com/kody-w/rapp-hive-public/blob/main/portfolio/repos/RAPP.md) · **New to RAPP?** [Start here: get your Brainstem →](https://github.com/kody-w/rapp-installer#start-here)
+<!-- rapp1:network-header:end -->
+
 > **Repository authority:** this is the canonical home of the public RAPP
 > foundation, reference implementation, organism model, and
 > [philosophy](./PHILOSOPHY.md).
