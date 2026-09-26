@@ -522,6 +522,18 @@ def test_project_local_free_port_success_reaches_callers(relative, tmp_path):
     assert "http://localhost:7075" in result.stdout
 
 
+def test_project_local_free_port_ledger_is_reproducible():
+    result = subprocess.run(
+        (sys.executable, "tools/build_historical_source_ledger.py", "--check"),
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 @pytest.mark.parametrize("relative", tuple(DESCRIPTOR_SOURCES))
 def test_inert_deployment_descriptor_matches_recorded_history(relative):
     commit, blob = DESCRIPTOR_SOURCES[relative]

@@ -23,8 +23,14 @@ def deterministic_gzip(source: bytes) -> bytes:
     return bytes(payload)
 
 
-def line_subsequence() -> dict:
-    return {"type": "line-subsequence"}
+def line_subsequence(*replacements: tuple[str, str]) -> dict[str, object]:
+    check: dict[str, object] = {"type": "line-subsequence"}
+    if replacements:
+        check["replacements"] = [
+            {"original": original, "adapted": adapted}
+            for original, adapted in replacements
+        ]
+    return check
 
 
 def marker_set(minimum_line_coverage: float, *markers: str) -> dict:
@@ -422,14 +428,46 @@ DISTRIBUTION_SOURCE_RECORDS = (
     ("distribution-brainstem-boot", "distribution-code", "rapp_brainstem/utils/boot.py", "7f9553ed0f079fbce70755ee4cae3e51705dcccf"),
 )
 
+PROJECT_LOCAL_INSTALLERS = ("install.sh", "installer/install.sh")
+PROJECT_LOCAL_PORT_REPLACEMENTS = (
+    (
+        '    local start="${1:-7072}" p="$start" lim=$((start + 50))\n',
+        '    local start="${1:-7072}"\n'
+        '    local p="$start"\n'
+        '    local lim=$((start + 50))\n',
+    ),
+    (
+        '    echo "$start"\n',
+        "    printf 'Error: no free port available in range %s-%s.\\n' "
+        '"$start" "$((lim - 1))" >&2\n'
+        '    return 1\n',
+    ),
+    (
+        '    port=$(find_free_port 7072)\n',
+        '    port=$(find_free_port 7072) || return 1\n',
+    ),
+)
+
 SOURCE_RECORDS += tuple(
     {
         "id": record_id,
         "category": category,
         "path": path,
         "commit": commit,
-        "check": line_subsequence(),
+        "check": (
+            line_subsequence(*PROJECT_LOCAL_PORT_REPLACEMENTS)
+            if path in PROJECT_LOCAL_INSTALLERS
+            else line_subsequence()
+        ),
         "adaptation": (
+            "Preserve the historical implementation after its unchanged "
+            "plan/refusal boundary, with exact reversible fixes for project-local "
+            "port initialization, bounded exhaustion, and caller failure "
+            "propagation. The original source capsule remains byte-identical; "
+            "active effects remain unavailable without exact Grail binding, "
+            "reviewed dependency injection, owner approval, and authenticated "
+            "fresh section-13 evidence."
+            if path in PROJECT_LOCAL_INSTALLERS else
             "Restore the exact historical implementation after a target-owned "
             "plan/refusal boundary. Default execution emits local provenance; "
             "active effects remain unavailable without exact Grail binding, "

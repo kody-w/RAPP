@@ -80,6 +80,11 @@ source capsules remain unchanged in `HISTORICAL_SOURCE_LEDGER.json`; explicit,
 reversible replacements let the provenance checks recover the original blobs
 without relaxing their byte or line-preservation assertions.
 
+Keep those replacements in `tools/build_historical_source_ledger.py`, then run
+`python3 tools/build_historical_source_ledger.py --write`. The regression checks
+the generated ledger for drift. CI runs `python3 tests/run_restoration_acceptance.py`,
+which checks generated receipts before invoking the canonical conformance runner.
+
 ## Retired tests
 
 Exact bytes of tests that positively asserted pre-rev-5 identity, frame, egg,
