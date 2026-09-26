@@ -17,7 +17,7 @@
     "basis": "tracked-path-set-after-restoration",
     "generated_at": "2026-09-25",
     "tracked_path_count": 794,
-    "tracked_path_set_sha256": "55e5ecee2dabc2decd2ef8f7d978c641c335747931a0628fb1045551ceb6f25c",
+    "tracked_path_set_sha256": "236b91ba55b5b2660a7dc83ab8190484a2a3369ea7995f9c31f12f49cadb8080",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -62,7 +62,7 @@
         "prefix": ""
       },
       "expected_count": 794,
-      "path_set_sha256": "55e5ecee2dabc2decd2ef8f7d978c641c335747931a0628fb1045551ceb6f25c"
+      "path_set_sha256": "236b91ba55b5b2660a7dc83ab8190484a2a3369ea7995f9c31f12f49cadb8080"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",

@@ -11,7 +11,7 @@
     "mutable_generated_paths": [],
     "current_inventory": {
       "tracked_paths": 794,
-      "stable_tracked_bytes": 15197058
+      "stable_tracked_bytes": 15216593
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -629,7 +629,7 @@
       "TEMPLATE.md",
       "cave/index.html",
       "cave/specs/SUPER_RAR.md",
-      "docs/proposals/0010-agents-workspace-is-not-a-rapp-workspace.md",
+      "docs/proposals/0010-agents-folder-is-not-a-rapp-workspace.md",
       "installer/shortcuts/README.md",
       "installer/shortcuts/brainstem-voice/README.md",
       "installer/shortcuts/protocol.md",
