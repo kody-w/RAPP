@@ -224,7 +224,11 @@ URLs: no server, no API, no search.
    every file, including the pointers.
 5. **Pointers, `members/<station>.md`**: one per station the Hive curates, in
    the Hive's one published room (`shared/<room>/members/<station>.md` inside
-   the Hive). A station that leaves is moved to `former/<station>.md`.
+   the Hive). A pointer may say `card: none` while the station is listed but
+   has not yet published `.rapp/member.md`; readers then do not fetch the
+   card, and a 404 there is not a defect. A pointer that omits `card:` or says
+   `card: present` claims the card exists, and a missing card is a defect. A
+   station that leaves is moved to `former/<station>.md`.
 6. **Cards, `.rapp/member.md`**, in each station's own repository, changed by
    its own commits, with optional files under `.rapp/shared/`.
 7. **Links.** A card's `links` name its neighbors and make the network a graph
@@ -295,10 +299,11 @@ file is at most 64 KB of UTF-8 text under the Hive's text rules.
 | `repo`, `raw` | `owner/repo`, and the raw base it is read from, ending in `/` with the repo's owner and name |
 | `lts` | present exactly when `channel` is `rapp1-lts`: the 40-hex commit it is read at |
 | `newest` | `HEAD`, or a branch name without `/` |
+| `card` | optional; `present` by default, or `none` when the Hive lists a station whose `.rapp/member.md` is not published yet; readers do not fetch a missing card for `card: none` |
 | `line`, `also_on` | its subway line id; an optional sorted list of other lines |
 | `channel` | `rapp1-lts` or `newest` |
 | `lifecycle`, `superseded_by` | `active`, `deprecated`, `superseded` or `archived`; the successor's `owner/repo`, required with `superseded` |
-| (body) | with `lts` only: one `sha256  path` line per file read at that commit, sorted, at most 200 |
+| (body) | with `lts` only: one `sha256  path` line per file read at that commit, sorted, at most 200; `card: none` cannot list `.rapp/member.md` |
 
 | Card key | Value |
 |---|---|
@@ -704,6 +709,9 @@ same.
 > `members/<station>.md`, per station the Hive curates. The card, the pointer
 > and the files the network may read are defined by `DISTRIBUTED-HIVE.md` in
 > `kody-w/rapp-model-hive`, at the commit the amendment pull request names.
+> A pointer MAY say `card: none` for a listed station whose card is not
+> published yet; readers then do not fetch `.rapp/member.md`, while a pointer
+> that claims or implies `card: present` MUST have a card at `HEAD`.
 >
 > The chain extends XLVII.1 and XLVII.2: seed → beacon → `estate.json`
 > `hives[]` → the Hive root's `PUBLISHED.md` → pointers → cards → their
