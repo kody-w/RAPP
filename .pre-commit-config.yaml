@@ -1,0 +1,27 @@
+# Pre-commit hooks for kody-w/RAPP.
+#
+# One-time setup per clone:
+#   pip install pre-commit
+#   pre-commit install
+#
+# After that, `git commit` runs the hooks below automatically. To run
+# the same checks ad-hoc against everything: `pre-commit run --all-files`.
+#
+# Hooks here mirror the GitHub Actions in .github/workflows/ so a local
+# commit fails fast if it would have failed in CI.
+
+repos:
+  - repo: local
+    hooks:
+      - id: rapp-brainstem-regressions
+        name: rapp_brainstem regression tests
+        description: >
+          Pinned static checks against known regressions
+          (see rapp_brainstem/test_regressions.py for the rationale).
+        entry: python3 rapp_brainstem/test_regressions.py
+        language: system
+        # The test scans the whole package, so we don't pass file
+        # arguments and we run it on every commit that touches the
+        # brainstem (CI runs it unconditionally on the main branch).
+        pass_filenames: false
+        files: ^rapp_brainstem/
