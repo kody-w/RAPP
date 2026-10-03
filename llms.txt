@@ -10,6 +10,31 @@ able to verify it independently, resume represented work when applicable, and
 hand it off without hidden conversation history. Irreversible authority remains
 with the human owner.
 
+## The Zen of RAPP
+
+Hold every RAPP and Brainstem decision to these lines
+(https://raw.githubusercontent.com/kody-w/RAPP/main/ZEN.md):
+
+    Simple is better than clever.
+    If pasting it works, there is nothing to build.
+    A file you drop beats a feature you learn.
+    One file, one agent.
+    The kernel stays still; everything else is a file beside it.
+    Words over machinery.
+    If you have to teach the machinery, the machinery is wrong.
+    Regular people first; experts can always go deeper.
+    Add nothing a user would have to be told about.
+    Subtracting is a feature.
+    Conversation is the interface.
+    Nothing runs without a yes.
+    Local first, and yours forever.
+    The one-liner never breaks.
+    Every new word must earn its place.
+    Done means someone used it, not that it shipped.
+    If it's hard to explain, it's a bad idea.
+
+ZEN.md also carries these lines as haiku and koans.
+
 ## Current status
 
 - This repository is an experimental source checkout, not a shipped installer
