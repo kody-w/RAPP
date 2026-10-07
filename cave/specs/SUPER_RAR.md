@@ -55,7 +55,7 @@ observations only and are never accepted. Network fetching is off by default.
 The prepared Cave installer snapshot remains untouched, apart from the one
 ZIP-framing exception `proposal-0003-part-a` recorded in
 `installer/RETIRED_ARTIFACTS.json`, and non-installing. Its catalog record
-points to [`KERNEL_PIN.json`](../../KERNEL_PIN.json), whose
+points to [`kernel.json`](../../kernel.json), whose
 read-only grail is `kody-w/rapp-installer@brainstem-v0.6.9`. The Cave path is
 not an alternate installer.
 

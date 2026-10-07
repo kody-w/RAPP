@@ -26,7 +26,7 @@
   "current_machine_guidance": {
     "protocol_authority": "RAPP1_AUTHORITY.json",
     "repository_status": "RAPP1_STATUS.md",
-    "immutable_grail_pin": "KERNEL_PIN.json",
+    "immutable_grail_pin": "kernel.json",
     "active_grail_repository": "kody-w/rapp-installer",
     "active_grail_tag": "brainstem-v0.6.9",
     "acceptance": "No kernel bytes are accepted from this archive alias. Follow the structural authority pin, current status, immutable grail boundary, and authenticated RAPP/1 trust requirements."

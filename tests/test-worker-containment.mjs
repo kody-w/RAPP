@@ -532,7 +532,7 @@ const [workerReadmeCurrent, workerReadmeHistory = ""] = workerReadme.split(
 );
 assert.match(workerReadme, new RegExp(WORKER_COMMIT));
 assert.match(workerReadmeCurrent, /false by default/i);
-assert.match(workerReadmeCurrent, /KERNEL_PIN\.json/);
+assert.match(workerReadmeCurrent, /kernel\.json/);
 assert.match(workerReadmeCurrent, /rapp-installer@brainstem-v0\.6\.9/);
 assertNoMatches(workerReadmeCurrent, [
   /\bwrangler\s+(?:deploy|dev|login|secret|tail)\b/i,

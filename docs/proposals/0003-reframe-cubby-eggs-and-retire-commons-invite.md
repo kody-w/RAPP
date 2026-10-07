@@ -245,7 +245,7 @@ only after the owner has issued a signed replacement.
 
 The file is not live. GitHub Pages does not publish it (`_config.yml` excludes
 it), and the retired hatch tutorial already points its download control at
-`KERNEL_PIN.json`. What is left is a tracked blob that no verifier accepts:
+`kernel.json`. What is left is a tracked blob that no verifier accepts:
 rapp-1 at `591e014` refuses it, and `rapp1_core` refuses it as
 `invalid-jws`.
 
@@ -306,7 +306,7 @@ keep their exact bytes, and what happens to it:
   classifies the snapshot. It stays true: the snapshot stays immutable, and
   this one exception is recorded in `installer/RETIRED_ARTIFACTS.json`.
 
-**Nothing else is relaxed.** The grail bytes pinned by `KERNEL_PIN.json` stay
+**Nothing else is relaxed.** The grail bytes pinned by `kernel.json` stay
 read-only (Article LV.4). No other file in the prepared subtree changes, and
 no other archive or egg: the three Power archive copies and
 `pages/tutorials/sample-session.egg` keep their bytes. No generated external
@@ -412,7 +412,7 @@ checker reports.
    - `pages/tutorials/hatch-egg.html` keeps `data-historical-href="commons.egg"`,
      the download label and the `hatch` command example. They are inert
      history in the retired tutorial (text, not a link or a script), and its
-     live link already goes to `KERNEL_PIN.json`.
+     live link already goes to `kernel.json`.
    - `tests/rapp1_core/test_eggs.py` uses the name `kody-w--commons.egg` for a
      synthetic test member, not this file, and the test's name rule does not
      match it.

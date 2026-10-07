@@ -5,7 +5,8 @@
 > [`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](./RAPP1_STATUS.md). Incompatible guidance below describes
 > legacy runtime behavior or migration inputs, not current protocol. The
-> `KERNEL_PIN.json` grail bytes remain read-only.
+> current grail metadata is pinned by `kernel.json`; the older local grail
+> evidence recorded by `RAPP1_AUTHORITY.json` remains read-only.
 
 ## Current repository instructions
 
@@ -32,9 +33,10 @@
    disable only the exact unsafe edge with local fixtures, default-off
    capabilities, reviewed bindings, or explicit owner-approved apply modes.
    Do not replace useful content with blank refusals or semantic tombstones.
-   Installer context must resolve read-only through `KERNEL_PIN.json` and
-   `kody-w/rapp-installer@brainstem-v0.6.9`; it must not advertise or execute a
-   moving installer. Existing target-owned launcher refusals remain
+   Installer context must resolve read-only through the full commit in
+   `kernel.json`; the local `brainstem-v0.6.9` bytes remain historical evidence
+   under `RAPP1_AUTHORITY.json`. It must not advertise or execute a moving
+   installer. Existing target-owned launcher refusals remain
    containment evidence until they receive an equally complete safe adapter.
 6. RAPP's primary audience is AI runtimes. Humans are sovereign owners,
    safety authorities, and beneficiaries. Machine-facing work should optimize

@@ -45,9 +45,10 @@ NEIGHBORHOOD_RAPPID = (
     "ca72ca0a3cb90c357fb09e38b02f85f09935cacbf61e94740c57f1eb30a73e0a"
 )
 KERNEL_REFERENCE = {
-    "record": "KERNEL_PIN.json",
-    "grail": "kody-w/rapp-installer",
-    "tag": "brainstem-v0.6.9",
+    "record": "kernel.json",
+    "kernel": "kody-w/rapp-installer",
+    "sha": "0e43ee580e78c150b1c59002456822d2e779388e",
+    "version": "0.6.16",
     "policy": "read-only",
 }
 SOURCE_POLICY = {
@@ -504,7 +505,7 @@ def render_rar() -> dict:
                     "immutable_prepared_snapshot": True,
                     "purpose": (
                         "Retained prepared snapshot: rapp-installer. The "
-                        "current immutable grail reference is KERNEL_PIN.json "
+                        "current immutable grail reference is kernel.json "
                         "and kody-w/rapp-installer@brainstem-v0.6.9; this Cave "
                         "path authorizes no bootstrap or installation."
                     ),
@@ -730,7 +731,7 @@ def _validate_catalog(relative: str, expected: dict) -> list[str]:
             errors.append("rapps must retain @kody-w/rapp-installer")
         elif installer.get("kernel_pin") != KERNEL_REFERENCE:
             errors.append(
-                "rapp-installer must point to KERNEL_PIN.json and "
+                "rapp-installer must point to kernel.json and "
                 "brainstem-v0.6.9"
             )
     else:

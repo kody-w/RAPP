@@ -4090,7 +4090,7 @@ the lawful root re-anchor, and the signed replacement invite are owner actions.
 
 ### LV.4 — Immutable grail; target-owned convergence
 
-`kody-w/rapp-installer` and the bytes pinned by `KERNEL_PIN.json` are an
+`kody-w/rapp-installer` and the bytes pinned by `kernel.json` are an
 immutable, read-only grail. This Article grants no authority to edit that
 repository, its tag, or its vendored pinned bytes.
 

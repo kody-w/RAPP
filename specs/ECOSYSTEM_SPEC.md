@@ -8,7 +8,7 @@
 > [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The immutable standard pin is commit
 > `d2cd5abed48d3f52b86bbb975ac3558286d1db41`; the immutable grail pin is
 > `kody-w/rapp-installer@brainstem-v0.6.9` in
-> [`KERNEL_PIN.json`](../KERNEL_PIN.json).
+> [`kernel.json`](../kernel.json).
 >
 > **Mirror contract retired.** [`specs/ecosystem-spec.json`](ecosystem-spec.json)
 > is now a fail-closed status record with no active byte-identical mirrors.

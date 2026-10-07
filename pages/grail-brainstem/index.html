@@ -2152,7 +2152,7 @@
       <iframe id="rapp-classic-frame" style="position:absolute;inset:0;width:100%;height:100%;border:none;background:#0d1117;" loading="lazy" title="Classic front door"></iframe>
       <div class="local-details-card">
         <h2>Preserved grail browser snapshot anatomy</h2>
-        <p>The original classic-front-door frame remains in the source context above. Its destination is intentionally unset. This target-owned page restores the historical visual snapshot without changing or executing the immutable files pinned in <a href="/RAPP/KERNEL_PIN.json">KERNEL_PIN.json</a>.</p>
+        <p>The original classic-front-door frame remains in the source context above. Its destination is intentionally unset. This target-owned page restores the historical visual snapshot without changing or executing the immutable files pinned in <a href="/RAPP/kernel.json">kernel.json</a>.</p>
         <p>Installer context is preserved as evidence and resolves to <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9" target="_blank" rel="noopener noreferrer">kody-w/rapp-installer@brainstem-v0.6.9</a>; this page exposes no executable install or download edge.</p>
         <p><a href="/RAPP/RAPP1_STATUS.md">Current RAPP/1 status</a> · <a href="/RAPP/RAPP1_AUTHORITY.json">rev-5 authority pin</a></p>
       </div>
@@ -6999,7 +6999,7 @@ _r if isinstance(_r, str) else json.dumps(_r)
         }
         if (lower.includes("grail") || lower.includes("immutable")) {
             return isGrail
-                ? "This target-owned page restores a browser snapshot only. The three immutable grail files pinned by KERNEL_PIN.json are untouched and never executed here."
+                ? "This target-owned page restores a browser snapshot only. The three immutable grail files pinned by kernel.json are untouched and never executed here."
                 : "Sphere is a historical browser interface. Immutable grail bytes are outside this page and remain untouched.";
         }
         if (lower.includes("voice") || lower.includes("model") || lower.includes("chat")) {

@@ -4,8 +4,9 @@
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). Runtime facts below do not redefine
-> protocol. The `KERNEL_PIN.json` bytes from
-> `kody-w/rapp-installer@brainstem-v0.6.9` are read-only.
+> protocol. `kernel.json` records the current grail commit; the older local
+> `kody-w/rapp-installer@brainstem-v0.6.9` evidence recorded by
+> `RAPP1_AUTHORITY.json` is read-only.
 
 ## Current instructions
 
@@ -17,9 +18,10 @@
   observations as data exhaust. Disable only the exact unsafe side-effect
   edge; do not replace useful artifacts with blank refusals or semantic
   tombstones.
-- Preserve installer context as read-only evidence through `KERNEL_PIN.json`
-  and `kody-w/rapp-installer@brainstem-v0.6.9`. Never reactivate a moving
-  installer or infer installation authority from the historical interface.
+- Preserve current installer context through the full commit in `kernel.json`
+  and the older local evidence through `RAPP1_AUTHORITY.json`. Never reactivate
+  a moving installer or infer installation authority from the historical
+  interface.
 - RAPP is designed primarily for AI runtimes. Humans remain the sovereign
   owners, safety authorities, and beneficiaries. Prefer machine-verifiable
   contracts, explicit adoption receipts, portable context, and fail-closed

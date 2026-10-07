@@ -2,7 +2,7 @@
 title: Mirror Spec
 status: historical
 section: Architecture
-hook: Historical frozen-kernel mirror design, superseded by the immutable KERNEL_PIN and RAPP/1 authority records.
+hook: Historical frozen-kernel mirror design, superseded by the immutable KERNEL and RAPP/1 authority records.
 ---
 
 # Mirror Spec
@@ -12,7 +12,7 @@ hook: Historical frozen-kernel mirror design, superseded by the immutable KERNEL
 > evolution follow RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Kernel bytes are fixed by
-> [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) at
+> [`kernel.json`](../../../kernel.json) at
 > `kody-w/rapp-installer@brainstem-v0.6.9`. Moving `main`, `master`, or
 > `latest` references are never verification sources.
 

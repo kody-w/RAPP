@@ -141,7 +141,7 @@ from it. For installation, start from the installer repo's
 > retired and has no active mirrors.
 > The authority commit is
 > `d2cd5abed48d3f52b86bbb975ac3558286d1db41`; kernel evidence is fixed by
-> [`KERNEL_PIN.json`](./KERNEL_PIN.json) at
+> [`kernel.json`](./kernel.json) at
 > `kody-w/rapp-installer@brainstem-v0.6.9`. `rapp-god` and moving branches are
 > divergent, non-authoritative history.
 

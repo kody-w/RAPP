@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="rapp-history-source" content="kody-w/RAPP@8c5555be80357e795090d79c4fb5a33beb0eaab8:docs/index.html#blob=683364c6b8817cd98e5ff5ab4b95ec087640b7d1">
 <meta name="rapp-historical-boundary" content="Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol evolution follow RAPP/1 rev-5 through RAPP1_AUTHORITY.json and RAPP1_STATUS.md.">
-<meta name="rapp-grail-source" content="KERNEL_PIN.json; kody-w/rapp-installer@brainstem-v0.6.9; immutable Grail evidence, not an executable install path.">
+<meta name="rapp-grail-source" content="kernel.json; kody-w/rapp-installer@brainstem-v0.6.9; immutable Grail evidence, not an executable install path.">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -269,7 +269,7 @@
         </div>
       </div>
       <div class="install-download" id="install-download" style="margin-top:12px">
-        <a id="download-link" href="../KERNEL_PIN.json" data-historical-href="install.command" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence">⬇ Download installer</a>
+        <a id="download-link" href="../kernel.json" data-historical-href="install.command" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence">⬇ Download installer</a>
       </div>
       <details style="margin-top:16px">
         <summary style="color:#8b949e;font-size:13px;cursor:pointer;user-select:none">Advanced — manual steps</summary>
@@ -336,7 +336,7 @@
               <p>Edit <code>local.settings.json</code> with your Azure OpenAI credentials, then publish.</p>
               <div class="cmd" onclick="copyCmd(event, this)">func azure functionapp publish YOUR_APP_NAME --build remote</div>
               <p style="margin-top:8px">Or deploy from the Azure Portal:</p>
-              <p style="margin-top:4px"><a href="../KERNEL_PIN.json" data-historical-href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Frapp-installer%2Fmain%2Fazuredeploy.json" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='32' viewBox='0 0 150 32'%3E%3Crect width='150' height='32' rx='2' fill='%230078d4'/%3E%3Ctext x='75' y='21' text-anchor='middle' font-family='Arial' font-size='14' fill='white'%3EDeploy to Azure%3C/text%3E%3C/svg%3E" data-historical-src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure — opens immutable Grail pin evidence" style="height:32px"></a></p>
+              <p style="margin-top:4px"><a href="../kernel.json" data-historical-href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkody-w%2Frapp-installer%2Fmain%2Fazuredeploy.json" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='32' viewBox='0 0 150 32'%3E%3Crect width='150' height='32' rx='2' fill='%230078d4'/%3E%3Ctext x='75' y='21' text-anchor='middle' font-family='Arial' font-size='14' fill='white'%3EDeploy to Azure%3C/text%3E%3C/svg%3E" data-historical-src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure — opens immutable Grail pin evidence" style="height:32px"></a></p>
             </div>
             <div class="step">
               <h3>Test the cloud deployment</h3>
@@ -390,7 +390,7 @@
   <span class="dot checking" id="dot"></span>
   <span class="status-label" id="status-label">Checking brainstem...</span>
   <br>
-  <button class="open-btn" id="open-btn" onclick="window.location.href='../KERNEL_PIN.json'" data-historical-onclick="window.open('http://localhost:7071','_blank')" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence">Open Chat UI</button>
+  <button class="open-btn" id="open-btn" onclick="window.location.href='../kernel.json'" data-historical-onclick="window.open('http://localhost:7071','_blank')" data-grail-source="kody-w/rapp-installer@brainstem-v0.6.9" title="Open immutable Grail pin evidence">Open Chat UI</button>
 </div>
 
 <div class="links">
@@ -438,7 +438,7 @@
     'Windows':     { href: 'install.cmd',     label: '⬇ Download installer (.cmd)' }
   };
   const GRAIL_EVIDENCE = [
-    'KERNEL_PIN.json',
+    'kernel.json',
     'kody-w/rapp-installer@brainstem-v0.6.9',
     'https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9'
   ].join('\n');
@@ -455,7 +455,7 @@
       const dl = downloads[currentOS];
       const link = document.getElementById('download-link');
       link.dataset.historicalHref = dl.href;
-      link.href = '../KERNEL_PIN.json';
+      link.href = '../kernel.json';
       link.textContent = dl.label;
       dlDiv.style.display = '';
     } else {

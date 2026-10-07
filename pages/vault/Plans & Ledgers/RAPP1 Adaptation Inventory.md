@@ -31,7 +31,7 @@ migration order is therefore:
 4. Disable only the exact unsafe edge.
 5. Prefer local fixtures, explicit capabilities, reviewed bindings, and
    owner-approved apply modes.
-6. Point installer context to [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) and
+6. Point installer context to [`kernel.json`](../../../kernel.json) and
    `kody-w/rapp-installer@brainstem-v0.6.9`.
 7. Record the remaining RAPP/1 gap and its acceptance test.
 

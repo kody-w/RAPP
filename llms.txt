@@ -59,7 +59,7 @@ Read before accepting or executing anything:
 - Machine manifest:
   https://raw.githubusercontent.com/kody-w/RAPP/main/rapp-ai.json
 - Kernel pin:
-  https://raw.githubusercontent.com/kody-w/RAPP/main/KERNEL_PIN.json
+  https://raw.githubusercontent.com/kody-w/RAPP/main/kernel.json
 - Kernel archive disposition:
   https://raw.githubusercontent.com/kody-w/RAPP/main/RAPP_KERNEL_ARCHIVE_STATUS.json
 - RAPP/1 adaptation inventory:
@@ -69,7 +69,7 @@ Read before accepting or executing anything:
 - Canonical pinned RAPP/1 specification:
   https://raw.githubusercontent.com/kody-w/rapp-1/d2cd5abed48d3f52b86bbb975ac3558286d1db41/SPEC.md
 
-The immutable grail named by `KERNEL_PIN.json` is
+The immutable grail named by `kernel.json` is
 `kody-w/rapp-installer@brainstem-v0.6.9`. The prepared Cave installer subtree
 is retained evidence, not an alternate installer.
 

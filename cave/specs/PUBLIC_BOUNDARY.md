@@ -8,7 +8,7 @@
 > grant no authority.
 > Preserve their contextual records, but keep verification, acceptance, and
 > distribution state separate. The immutable grail reference is
-> [`KERNEL_PIN.json`](../../KERNEL_PIN.json) at
+> [`kernel.json`](../../kernel.json) at
 > `kody-w/rapp-installer@brainstem-v0.6.9`; no Cave record overrides it.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->

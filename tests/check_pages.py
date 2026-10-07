@@ -594,9 +594,9 @@ def main() -> int:
 
     copy_requirements = {
         "index.html": ("not yet fully rapp/1 conformant", "no active installer"),
-        "pages/index.html": ("rapp-current-status", "kernel_pin.json"),
-        "pages/kernel.html": ("not yet fully rapp/1 conformant", "kernel_pin.json"),
-        "installer/index.html": ("rapp-current-status", "kernel_pin.json"),
+        "pages/index.html": ("rapp-current-status", "kernel.json"),
+        "pages/kernel.html": ("not yet fully rapp/1 conformant", "kernel.json"),
+        "installer/index.html": ("rapp-current-status", "kernel.json"),
         "blog.html": ("superseded historical record", "no current installer"),
         "release-notes.html": ("superseded historical record", "no current installer"),
         "pages/about/ecosystem.html": ("generated historical observation", "not an active catalog"),

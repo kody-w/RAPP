@@ -18,7 +18,7 @@
     {
       "path": "tests/check_kernel_pin_local.py",
       "disposition": "canonical-direct",
-      "reason": "Compares KERNEL_PIN hashes only with repository-local frozen bytes.",
+      "reason": "Compares KERNEL hashes only with repository-local frozen bytes.",
       "gate": "kernel-pin-local"
     },
     {

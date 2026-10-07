@@ -2,7 +2,7 @@
 
 Read [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json),
 [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md), and
-[`KERNEL_PIN.json`](../../KERNEL_PIN.json) first. RAPP is not yet fully RAPP/1
+[`kernel.json`](../../kernel.json) first. RAPP is not yet fully RAPP/1
 conformant. The immutable grail remains
 `kody-w/rapp-installer@brainstem-v0.6.9`; never edit its pinned bytes or the
 prepared `cave/rapplications/rapp-installer/**` snapshot.
@@ -48,7 +48,7 @@ its default effects remain bounded and independently verifiable.
   supplied.
 - The exact RAPP/1 §8 request, success, and 422 refusal shapes are preserved
   when the adapter touches the synchronous loopback façade.
-- The three hashes in `KERNEL_PIN.json` still match the local immutable grail
+- The three hashes in `kernel.json` still match the local immutable grail
   bytes and the pin still names `brainstem-v0.6.9`.
 
 ## Failure policy

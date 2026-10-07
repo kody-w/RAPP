@@ -52,7 +52,7 @@ The original directory's brainstem and installer-era language remains part of
 the historical record. Its obsolete execution edge is not deleted or replaced
 with a blank refusal; it resolves to immutable implementation evidence:
 
-- checked-in pin record: [`KERNEL_PIN.json`](../../KERNEL_PIN.json);
+- checked-in pin record: [`kernel.json`](../../kernel.json);
 - pinned source: [`kody-w/rapp-installer@brainstem-v0.6.9`](https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9);
 - frozen files: `rapp_brainstem/brainstem.py`,
   `rapp_brainstem/agents/basic_agent.py`, and `rapp_brainstem/VERSION`.

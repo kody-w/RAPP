@@ -139,12 +139,15 @@ actions; the retired tool cannot mint or PUT a replacement identity.
 
 ## Immutable grail boundary
 
-The files pinned by [`KERNEL_PIN.json`](./KERNEL_PIN.json) remain read-only and
-byte-identical to `kody-w/rapp-installer@brainstem-v0.6.9`. RAPP/1 convergence
-must happen in target-owned adapters, validators, migration tooling, and
-retirement policy. Historical `rapp-frame/*` and `brainstem-egg/*` paths may
-remain as dated evidence or implementation inputs, but they are not the current
-RAPP/1 frame or egg authority.
+[`kernel.json`](./kernel.json) records the current grail commit. The older
+local grail files recorded by
+[`RAPP1_AUTHORITY.json`](./RAPP1_AUTHORITY.json) remain read-only and
+byte-identical to `kody-w/rapp-installer@brainstem-v0.6.9`; they are historical
+evidence, not vendored copies of the current pin. RAPP/1 convergence must
+happen in target-owned adapters, validators, migration tooling, and retirement
+policy. Historical `rapp-frame/*` and `brainstem-egg/*` paths may remain as
+dated evidence or implementation inputs, but they are not the current RAPP/1
+frame or egg authority.
 
 Until all owner-action blockers and implementation migrations are complete,
 this repository must continue to lead with **NOT YET FULLY RAPP/1 CONFORMANT**.

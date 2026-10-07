@@ -1891,7 +1891,7 @@ def test_mirror_drift_uses_exact_pin_and_never_overwrites(
 ):
     script = ROOT / "tests" / "mirror-drift.sh"
     source = script.read_text(encoding="utf-8")
-    assert "KERNEL_PIN.json" in source
+    assert "RAPP1_AUTHORITY.json" in source
     assert "brainstem-v0.6.9" in source
     assert "/main" not in source
     assert "Restore with:" not in source
@@ -1899,8 +1899,10 @@ def test_mirror_drift_uses_exact_pin_and_never_overwrites(
     assert "Do not overwrite or remove immutable bytes" in source
     assert "Inspect the pinned Grail" in source
 
-    pin = json.loads((ROOT / "KERNEL_PIN.json").read_text(encoding="utf-8"))
-    frozen = pin["kernel"]["frozen"]
+    authority = json.loads(
+        (ROOT / "RAPP1_AUTHORITY.json").read_text(encoding="utf-8")
+    )
+    frozen = authority["immutable_grail_boundary"]["frozen"]
     before = {
         path: (ROOT / path).read_bytes()
         for path in frozen

@@ -9,7 +9,7 @@
 > The retained steward and builder may analyze, render, check, and plan against
 > explicit pinned/checksummed sources, but never install, stream, write,
 > publish, or accept an entry. Installer facts route through
-> [`KERNEL_PIN.json`](../../KERNEL_PIN.json) and
+> [`kernel.json`](../../kernel.json) and
 > `kody-w/rapp-installer@brainstem-v0.6.9`.
 
 > **Whole-document status:** the remaining body is preserved design history,

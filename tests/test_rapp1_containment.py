@@ -476,8 +476,11 @@ for (const step of [1, "1A", "7", undefined]) {
             self.assertNotIn("Retired semantic tombstone", text)
 
     def test_pinned_grail_and_cave_kernel_bytes_are_unchanged(self):
-        pin = json.loads((ROOT / "KERNEL_PIN.json").read_text())
-        self.assertEqual(pin["kernel"]["frozen"], EXPECTED_GRAIL_PINS)
+        authority = json.loads((ROOT / "RAPP1_AUTHORITY.json").read_text())
+        self.assertEqual(
+            authority["immutable_grail_boundary"]["frozen"],
+            EXPECTED_GRAIL_PINS,
+        )
         for relative, expected in {
             **EXPECTED_GRAIL_PINS,
             **EXPECTED_CAVE_KERNEL,

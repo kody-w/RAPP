@@ -57,14 +57,14 @@
       "4c2b999f8c890b76d057241d29ecda29e0239d79"
     ],
     "status_path": "RAPP1_STATUS.md",
-    "status_sha256": "bce9a915822cad10a7fe80c4e8c4965c2ce0dd8e292a633c8d41d7ec33c3cfd3",
+    "status_sha256": "5b0423943f60bf686e7ae25eb0d5545fd65aaef7714936df508e8b470a8d558a",
     "status_state": "Owner-action ledger links, dated and current path counts, restored target-owned launch boundaries, exact inert copies of removed runtimes, the direct immutable brainstem.py limitation, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
     "current_path_hashes": {
       "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
       "specs/ecosystem-spec.json": "147179baae2021272c5dce6f426eaf6d168df20f863027ca9e8ab51e64d87e5d",
       "rapp_kernel/manifest.json": "a2826eb8820f4487948bfdb1bf3f80b4ca8ccdf902553d5d109cb8de3bb85889",
       "rapp_kernel/latest/brainstem.py": "f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa",
-      "KERNEL_PIN.json": "427a37cc914a279b9c32a2ab85be9a19a0046f10f9f503c088a2670b6646e21c",
+      "kernel.json": "407041a1d9b5b0cbc59d27298d529effc7242e3f7b9b6a104d1157c84739945c",
       "cave/rappid.json": "2a74e9c677128208316a73e2ac3c8ac4da20e19363968b71c40fdee62ff47de6",
       "cave/rapplications/rapp-installer/rappid.json": "f2160814514b85d4ca9f34c45e41e99a7a3e34bb605fd5560ef468f3e1774144"
     }
@@ -220,9 +220,10 @@
       "version_attestation": null,
       "latest_brainstem_path": "rapp_kernel/latest/brainstem.py",
       "latest_brainstem_sha256": "f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa",
-      "classification": "frozen v0.6.0 archive alias, not the active brainstem-v0.6.9 pin",
-      "active_pin_record": "KERNEL_PIN.json",
-      "active_pin_tag": "brainstem-v0.6.9",
+      "classification": "frozen v0.6.0 archive alias, not the active current grail pin",
+      "active_pin_record": "kernel.json",
+      "active_pin_sha": "0e43ee580e78c150b1c59002456822d2e779388e",
+      "active_pin_version": "0.6.16",
       "payload_edit_allowed": false
     },
     "facade_current": {
@@ -636,7 +637,7 @@
         "target_human_disposition": "specs/ECOSYSTEM_SPEC.md",
         "kernel_alias_manifest": "rapp_kernel/manifest.json",
         "kernel_alias_payload": "rapp_kernel/latest/brainstem.py",
-        "active_kernel_pin": "KERNEL_PIN.json",
+        "active_kernel_pin": "kernel.json",
         "target_disposition": {
           "state": "retired-from-active-claims",
           "record": "specs/ecosystem-spec.json",
@@ -699,7 +700,7 @@
         },
         {
           "id": "kernel-latest-retired-or-provenance-pinned",
-          "procedure": "Hash rapp_kernel/latest/brainstem.py, inspect rapp_kernel/manifest.json and public claims, compare them with KERNEL_PIN.json, and inspect the approved alias retirement or target-owned provenance sidecar.",
+          "procedure": "Hash rapp_kernel/latest/brainstem.py, inspect rapp_kernel/manifest.json and public claims, compare them with kernel.json, and inspect the approved alias retirement or target-owned provenance sidecar.",
           "pass_condition": "The alias payload remains byte-identical at SHA-256 f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa and is either not presented as latest/current or is explicitly pinned as the unauthenticated historical v0.6.0 archive; brainstem-v0.6.9 remains the distinct active immutable pin."
         },
         {
@@ -731,7 +732,7 @@
         "allowed_protocol_route": "POST /chat",
         "allowed_control_route": "GET /health",
         "canonical_door_evidence": "RAPP1_OWNER_ACTIONS.json#known_evidence.canonical_doors",
-        "pinned_grail_record": "KERNEL_PIN.json"
+        "pinned_grail_record": "kernel.json"
       },
       "when": "Switch public routing only after all four RAPP1_STATUS owner blockers, the post-migration Active-path residual, canonical-door dispositions, exact current-facade tests, immutable pin gate, and owner deployment review pass on the same deployment commit.",
       "how": [
@@ -743,7 +744,7 @@
         "Verify the root canonical door serves the exact target rappid.json bytes and either publish each missing RAPP-owned identity door through separate authorization or retire its claim. Never modify or deploy kody-w/rapp-installer, its clone, or pinned files to close a door.",
         "Deploy the facade on target-owned infrastructure with durable storage outside the grail paths and a rollback target that is unavailable or maintenance-only, never the legacy wire. Record the exact injected adapter bytes and prove the adapter cannot access grail token caches, telemetry, agents, tools, or facade persistence.",
         "Run exact request, response, idempotency, concurrency, route-isolation, and refusal tests against the deployment origin.",
-        "Hash the three KERNEL_PIN.json frozen files before and after deployment and traffic tests, then run check_kernel_pin.py."
+        "Hash the three kernel.json frozen files before and after deployment and traffic tests, then run check_kernel_pin.py."
       ],
       "prerequisites": [
         "owner-publish-authenticated-registry is accepted and fresh.",
@@ -794,7 +795,7 @@
         {
           "id": "facade-no-grail-side-effects",
           "procedure": "Record SHA-256 for rapp_brainstem/brainstem.py, rapp_brainstem/agents/basic_agent.py, and rapp_brainstem/VERSION; prove the default launcher returns inference-refused without importing brainstem; inspect the injected adapter and exercise all facade cases; verify no grail token/cache read, telemetry write, agent/tool load, or grail path change, then rerun python3 check_kernel_pin.py.",
-          "pass_condition": "All three hashes remain the exact KERNEL_PIN.json values, the default inference boundary refuses closed, the launcher and adapter have no grail dependency or side effect, the pin gate passes, and facade state is written only to the approved external store."
+          "pass_condition": "All three hashes remain the exact kernel.json values, the default inference boundary refuses closed, the launcher and adapter have no grail dependency or side effect, the pin gate passes, and facade state is written only to the approved external store."
         },
         {
           "id": "facade-claim-switch",

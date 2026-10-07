@@ -122,10 +122,14 @@ test('all owner-action blockers remain explicit', () => {
   }
 });
 
-test('immutable grail hashes agree and bytes remain pinned', () => {
-  const pin = json('KERNEL_PIN.json');
+test('current kernel pin and immutable historical grail bytes remain explicit', () => {
+  const pin = json('kernel.json');
+  equal(pin.kernel, 'kody-w/rapp-installer');
+  equal(pin.sha, '0e43ee580e78c150b1c59002456822d2e779388e');
+  equal(pin.version, '0.6.16');
+  equal(pin.path, 'rapp_brainstem/brainstem.py');
+  equal(pin.kernel_blob, '3f7102ff508c813bb6494511fc32a421a633e418');
   const frozen = authority.immutable_grail_boundary.frozen;
-  equal(pin.kernel.frozen, frozen);
   for (const [relative, expected] of Object.entries(frozen)) {
     equal(sha256(relative), expected, `grail byte drift: ${relative}`);
   }
@@ -327,7 +331,7 @@ test('owned pages preserve distribution context without executable installers', 
       !source.includes('retired semantic tombstone'),
       `${relative} is still a semantic tombstone`,
     );
-    assert(source.includes('kernel_pin.json'), `${relative} lacks Grail evidence`);
+    assert(source.includes('kernel.json'), `${relative} lacks Grail evidence`);
     assert(source.includes("connect-src 'none'"), `${relative} permits network`);
   }
   assert(

@@ -9,7 +9,7 @@ instructions or RAPP/1 acceptance.
 
 The restored scripts at those stable paths now default to local provenance
 plans with zero effects. Active modes require the exact
-[`KERNEL_PIN.json`](../KERNEL_PIN.json) Grail binding, reviewed dependency
+[`kernel.json`](../kernel.json) Grail binding, reviewed dependency
 injection, target-specific owner approval, and authenticated fresh section-13
 evidence. That evidence is unavailable here, so effect requests refuse before
 transport or mutation. The immutable Grail remains

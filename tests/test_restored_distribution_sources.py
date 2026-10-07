@@ -15,7 +15,7 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PIN_SHA256 = "427a37cc914a279b9c32a2ab85be9a19a0046f10f9f503c088a2670b6646e21c"
+PIN_SHA256 = "407041a1d9b5b0cbc59d27298d529effc7242e3f7b9b6a104d1157c84739945c"
 FROZEN = {
     "rapp_brainstem/brainstem.py": "a293dd9f11eef915bf15776f08c736faa60cb749820871b6753ea98233142a71",
     "rapp_brainstem/agents/basic_agent.py": "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb",
@@ -564,12 +564,15 @@ def test_inert_deployment_descriptor_matches_recorded_history(relative):
 
 
 def test_kernel_pin_and_frozen_grail_bytes_remain_exact():
-    pin_path = ROOT / "KERNEL_PIN.json"
+    pin_path = ROOT / "kernel.json"
     assert hashlib.sha256(pin_path.read_bytes()).hexdigest() == PIN_SHA256
     pin = json.loads(pin_path.read_text(encoding="utf-8"))
-    assert pin["kernel"]["grail"] == "kody-w/rapp-installer"
-    assert pin["kernel"]["tag"] == "brainstem-v0.6.9"
-    assert pin["kernel"]["frozen"] == FROZEN
+    assert pin["kernel"] == "kody-w/rapp-installer"
+    assert pin["sha"] == "0e43ee580e78c150b1c59002456822d2e779388e"
+    assert pin["version"] == "0.6.16"
+    assert pin["path"] == "rapp_brainstem/brainstem.py"
+    assert pin["kernel_blob"] == "3f7102ff508c813bb6494511fc32a421a633e418"
+    assert "immutable historical evidence" in pin["rule"]
     for relative, expected in FROZEN.items():
         assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected
 
@@ -764,7 +767,10 @@ def test_default_plan_is_effect_free(relative, kind, tmp_path):
     assert plan["mode"] == "plan"
     assert plan["source_commit"] == SOURCES[relative][0]
     assert plan["source_blob"] == SOURCES[relative][1]
-    assert plan["kernel"] == "kody-w/rapp-installer@brainstem-v0.6.9"
+    assert plan["kernel"] == (
+        "kody-w/rapp-installer@"
+        "0e43ee580e78c150b1c59002456822d2e779388e"
+    )
     assert plan["kernel_pin_sha256"] == PIN_SHA256
     assert plan["apply_permitted"] is False
     assert not sentinel.exists()
@@ -792,7 +798,7 @@ def test_fully_flagged_apply_still_refuses_without_effects(relative, kind, tmp_p
         "--target",
         relative,
         "--kernel-pin",
-        os.fspath(ROOT / "KERNEL_PIN.json"),
+        os.fspath(ROOT / "kernel.json"),
         "--reviewed-dependency-injection",
         os.fspath(dependency),
         "--owner-approval",
@@ -833,8 +839,8 @@ def test_apply_rejects_non_exact_pin_and_directory_evidence(
         approval,
         section13,
     ) = _sentinel_environment(tmp_path)
-    bad_pin = tmp_path / "KERNEL_PIN.json"
-    bad_pin.write_bytes((ROOT / "KERNEL_PIN.json").read_bytes() + b" \n")
+    bad_pin = tmp_path / "kernel.json"
+    bad_pin.write_bytes((ROOT / "kernel.json").read_bytes() + b" \n")
     evidence_directory = tmp_path / "not-a-file"
     evidence_directory.mkdir()
     before = _snapshot(effects)
@@ -864,7 +870,7 @@ def test_apply_rejects_non_exact_pin_and_directory_evidence(
         check=False,
     )
     assert wrong_pin.returncode == 78
-    assert "exact KERNEL_PIN.json" in wrong_pin.stderr
+    assert "exact kernel.json" in wrong_pin.stderr
     assert "evidence is unavailable" not in wrong_pin.stderr
 
     directory_evidence = subprocess.run(
@@ -875,7 +881,7 @@ def test_apply_rejects_non_exact_pin_and_directory_evidence(
             "--target",
             relative,
             "--kernel-pin",
-            os.fspath(ROOT / "KERNEL_PIN.json"),
+            os.fspath(ROOT / "kernel.json"),
             "--reviewed-dependency-injection",
             os.fspath(evidence_directory),
             "--owner-approval",
@@ -1000,7 +1006,7 @@ def test_non_native_launchers_gate_before_historical_commands():
         "--reviewed-dependency-injection",
         "--owner-approval",
         "--section13-evidence",
-        "kody-w/rapp-installer@brainstem-v0.6.9",
+        "kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e",
         "authenticated fresh section-13 evidence is unavailable",
     )
     for relative in POWERSHELL_PLAN:
@@ -1097,7 +1103,7 @@ def test_powershell_defaults_and_refusals_are_effect_free_when_available(
                 "--target",
                 relative,
                 "--kernel-pin",
-                os.fspath(ROOT / "KERNEL_PIN.json"),
+                os.fspath(ROOT / "kernel.json"),
                 "--reviewed-dependency-injection",
                 os.fspath(dependency),
                 "--owner-approval",

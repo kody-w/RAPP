@@ -384,7 +384,7 @@ SOURCE_RECORDS = (
         "commit": "b4f3e31c1c30cfaf798728cec2de45dbfcfb3e25",
         "check": marker_set(
             0.177,
-            "KERNEL_PIN.json",
+            "kernel.json",
             "brainstem-v0.6.9",
             "expected_sha",
         ),
@@ -1161,7 +1161,7 @@ def render() -> str:
             "restore_fullest_artifact_first": True,
             "preserve_data_exhaust": True,
             "disable_only_exact_unsafe_edges": True,
-            "installer_reference": "KERNEL_PIN.json",
+            "installer_reference": "kernel.json",
             "grail": "kody-w/rapp-installer@brainstem-v0.6.9",
         },
         "generation_basis": (

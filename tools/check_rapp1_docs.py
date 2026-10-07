@@ -496,13 +496,13 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
                     errors.append(f"fixture: {name} target-check path is missing: {path}")
     expected_terminal_hashes = {
         "pages/index.html": (
-            "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289"
+            "8d458d22bc60c4b4b3c0157f570f26c4c8e604838dbc50feeac5655e9465bf05"
         ),
         "cave/rar/index.json": (
-            "0243ca6318e4ca6176326ee9d1eee70cba4bfb2cf737f329c0525ad309c3eb04"
+            "08477cf03917cc72c776c1c7c962b4eba081549ab7f6844aebc52a045aa0c69a"
         ),
         "cave/super-rar/index.json": (
-            "3fdb030dc301d4c6596729e4c795ad79054ffb376caa2bb8a5b87e86767c8a99"
+            "de26961af10c63f94bf88f9012e97422c5c5b89a962b52f9d4ade13ee69df2b0"
         ),
     }
     terminal_hashes = target_checks.get("integrated_terminal_states", {}).get(
@@ -520,7 +520,7 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             "d66b6fcb348238eb6db435c50a66cbc88c9800cca0c6d89db32bfa73799875a5"
         ),
         "installer/README.md": (
-            "85d0913c7f2486158820f228004abe5245558c3d9ec6b39ab4c36edb6eb575fc"
+            "3e403f10b72bdf03d038903c7b2f0cc334190129932808253acbf38fcb5b729f"
         ),
     }
     documentation_hashes = target_checks.get(
@@ -594,6 +594,37 @@ def _validate_fixture(fixture: dict[str, Any]) -> list[str]:
             errors.append(f"fixture: ownership exclusion is outside action scope: {path}")
         if not isinstance(reason, str) or not reason:
             errors.append(f"fixture: ownership exclusion has no reason: {path}")
+    authorized_owned_edits = fixture.get("authorized_owned_migration_edits")
+    expected_authorized_owned_edits = {
+        "index.html",
+        "installer/integration_plant.sh",
+    }
+    if (
+        not isinstance(authorized_owned_edits, dict)
+        or set(authorized_owned_edits) != expected_authorized_owned_edits
+    ):
+        errors.append("fixture: authorized owned migration edits drifted")
+        authorized_owned_edits = {}
+    for path, record in authorized_owned_edits.items():
+        if path not in ownership_exclusions:
+            errors.append(
+                f"fixture: authorized owned migration edit is not owner-excluded: {path}"
+            )
+            continue
+        if (
+            not isinstance(record, dict)
+            or set(record) != {"reason", "sha256"}
+            or not isinstance(record["reason"], str)
+            or not record["reason"]
+        ):
+            errors.append(
+                f"fixture: authorized owned migration edit is malformed: {path}"
+            )
+            continue
+        if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != record["sha256"]:
+            errors.append(
+                f"fixture: authorized owned migration edit bytes drifted: {path}"
+            )
     for path in original_all:
         if path not in seen:
             errors.append(f"fixture: original R1-DOC-01 path has no disposition: {path}")
@@ -696,7 +727,10 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         for category_name in protected_categories
         for path in categories[category_name]["paths"]
     } | set(ownership_exclusions)
-    for path in sorted(changed_paths & protected_paths):
+    authorized_owned_edits = set(
+        fixture.get("authorized_owned_migration_edits", {})
+    )
+    for path in sorted((changed_paths & protected_paths) - authorized_owned_edits):
         errors.append(f"{path}: protected mirror/immutable/owned path was modified")
     allowed_owner_mirror_edit = {
         "specs/ECOSYSTEM_SPEC.md",
@@ -758,7 +792,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
             for token in (
                 "rapp-history-source",
                 "rapp1_status.md",
-                "kernel_pin.json",
+                "kernel.json",
                 "content-security-policy",
                 "connect-src 'none'",
                 "form-action 'none'",
@@ -809,7 +843,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
             lowered = raw.lower()
             for token in (
                 "rapp1_status.md",
-                "kernel_pin.json",
+                "kernel.json",
                 "content-security-policy",
                 "form-action 'none'",
             ):
@@ -859,7 +893,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
                 "rapp-history-source",
                 "rapp1-historical-section-start",
                 "rapp1-historical-section-end",
-                "kernel_pin.json",
+                "kernel.json",
                 "cubbies/index.json",
             ):
                 if token not in lowered:
@@ -1003,7 +1037,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         "historical surface",
         "default to local provenance",
         "zero effects",
-        "KERNEL_PIN.json",
+        "kernel.json",
         "reviewed dependency",
         "authenticated fresh section-13",
         "evidence is unavailable",
@@ -1089,8 +1123,10 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         or rar_agent.get("active_distribution") is not False
         or rar_agent.get("streamable") is not False
         or rar_agent.get("source", {}).get("present") is not False
-        or rar_agent.get("kernel_pin", {}).get("record") != "KERNEL_PIN.json"
-        or rar_agent.get("kernel_pin", {}).get("tag") != "brainstem-v0.6.9"
+        or rar_agent.get("kernel_pin", {}).get("record") != "kernel.json"
+        or rar_agent.get("kernel_pin", {}).get("sha")
+        != "0e43ee580e78c150b1c59002456822d2e779388e"
+        or rar_agent.get("kernel_pin", {}).get("version") != "0.6.16"
     ):
         errors.append(
             "cave/rar/index.json: historical installer-agent observation is "
@@ -1117,8 +1153,10 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
         or super_agent.get("active_distribution") is not False
         or super_agent.get("streamable") is not False
         or super_agent.get("source", {}).get("present") is not False
-        or super_agent.get("kernel_pin", {}).get("record") != "KERNEL_PIN.json"
-        or super_agent.get("kernel_pin", {}).get("tag") != "brainstem-v0.6.9"
+        or super_agent.get("kernel_pin", {}).get("record") != "kernel.json"
+        or super_agent.get("kernel_pin", {}).get("sha")
+        != "0e43ee580e78c150b1c59002456822d2e779388e"
+        or super_agent.get("kernel_pin", {}).get("version") != "0.6.16"
     ):
         errors.append(
             "cave/super-rar/index.json: historical installer-agent observation "
@@ -1146,7 +1184,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
             errors.append(f"{path}: missing immutable RAPP/1 authority pin")
         if (
             canon_rule["required_pin"] not in text
-            and "KERNEL_PIN.json" not in text
+            and "kernel.json" not in text
         ):
             errors.append(f"{path}: missing immutable grail pin")
         active, marker_errors = _active_text(path, fixture)
@@ -1261,7 +1299,7 @@ def _validate_post_categories(fixture: dict[str, Any]) -> list[str]:
 
     status = _read("RAPP1_STATUS.md")
     expected_status_sha256 = (
-        "bce9a915822cad10a7fe80c4e8c4965c2ce0dd8e292a633c8d41d7ec33c3cfd3"
+        "5b0423943f60bf686e7ae25eb0d5545fd65aaef7714936df508e8b470a8d558a"
     )
     if hashlib.sha256(status.encode("utf-8")).hexdigest() != expected_status_sha256:
         errors.append("RAPP1_STATUS.md: code-owned owner-evidence hash drifted")

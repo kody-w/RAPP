@@ -8,7 +8,7 @@
 > files are full read-only observations rather than tombstones: adapters may
 > analyze, render, check, and plan, but may not install, stream, write, publish,
 > or accept an entry. Prepared installer facts point to
-> [`KERNEL_PIN.json`](../../KERNEL_PIN.json) and
+> [`kernel.json`](../../kernel.json) and
 > `kody-w/rapp-installer@brainstem-v0.6.9`.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->

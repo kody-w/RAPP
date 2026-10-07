@@ -209,7 +209,7 @@ function runtimeRefusal(request, runtime, capability) {
       required_flag: `${RUNTIME_FLAG}=true`,
       required_binding: RUNTIME_BINDING,
       guidance: {
-        kernel_pin: 'KERNEL_PIN.json',
+        kernel_pin: 'kernel.json',
         grail: 'kody-w/rapp-installer@brainstem-v0.6.9',
       },
     }, { status: 503 }, request, runtime);
@@ -680,7 +680,7 @@ export default {
         capabilities: runtime.capabilities,
         historical_source: HISTORICAL_SOURCE,
         guidance: {
-          kernel_pin: 'KERNEL_PIN.json',
+          kernel_pin: 'kernel.json',
           grail: 'kody-w/rapp-installer@brainstem-v0.6.9',
         },
       }, { status: 200 }, request, runtime);

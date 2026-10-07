@@ -57,7 +57,7 @@ do
         echo "FAIL: $route has no historical source provenance" >&2
         exit 1
     }
-    grep -qi "KERNEL_PIN.json" "$ROOT/$route" || {
+    grep -qi "kernel.json" "$ROOT/$route" || {
         echo "FAIL: $route does not route installer context to the Grail pin" >&2
         exit 1
     }
