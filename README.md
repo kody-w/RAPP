@@ -10,22 +10,15 @@ Every **Brainstem** is an atom: a small AI that runs on any computer (a Mac, a W
 closet), with the AI you already use, and stays on. **RAPP** makes all of your Brainstems work in unison, so several
 computers act as one AI instead of separate bots.
 
+A Brainstem is also a social butterfly: it connects the AIs already on your computer (Claude, ChatGPT, GitHub
+Copilot) so they share one memory and one set of abilities, instead of each starting from zero.
+
 ## Start: one line
 
-macOS and Linux:
-
-```bash
-curl -fsSL https://kody-w.github.io/rapp-installer/install.sh | bash
-```
-
-Windows (PowerShell):
-
-```powershell
-irm https://raw.githubusercontent.com/kody-w/rapp-installer/main/install.ps1 | iex
-```
-
-Sign in with GitHub once, and your Brainstem opens at http://localhost:7071. Run the same line on another computer
-and it adds another atom to your AI.
+The one line that installs a Brainstem is on the installer's
+[Start here](https://github.com/kody-w/rapp-installer#start-here) page, for macOS, Linux and Windows. Sign in with
+GitHub once and your Brainstem opens at http://localhost:7071. Run the same line on another computer and it adds
+another atom to your AI.
 
 ## What people do with it
 
@@ -37,6 +30,38 @@ and it adds another atom to your AI.
 | Your AI inside the AI apps you use | Connect your Brainstem to Claude, GitHub Copilot or ChatGPT with [brainstem-mcp](https://github.com/kody-w/brainstem-mcp); they share its memory and agents | Works today |
 | Several computers working as one | The strong computer does the heavy work, the others ask and help, through RAPP | Coming next |
 | AI in places it has never been | A Linux NAS, a game console, whatever is next. Each new place is proven on a real machine first | Being proven |
+
+## What RAPP does that other AI tools don't
+
+| RAPP + Brainstem | Claude Code, ChatGPT, Copilot | Why it matters |
+|---|---|---|
+| Runs on any computer you own and stays on | A session in a terminal, or an app on someone else's cloud | Your AI keeps working while you sleep, on the old laptop in the closet |
+| Several computers act as one AI (coming next) | One machine, one session at a time | Your strongest computer does the heavy work; the others just ask |
+| Abilities are files you own and run the same on every Brainstem | Custom agents live inside one product | You keep what you build, and you can share or trade it |
+| Any AI model, switched with one setting | Mostly one vendor's models | Use the best or the cheapest model for each job, free ones included |
+| A core that doesn't change, proven identical everywhere | Updates change behavior under you | What worked last month still works the same way |
+| Claude, ChatGPT and Copilot can connect to your Brainstem | Each AI is separate | Every AI you use shares one memory and one set of abilities |
+| Memory stays on your machine | Memory lives on their servers | Your life stays yours |
+| A shared record your computers can check | No shared record between tools | Your computers agree on what happened, and you can verify it |
+
+They do some things better: Claude Code is the stronger coding agent, ChatGPT is the more polished app, and MCP has
+the biggest ecosystem of tools. RAPP gives them a home: they connect to your Brainstem, and your Brainstem runs where
+they can't.
+
+## Runs on RAPP: join the network
+
+Outsiders are welcome, people and AIs alike. Anything that passes the same checks we hold ourselves to gets the
+**Runs on RAPP** mark and works with every Brainstem.
+
+| You built | Prove it with (from [rapp-1](https://github.com/kody-w/rapp-1)) | Status |
+|---|---|---|
+| Agents or a repo of them | `python3 rapp_check.py <your repo>` reports COMPLIANT or CLEAN | Open now |
+| RAPP in another language | `python3 conformance.py`: every test vector passes | Open now |
+| A Brainstem of your own, or an AI app that talks to Brainstems | The Brainstem conformance tests: the same answers as the reference, field for field | Opening soon |
+
+To get listed, open an issue on [rapp-1](https://github.com/kody-w/rapp-1/issues) with your check output and a link to
+your work. Certified agents go in the [registry](https://github.com/kody-w/RAR), and a certified Brainstem joins your
+AI as another atom.
 
 ## Your first agent
 
