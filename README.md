@@ -4,6 +4,102 @@
 [![RAPP/1](https://kody-w.github.io/rapp-hive-public/portfolio/badges/RAPP.svg)](https://github.com/kody-w/rapp-hive-public/blob/main/portfolio/repos/RAPP.md) · **New to RAPP?** [Start here: get your Brainstem →](https://github.com/kody-w/rapp-installer#start-here)
 <!-- rapp1:network-header:end -->
 
+**AI that runs anywhere.** One line turns any computer you own into part of your AI.
+
+Every **Brainstem** is an atom: a small AI that runs on any computer (a Mac, a Windows PC, a Linux box, a Mac mini in a
+closet), with the AI you already use, and stays on. **RAPP** makes all of your Brainstems work in unison, so several
+computers act as one AI instead of separate bots.
+
+A Brainstem is also a social butterfly: it connects the AIs already on your computer (Claude, ChatGPT, GitHub
+Copilot) so they share one memory and one set of abilities, instead of each starting from zero.
+
+## Start: one line
+
+The one line that installs a Brainstem is on the installer's
+[Start here](https://github.com/kody-w/rapp-installer#start-here) page, for macOS, Linux and Windows. Sign in with
+GitHub once and your Brainstem opens at http://localhost:7071. Run the same line on another computer and it adds
+another atom to your AI.
+
+## What people do with it
+
+| You want | What you do | Status |
+|---|---|---|
+| An AI that is always on, on a computer you already own | Run the one line on an old laptop or a Mac mini and leave it running | Works today |
+| An AI that remembers you | Tell it about yourself and your projects; it keeps that memory on your machine | Works today |
+| New abilities without coding | Add an agent from the [registry](https://github.com/kody-w/RAR): each one is a single file that does one job | Works today |
+| Your AI inside the AI apps you use | Connect your Brainstem to Claude, GitHub Copilot or ChatGPT with [brainstem-mcp](https://github.com/kody-w/brainstem-mcp); they share its memory and agents | Works today |
+| Several computers working as one | The strong computer does the heavy work, the others ask and help, through RAPP | Coming next |
+| AI in places it has never been | A Linux NAS, a game console, whatever is next. Each new place is proven on a real machine first | Being proven |
+
+## What RAPP does that other AI tools don't
+
+| RAPP + Brainstem | Claude Code, ChatGPT, Copilot | Why it matters |
+|---|---|---|
+| Runs on any computer you own and stays on | A session in a terminal, or an app on someone else's cloud | Your AI keeps working while you sleep, on the old laptop in the closet |
+| Several computers act as one AI (coming next) | One machine, one session at a time | Your strongest computer does the heavy work; the others just ask |
+| Abilities are files you own and run the same on every Brainstem | Custom agents live inside one product | You keep what you build, and you can share or trade it |
+| Any AI model, switched with one setting | Mostly one vendor's models | Use the best or the cheapest model for each job, free ones included |
+| A core that doesn't change, proven identical everywhere | Updates change behavior under you | What worked last month still works the same way |
+| Claude, ChatGPT and Copilot can connect to your Brainstem | Each AI is separate | Every AI you use shares one memory and one set of abilities |
+| Memory stays on your machine | Memory lives on their servers | Your life stays yours |
+| A shared record your computers can check | No shared record between tools | Your computers agree on what happened, and you can verify it |
+
+They do some things better: Claude Code is the stronger coding agent, ChatGPT is the more polished app, and MCP has
+the biggest ecosystem of tools. RAPP gives them a home: they connect to your Brainstem, and your Brainstem runs where
+they can't.
+
+## Runs on RAPP: join the network
+
+Outsiders are welcome, people and AIs alike. Anything that passes the same checks we hold ourselves to gets the
+**Runs on RAPP** mark and works with every Brainstem.
+
+| You built | Prove it with (from [rapp-1](https://github.com/kody-w/rapp-1)) | Status |
+|---|---|---|
+| Agents or a repo of them | `python3 rapp_check.py <your repo>` reports COMPLIANT or CLEAN | Open now |
+| RAPP in another language | `python3 conformance.py`: every test vector passes | Open now |
+| A Brainstem of your own, or an AI app that talks to Brainstems | The Brainstem conformance tests: the same answers as the reference, field for field | Opening soon |
+
+To get listed, open an issue on [rapp-1](https://github.com/kody-w/rapp-1/issues) with your check output and a link to
+your work. Certified agents go in the [registry](https://github.com/kody-w/RAR), and a certified Brainstem joins your
+AI as another atom.
+
+## Your first agent
+
+An agent is a Python file named `something_agent.py` in your Brainstem's `agents` folder:
+
+```python
+from agents.basic_agent import BasicAgent
+
+class HelloAgent(BasicAgent):
+    def __init__(self):
+        self.name = "Hello"
+        self.metadata = {"name": self.name, "description": "Says hello to someone by name.",
+                         "parameters": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}}
+        super().__init__(name=self.name, metadata=self.metadata)
+
+    def perform(self, name="", **kwargs):
+        return f"Hello, {name}!"
+```
+
+Save it, then ask your Brainstem "say hello to Ada". Every Brainstem runs the same file the same way.
+
+## Where things live
+
+| Repo | What it is |
+|---|---|
+| **RAPP** (this repo) | Start here: the docs, examples and tools |
+| [rapp-installer](https://github.com/kody-w/rapp-installer) | The Brainstem itself and its one-line installer |
+| [rapp-1](https://github.com/kody-w/rapp-1) | The technical spec of the format (`rapp/1`) and its conformance tests |
+| [RAR](https://github.com/kody-w/RAR) | The registry of shared agents |
+| [rappterbook](https://github.com/kody-w/rappterbook) | A social network where AI agents post and talk |
+
+---
+
+## For AI runtimes and maintainers
+
+Everything below is the project's status, authority and history, unchanged.
+
+
 > **Repository authority:** this is the canonical home of the public RAPP
 > foundation, reference implementation, organism model, and
 > [philosophy](./PHILOSOPHY.md).
