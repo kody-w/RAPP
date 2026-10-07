@@ -6,9 +6,9 @@
 _RAPP_TARGET="install.command"
 _RAPP_COMMIT="4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"
 _RAPP_BLOB="6d444ac6e2303bc5cb694884ad9e4931be959048"
-_RAPP_PIN_SHA256="427a37cc914a279b9c32a2ab85be9a19a0046f10f9f503c088a2670b6646e21c"
+_RAPP_PIN_SHA256="407041a1d9b5b0cbc59d27298d529effc7242e3f7b9b6a104d1157c84739945c"
 _rapp_plan() {
-    printf '{"schema":"rapp-restored-distribution-source/1.0","target":"%s","mode":"plan","source_commit":"%s","source_blob":"%s","kernel":"kody-w/rapp-installer@brainstem-v0.6.9","kernel_pin_sha256":"%s","apply_permitted":false,"reason":"authenticated-section-13-evidence-unavailable"}\n' \
+    printf '{"schema":"rapp-restored-distribution-source/1.0","target":"%s","mode":"plan","source_commit":"%s","source_blob":"%s","kernel":"kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e","kernel_pin_sha256":"%s","apply_permitted":false,"reason":"authenticated-section-13-evidence-unavailable"}\n' \
         "$_RAPP_TARGET" "$_RAPP_COMMIT" "$_RAPP_BLOB" "$_RAPP_PIN_SHA256"
 }
 _rapp_refuse() {
@@ -29,19 +29,13 @@ _rapp_pin_matches() {
     [ -f "$1" ] || return 1
     {
         _rapp_expect_line '{' &&
-        _rapp_expect_line '  "spec": "rapp-distro/1.0",' &&
-        _rapp_expect_line '  "distro": "RAPP (the reference distro)",' &&
-        _rapp_expect_line '  "kernel": {' &&
-        _rapp_expect_line '    "grail": "kody-w/rapp-installer",' &&
-        _rapp_expect_line '    "tag": "brainstem-v0.6.9",' &&
-        _rapp_expect_line '    "frozen": {' &&
-        _rapp_expect_line '      "rapp_brainstem/brainstem.py": "a293dd9f11eef915bf15776f08c736faa60cb749820871b6753ea98233142a71",' &&
-        _rapp_expect_line '      "rapp_brainstem/agents/basic_agent.py": "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb",' &&
-        _rapp_expect_line '      "rapp_brainstem/VERSION": "13eb74b44be6e3a85a0efa0dedf56aec05e9e50140e1c8bbc0d0fbd8097b0717"' &&
-        _rapp_expect_line '    }' &&
-        _rapp_expect_line '  },' &&
-        _rapp_expect_line '  "channel": "lts",' &&
-        _rapp_expect_line "  \"note\": \"RAPP tracks the grail (kody-w/rapp-installer). Pinned at brainstem-v0.6.9, the grail's current kernel release — a deliberate distro bump from v0.6.0 ordered in kody-w/RAPP#83 (the grail feeds RAPP; RAPP's vendored copy tracks it). Verified byte-identical to the grail tag.\"" &&
+        _rapp_expect_line '  "kernel": "kody-w/rapp-installer",' &&
+        _rapp_expect_line '  "sha": "0e43ee580e78c150b1c59002456822d2e779388e",' &&
+        _rapp_expect_line '  "version": "0.6.16",' &&
+        _rapp_expect_line '  "path": "rapp_brainstem/brainstem.py",' &&
+        _rapp_expect_line '  "kernel_blob": "3f7102ff508c813bb6494511fc32a421a633e418",' &&
+        _rapp_expect_line '  "pinned": "2026-10-07",' &&
+        _rapp_expect_line "  \"rule\": \"RAPP's local rapp_brainstem grail files remain immutable historical evidence at brainstem-v0.6.9 and are not vendored by this current pin.\"" &&
         _rapp_expect_last_line '}' &&
         ! IFS= read -r _rapp_extra
     } < "$1"
@@ -83,7 +77,7 @@ while [ "$#" -gt 0 ]; do
 done
 [ "$_RAPP_ALLOW" -eq 1 ] || _rapp_refuse "--allow-active-effects is required"
 [ "$_RAPP_REQUESTED_TARGET" = "$_RAPP_TARGET" ] || _rapp_refuse "target-specific approval target is missing or mismatched"
-_rapp_pin_matches "$_RAPP_PIN" || _rapp_refuse "exact KERNEL_PIN.json for kody-w/rapp-installer@brainstem-v0.6.9 is required"
+_rapp_pin_matches "$_RAPP_PIN" || _rapp_refuse "exact kernel.json for kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e is required"
 [ -f "$_RAPP_INJECTION" ] || _rapp_refuse "reviewed dependency injection evidence is required"
 [ -f "$_RAPP_APPROVAL" ] || _rapp_refuse "target-specific owner approval is required"
 [ -f "$_RAPP_EVIDENCE" ] || _rapp_refuse "authenticated fresh section-13 evidence is required"

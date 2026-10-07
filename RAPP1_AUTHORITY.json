@@ -30,9 +30,9 @@
   "immutable_grail_boundary": {
     "repository": "kody-w/rapp-installer",
     "tag": "brainstem-v0.6.9",
-    "pin_record": "KERNEL_PIN.json",
+    "current_pin_record": "kernel.json",
     "policy": "read-only",
-    "implementation_policy": "RAPP/1 convergence occurs in target-owned adapters, validators, migrations, and retirement markers; the pinned grail bytes are not modified.",
+    "implementation_policy": "kernel.json tracks the current grail commit; these older local grail bytes remain immutable historical evidence and are not vendored by that current pin. RAPP/1 convergence occurs in target-owned adapters, validators, migrations, and retirement markers.",
     "frozen": {
       "rapp_brainstem/brainstem.py": "a293dd9f11eef915bf15776f08c736faa60cb749820871b6753ea98233142a71",
       "rapp_brainstem/agents/basic_agent.py": "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb",

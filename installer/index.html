@@ -126,7 +126,7 @@
   <div class="install-body" id="cmd-row">
     <span class="dollar">$</span>
     <span class="cmd"><span id="cmd-text">macOS installer context</span> ·
-      <a href="../KERNEL_PIN.json">KERNEL_PIN.json</a> →
+      <a href="../kernel.json">kernel.json</a> →
       <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9">kody-w/rapp-installer@brainstem-v0.6.9</a>
       · source evidence only</span>
     <span class="copy">⧉</span>
@@ -153,7 +153,7 @@
       <div class="step">
         <h3>Install</h3>
         <p>Install puts the brainstem at <code>~/.brainstem/src/rapp_brainstem/</code>.</p>
-        <pre><a href="../KERNEL_PIN.json">KERNEL_PIN.json</a> →
+        <pre><a href="../kernel.json">kernel.json</a> →
 <a href="https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9">immutable Grail source</a>
 machine-wide installer context · no executable command</pre>
       </div>
@@ -167,7 +167,7 @@ immutable source inspection only</pre>
         <h3>Project-local install (optional)</h3>
         <p>Want a brainstem scoped to a single project instead of machine-wide? <code>cd</code> into the project, then run:</p>
         <pre>Project-local installer context →
-<a href="../KERNEL_PIN.json">verified immutable Grail boundary</a></pre>
+<a href="../kernel.json">verified immutable Grail boundary</a></pre>
         <p style="font-size:.9em;opacity:.75;margin-top:8px">
           Drops at <code>./.brainstem/</code>, picks a free port (7072+), runs alongside your global brainstem, auto-gitignored.
           Each project gets its own <code>agents/</code> and its own catalog. Visit <code>http://localhost:&lt;port&gt;/web/neighborhood.html</code> on any running brainstem to see all installs on this machine.
@@ -197,7 +197,7 @@ immutable source inspection only</pre>
       <p class="met"><em>Metaphor: long-term memory. Slow, durable, multi-tenant.</em></p>
       <div class="step">
         <h3>Deploy</h3>
-        <p>Click the button on the <a href="../KERNEL_PIN.json" title="Historical swarm edge; opens immutable Grail evidence">swarm page</a>, fill in the
+        <p>Click the button on the <a href="../kernel.json" title="Historical swarm edge; opens immutable Grail evidence">swarm page</a>, fill in the
           resource group, wait ~3 minutes.</p>
       </div>
     </div>
@@ -242,12 +242,12 @@ immutable source inspection only</pre>
   <a href="../pages/docs/SPEC.md">SPEC.md</a>
   <a href="https://github.com/kody-w/RAPP/blob/main/rapp_brainstem/web/index.html" target="_blank" rel="noopener">Brainstem (virtual)</a>
   <a href="https://github.com/kody-w/RAPP/tree/main/rapp_swarm" target="_blank" rel="noopener">Swarm</a>
-  <a href="../KERNEL_PIN.json" title="Historical Shortcut edge; opens immutable Grail evidence">Apple Shortcuts</a>
+  <a href="../kernel.json" title="Historical Shortcut edge; opens immutable Grail evidence">Apple Shortcuts</a>
   <a href="https://github.com/kody-w/RAPP" target="_blank">Source</a>
 </div>
 
 <footer>RAPP v1 — frozen 2026-04-17 · digital twin ·
-  <a href="../KERNEL_PIN.json">Grail pin</a> ·
+  <a href="../kernel.json">Grail pin</a> ·
   <a href="../RAPP1_STATUS.md">status</a>
 </footer>
 
@@ -276,7 +276,7 @@ immutable source inspection only</pre>
     });
   })();
   cmdRow.addEventListener('click', () => {
-    const evidence = 'KERNEL_PIN.json → https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9';
+    const evidence = 'kernel.json → https://github.com/kody-w/rapp-installer/tree/brainstem-v0.6.9';
     navigator.clipboard.writeText(evidence).then(() => {
       cmdRow.classList.add('copied');
       setTimeout(() => cmdRow.classList.remove('copied'), 1200);

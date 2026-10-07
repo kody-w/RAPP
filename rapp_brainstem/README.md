@@ -48,7 +48,7 @@ py -m pip install -r requirements.txt
 
 If the checkout already exists, fetch and detach at the same tag rather than
 pulling a moving branch. Target-owned installers may add wrappers and adapters,
-but they must preserve the three hashes in `KERNEL_PIN.json`.
+but they must preserve the three hashes in `kernel.json`.
 
 ---
 
@@ -341,7 +341,7 @@ validators, migrations, and retirement policy.
 
 - **Inspect the runtime value:** `curl -s localhost:7071/version`
 - **Verify authority and hashes:** follow `RAPP1_AUTHORITY.json`,
-  `KERNEL_PIN.json`, and `RAPP1_STATUS.md`
+  `kernel.json`, and `RAPP1_STATUS.md`
 
 ---
 

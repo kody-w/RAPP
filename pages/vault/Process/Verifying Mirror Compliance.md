@@ -12,7 +12,7 @@ hook: The one-liner that confirms this kernel mirror is byte-identical to grail.
 > RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Current mirror verification is
-> against [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) and immutable
+> against [`kernel.json`](../../../kernel.json) and immutable
 > `kody-w/rapp-installer@brainstem-v0.6.9`, never moving `main` or `latest`.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->

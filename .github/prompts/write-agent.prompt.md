@@ -2,7 +2,7 @@
 
 Read [`RAPP1_AUTHORITY.json`](../../RAPP1_AUTHORITY.json),
 [`RAPP1_STATUS.md`](../../RAPP1_STATUS.md), and
-[`KERNEL_PIN.json`](../../KERNEL_PIN.json) first. The immutable grail is
+[`kernel.json`](../../kernel.json) first. The immutable grail is
 `kody-w/rapp-installer@brainstem-v0.6.9`; its pinned bytes and the prepared
 `cave/rapplications/rapp-installer/**` snapshot are read-only.
 Canonicalization, identity, frames, wire, eggs, registry, trust, and protocol

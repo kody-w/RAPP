@@ -11,7 +11,7 @@
     "mutable_generated_paths": [],
     "current_inventory": {
       "tracked_paths": 855,
-      "stable_tracked_bytes": 16919423
+      "stable_tracked_bytes": 16921945
     },
     "integration_note": "The pinned integrated inventory describes d71b6f9; current path and byte coverage is separate, while the 691-row final verifier ledger remains a dated source report.",
     "status_boundary": "RAPP1_STATUS.md retains its code-owned owner-evidence hash from launch containment; current stable path and byte coverage is recorded separately from dated audit evidence.",
@@ -490,9 +490,9 @@
       "expected_count": 3,
       "path_set_sha256": "c9bba8f59689ee0df4c0df065404470df9a02c6872fbe80619b17b8c18ca8706",
       "sha256": {
-        "pages/index.html": "64609f746cd216a22bf023d3ca943644a01c2394fb7f29c3778a3ba013caf289",
-        "cave/rar/index.json": "0243ca6318e4ca6176326ee9d1eee70cba4bfb2cf737f329c0525ad309c3eb04",
-        "cave/super-rar/index.json": "3fdb030dc301d4c6596729e4c795ad79054ffb376caa2bb8a5b87e86767c8a99"
+        "pages/index.html": "8d458d22bc60c4b4b3c0157f570f26c4c8e604838dbc50feeac5655e9465bf05",
+        "cave/rar/index.json": "08477cf03917cc72c776c1c7c962b4eba081549ab7f6844aebc52a045aa0c69a",
+        "cave/super-rar/index.json": "de26961af10c63f94bf88f9012e97422c5c5b89a962b52f9d4ade13ee69df2b0"
       },
       "paths": [
         "pages/index.html",
@@ -506,7 +506,7 @@
       "path_set_sha256": "7423edeb7b7b24efda534a4ddf76d6483f10f16473eabd7dfb5ed640f314a27c",
       "sha256": {
         "pages/_site/partials/footer.html": "d66b6fcb348238eb6db435c50a66cbc88c9800cca0c6d89db32bfa73799875a5",
-        "installer/README.md": "85d0913c7f2486158820f228004abe5245558c3d9ec6b39ab4c36edb6eb575fc"
+        "installer/README.md": "3e403f10b72bdf03d038903c7b2f0cc334190129932808253acbf38fcb5b729f"
       },
       "paths": [
         "pages/_site/partials/footer.html",
@@ -521,6 +521,16 @@
     "cave/rapplications/rapp-installer/README.md": "immutable prepared-clone payload",
     "cave/rapplications/rapp-installer/hatch.py": "immutable prepared-clone payload",
     "cave/rapplications/rapp-installer/manifest.json": "immutable prepared-clone payload"
+  },
+  "authorized_owned_migration_edits": {
+    "index.html": {
+      "reason": "one-kernel-pin filename migration in the distribution-owned landing page",
+      "sha256": "3ba3f5d5aadcd90541c1ff989aca6ff5f461b3c20f7adee72f7bee70591b20a3"
+    },
+    "installer/integration_plant.sh": {
+      "reason": "one-kernel-pin filename and canonical-record migration in the code-owned installer adapter",
+      "sha256": "66d3e4243c278e9fed496fe5ac3c98a1046e23196a5227b738a872e31e476c20"
+    }
   },
   "derived_document_scope": {
     "extensions": [

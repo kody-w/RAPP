@@ -2,7 +2,7 @@
 # git blob b354cbb6759952105263b862d7ba18c185daa591.
 #
 # Metadata only. No reviewed upstream fetch binding is declared here, and the
-# capability flag is deliberately false. See worker.js and KERNEL_PIN.json.
+# capability flag is deliberately false. See worker.js and kernel.json.
 
 name = "rapp-auth"
 main = "worker.js"

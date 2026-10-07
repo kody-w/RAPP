@@ -36,7 +36,7 @@ The full-bodied **Rappter distro** (organs, senses, lineage/bonding lib, rich UI
 | `rapp_brainstem/agents/basic_agent.py` | Agent ABI. Base class every single-file agent extends. |
 
 `tests/mirror-drift.sh` is a legacy moving-main diagnostic and is not
-authoritative for the immutable pin. Validate against the authority/KERNEL_PIN
+authoritative for the immutable pin. Validate against the authority/KERNEL
 recorded tag and digests.
 
 ### 🧠 Tier 1 — Brainstem (local Python server)

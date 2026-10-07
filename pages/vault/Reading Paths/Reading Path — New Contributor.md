@@ -12,7 +12,7 @@ hook: 7 notes + the constitution. The onboarding read for someone about to contr
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Vault narratives and the local
 > Constitution preserve history; they do not outrank the immutable authority
-> commit or [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) at
+> commit or [`kernel.json`](../../../kernel.json) at
 > `kody-w/rapp-installer@brainstem-v0.6.9`.
 
 > **Disposition:** the onboarding sequence below is historical. It advertises

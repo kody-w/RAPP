@@ -6,7 +6,7 @@ REM RAPP_RESTORED_TARGET=install.cmd
 set "_rapp_target=install.cmd"
 set "_rapp_commit=4f6c14bbdf5b2d43887a9c7ab9cbda8c075f0dd6"
 set "_rapp_blob=03506ae1ab55d666f8fc47e9248afe4a54e15c72"
-set "_rapp_pin_sha256=427a37cc914a279b9c32a2ab85be9a19a0046f10f9f503c088a2670b6646e21c"
+set "_rapp_pin_sha256=407041a1d9b5b0cbc59d27298d529effc7242e3f7b9b6a104d1157c84739945c"
 if "%~1"=="" goto rapp_plan
 if /I "%~1"=="plan" goto rapp_plan
 if /I "%~1"=="--plan" goto rapp_plan
@@ -54,7 +54,7 @@ if not "%_rapp_allow%"=="1" goto rapp_missing_allow
 if /I not "%_rapp_requested_target%"=="%_rapp_target%" goto rapp_bad_target
 if not exist "%_rapp_pin%" goto rapp_bad_pin
 for %%I in ("%_rapp_pin%") do set "_rapp_pin_full=%%~fI"
-for %%I in ("%~dp0KERNEL_PIN.json") do set "_rapp_expected_pin=%%~fI"
+for %%I in ("%~dp0kernel.json") do set "_rapp_expected_pin=%%~fI"
 if /I not "%_rapp_pin_full%"=="%_rapp_expected_pin%" goto rapp_bad_pin
 if not exist "%_rapp_injection%" goto rapp_missing_injection
 if exist "%_rapp_injection%\NUL" goto rapp_missing_injection
@@ -65,7 +65,7 @@ if exist "%_rapp_evidence%\NUL" goto rapp_missing_evidence
 goto rapp_no_authority
 
 :rapp_plan
-echo {"schema":"rapp-restored-distribution-source/1.0","target":"%_rapp_target%","mode":"plan","source_commit":"%_rapp_commit%","source_blob":"%_rapp_blob%","kernel":"kody-w/rapp-installer@brainstem-v0.6.9","kernel_pin_sha256":"%_rapp_pin_sha256%","apply_permitted":false,"reason":"authenticated-section-13-evidence-unavailable"}
+echo {"schema":"rapp-restored-distribution-source/1.0","target":"%_rapp_target%","mode":"plan","source_commit":"%_rapp_commit%","source_blob":"%_rapp_blob%","kernel":"kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e","kernel_pin_sha256":"%_rapp_pin_sha256%","apply_permitted":false,"reason":"authenticated-section-13-evidence-unavailable"}
 exit /b 0
 :rapp_bad_mode
 1>&2 echo 410 Gone: %_rapp_target%: explicit plan/check/inspect or gated --apply is required ^(RAPP1_STATUS.md^).
@@ -83,7 +83,7 @@ exit /b 78
 1>&2 echo 410 Gone: %_rapp_target%: target-specific approval target is missing or mismatched ^(RAPP1_STATUS.md^).
 exit /b 78
 :rapp_bad_pin
-1>&2 echo 410 Gone: %_rapp_target%: exact KERNEL_PIN.json for kody-w/rapp-installer@brainstem-v0.6.9 is required ^(RAPP1_STATUS.md^).
+1>&2 echo 410 Gone: %_rapp_target%: exact kernel.json for kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e is required ^(RAPP1_STATUS.md^).
 exit /b 78
 :rapp_missing_injection
 1>&2 echo 410 Gone: %_rapp_target%: reviewed dependency injection evidence is required ^(RAPP1_STATUS.md^).

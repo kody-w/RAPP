@@ -168,7 +168,7 @@ def gates() -> tuple[Gate, ...]:
         Gate(
             "kernel-pin-local",
             (sys.executable, "tests/check_kernel_pin_local.py"),
-            "KERNEL_PIN frozen hashes against local bytes (no network)",
+            "canonical kernel.json shape and declared vendored bytes (no network)",
         ),
         Gate(
             "static-inspection",

@@ -35,7 +35,7 @@
     "trust_derivation": false
   },
   "immutable_grail_evidence": {
-    "pin_record": "../../KERNEL_PIN.json",
+    "pin_record": "../../RAPP1_AUTHORITY.json",
     "repository": "kody-w/rapp-installer",
     "tag": "brainstem-v0.6.9",
     "policy": "read-only evidence; no executable install or download action"

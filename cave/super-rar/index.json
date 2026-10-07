@@ -29,7 +29,7 @@
     "catalog_exhaust_restored_from": "d3d2623646a6111b4a7db9f1b960df233f8964c9",
     "initial_super_rar_design": "cdf1aba25ba39c373ba4c738e7c6d421fff0cf86"
   },
-  "built_at": "2026-09-25T17:22:35Z",
+  "built_at": "2026-10-07T20:23:59Z",
   "count": 2,
   "by_kind": {
     "agent": 1,
@@ -46,9 +46,10 @@
       "status": "historical-observation",
       "historical_observation_at": "2026-07-17T12:14:46Z",
       "kernel_pin": {
-        "record": "KERNEL_PIN.json",
-        "grail": "kody-w/rapp-installer",
-        "tag": "brainstem-v0.6.9",
+        "record": "kernel.json",
+        "kernel": "kody-w/rapp-installer",
+        "sha": "0e43ee580e78c150b1c59002456822d2e779388e",
+        "version": "0.6.16",
         "policy": "read-only"
       },
       "historical_metadata": [

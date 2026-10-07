@@ -42,11 +42,15 @@ from __future__ import annotations
 _RAPP_RESTORED_TARGET = "rapp_brainstem/tls_proxy.py"
 _RAPP_RESTORED_SOURCE_COMMIT = "55b91b9ecd182a3ce2057787f07c60e9aa3ca128"
 _RAPP_RESTORED_SOURCE_BLOB = "ee3fc89f515e43042f89fdd9ffe82827022a5503"
-_RAPP_KERNEL_PIN_SHA256 = "427a37cc914a279b9c32a2ab85be9a19a0046f10f9f503c088a2670b6646e21c"
-_RAPP_FROZEN = {
-    "rapp_brainstem/brainstem.py": "a293dd9f11eef915bf15776f08c736faa60cb749820871b6753ea98233142a71",
-    "rapp_brainstem/agents/basic_agent.py": "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb",
-    "rapp_brainstem/VERSION": "13eb74b44be6e3a85a0efa0dedf56aec05e9e50140e1c8bbc0d0fbd8097b0717",
+_RAPP_KERNEL_SHA256 = "407041a1d9b5b0cbc59d27298d529effc7242e3f7b9b6a104d1157c84739945c"
+_RAPP_KERNEL = {
+    "kernel": "kody-w/rapp-installer",
+    "sha": "0e43ee580e78c150b1c59002456822d2e779388e",
+    "version": "0.6.16",
+    "path": "rapp_brainstem/brainstem.py",
+    "kernel_blob": "3f7102ff508c813bb6494511fc32a421a633e418",
+    "pinned": "2026-10-07",
+    "rule": "RAPP's local rapp_brainstem grail files remain immutable historical evidence at brainstem-v0.6.9 and are not vendored by this current pin.",
 }
 
 
@@ -56,8 +60,8 @@ def _rapp_restored_plan():
         f'"target":"{_RAPP_RESTORED_TARGET}","mode":"plan",'
         f'"source_commit":"{_RAPP_RESTORED_SOURCE_COMMIT}",'
         f'"source_blob":"{_RAPP_RESTORED_SOURCE_BLOB}",'
-        '"kernel":"kody-w/rapp-installer@brainstem-v0.6.9",'
-        f'"kernel_pin_sha256":"{_RAPP_KERNEL_PIN_SHA256}",'
+        '"kernel":"kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e",'
+        f'"kernel_pin_sha256":"{_RAPP_KERNEL_SHA256}",'
         '"apply_permitted":false,'
         '"reason":"authenticated-section-13-evidence-unavailable"}'
     )
@@ -81,24 +85,9 @@ def _rapp_restored_pin_matches(path):
         pin = json_module.loads(pin_bytes)
     except (OSError, TypeError, ValueError):
         return False
-    if hashlib_module.sha256(pin_bytes).hexdigest() != _RAPP_KERNEL_PIN_SHA256:
+    if hashlib_module.sha256(pin_bytes).hexdigest() != _RAPP_KERNEL_SHA256:
         return False
-    kernel = pin.get("kernel", {})
-    if (
-        kernel.get("grail") != "kody-w/rapp-installer"
-        or kernel.get("tag") != "brainstem-v0.6.9"
-        or kernel.get("frozen") != _RAPP_FROZEN
-    ):
-        return False
-    root = pathlib_module.Path(__file__).resolve().parents[1]
-    try:
-        return all(
-            hashlib_module.sha256((root / relative).read_bytes()).hexdigest()
-            == digest
-            for relative, digest in _RAPP_FROZEN.items()
-        )
-    except OSError:
-        return False
+    return all(pin.get(key) == value for key, value in _RAPP_KERNEL.items())
 
 
 def _rapp_restored_gate(argv):
@@ -139,8 +128,8 @@ def _rapp_restored_gate(argv):
         )
     if not _rapp_restored_pin_matches(values.get("--kernel-pin", "")):
         return _rapp_restored_refuse(
-            "exact KERNEL_PIN.json for "
-            "kody-w/rapp-installer@brainstem-v0.6.9 is required"
+            "exact kernel.json for "
+            "kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e is required"
         )
     path_class = __import__("pathlib").Path
     for option, label in (

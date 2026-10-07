@@ -591,7 +591,11 @@ class Rapp1OwnerActionLedgerTests(unittest.TestCase):
             "f7fb359bbe8b6ba3db3665d81cb8e573"
             "a266c716278d8d21d8962ea40821e5aa",
         )
-        self.assertEqual(alias["active_pin_tag"], "brainstem-v0.6.9")
+        self.assertEqual(
+            alias["active_pin_sha"],
+            "0e43ee580e78c150b1c59002456822d2e779388e",
+        )
+        self.assertEqual(alias["active_pin_version"], "0.6.16")
         self.assertIs(alias["payload_edit_allowed"], False)
         manifest_path = ROOT / alias["manifest_path"]
         payload_path = ROOT / alias["latest_brainstem_path"]

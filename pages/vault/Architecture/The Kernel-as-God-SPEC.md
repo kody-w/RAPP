@@ -14,7 +14,7 @@ hook: Historical kernel-as-spec framing, superseded by the external immutable RA
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). The standard is pinned to
 > commit `d2cd5abed48d3f52b86bbb975ac3558286d1db41`; the grail is pinned by
-> [`KERNEL_PIN.json`](../../../KERNEL_PIN.json), never a moving branch.
+> [`kernel.json`](../../../kernel.json), never a moving branch.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 

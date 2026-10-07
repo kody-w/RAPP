@@ -54,7 +54,7 @@ Line numbers are for `main` at commit `8afc973`, before any amendment.
 ### What the grail does (Tier 1)
 
 `rapp_brainstem/brainstem.py` is byte-identical to the grail,
-`kody-w/rapp-installer@brainstem-v0.6.9` (see `KERNEL_PIN.json`;
+`kody-w/rapp-installer@brainstem-v0.6.9` (see `kernel.json`;
 `python3 check_kernel_pin.py` passes). Its loader is flat:
 
 ```python
@@ -277,7 +277,7 @@ and `tools/check_rapp1_docs.py`.
 What does not change:
 
 - No code, no agent file, and nothing under `rapp_brainstem/`. The three grail
-  files pinned by `KERNEL_PIN.json` are untouched (Article LV.4).
+  files pinned by `kernel.json` are untouched (Article LV.4).
 - No stale sentence is deleted or rewritten (Article XXVI, as Article LII.2
   and the 2026-07-08 precedent read it).
 - `README.md` line 134 is left as it is. It does not claim that folders
@@ -383,7 +383,7 @@ back.
   Article LIII.1 and Article LV.4.
 - Precedent: the "Amendment (2026-07-08)" notes in Articles XLVI and XLVII.
 - Grail loader: `rapp_brainstem/brainstem.py` lines 1202-1205, pinned by
-  `KERNEL_PIN.json` and checked by `check_kernel_pin.py` (see also
+  `kernel.json` and checked by `check_kernel_pin.py` (see also
   `KERNEL_TREE.md`).
 - Tier 2: `rapp_swarm/function_app.py` lines 266, 525-542, 562 and 616-660;
   `rapp_swarm/build.sh` lines 62-93 and 112-130; `rapp_swarm/.funcignore`.

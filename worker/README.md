@@ -49,7 +49,7 @@ request.
 ## Authority boundary
 
 The immutable grail remains the bytes recorded in
-[`../KERNEL_PIN.json`](../KERNEL_PIN.json) from
+[`../kernel.json`](../kernel.json) from
 `kody-w/rapp-installer@brainstem-v0.6.9`. This worker does not modify or
 replace those bytes. Current status and owner-action blockers remain in
 [`../RAPP1_STATUS.md`](../RAPP1_STATUS.md).

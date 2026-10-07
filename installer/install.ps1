@@ -22,13 +22,13 @@
 $RappRestoredTarget = "installer/install.ps1"
 $RappRestoredSourceCommit = "45d8e9fc6df2989d6c1c591613e30710f768ef1a"
 $RappRestoredSourceBlob = "aa2a471b16b4662a37a7dde67741f9feb12ac82f"
-$RappKernelPinSha256 = "427a37cc914a279b9c32a2ab85be9a19a0046f10f9f503c088a2670b6646e21c"
+$RappKernelPinSha256 = "407041a1d9b5b0cbc59d27298d529effc7242e3f7b9b6a104d1157c84739945c"
 function Write-RappRestoredPlan {
     $json = '{"schema":"rapp-restored-distribution-source/1.0","target":"' +
         $RappRestoredTarget + '","mode":"plan","source_commit":"' +
         $RappRestoredSourceCommit + '","source_blob":"' +
         $RappRestoredSourceBlob +
-        '","kernel":"kody-w/rapp-installer@brainstem-v0.6.9","kernel_pin_sha256":"' +
+        '","kernel":"kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e","kernel_pin_sha256":"' +
         $RappKernelPinSha256 +
         '","apply_permitted":false,"reason":"authenticated-section-13-evidence-unavailable"}'
     [Console]::Out.WriteLine($json)
@@ -51,14 +51,15 @@ function Test-RappRestoredKernelPin {
     } catch {
         return $false
     }
-    $frozen = $pin.kernel.frozen
     return (
         $hash -eq $RappKernelPinSha256 -and
-        $pin.kernel.grail -eq "kody-w/rapp-installer" -and
-        $pin.kernel.tag -eq "brainstem-v0.6.9" -and
-        $frozen.'rapp_brainstem/brainstem.py' -eq "a293dd9f11eef915bf15776f08c736faa60cb749820871b6753ea98233142a71" -and
-        $frozen.'rapp_brainstem/agents/basic_agent.py' -eq "701488bc00d536a7b23295e7da99c62f24e9b00f233daa325886430c736b78eb" -and
-        $frozen.'rapp_brainstem/VERSION' -eq "13eb74b44be6e3a85a0efa0dedf56aec05e9e50140e1c8bbc0d0fbd8097b0717"
+        $pin.kernel -eq "kody-w/rapp-installer" -and
+        $pin.sha -eq "0e43ee580e78c150b1c59002456822d2e779388e" -and
+        $pin.version -eq "0.6.16" -and
+        $pin.path -eq "rapp_brainstem/brainstem.py" -and
+        $pin.kernel_blob -eq "3f7102ff508c813bb6494511fc32a421a633e418" -and
+        $pin.pinned -eq "2026-10-07" -and
+        $pin.rule -eq "RAPP's local rapp_brainstem grail files remain immutable historical evidence at brainstem-v0.6.9 and are not vendored by this current pin."
     )
 }
 function Invoke-RappRestoredGate {
@@ -106,7 +107,7 @@ if ($RappValues["--target"] -ne $RappRestoredTarget) {
     return (Stop-RappRestored "target-specific approval target is missing or mismatched")
 }
 if (-not (Test-RappRestoredKernelPin $RappValues["--kernel-pin"])) {
-    return (Stop-RappRestored "exact KERNEL_PIN.json for kody-w/rapp-installer@brainstem-v0.6.9 is required")
+    return (Stop-RappRestored "exact kernel.json for kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e is required")
 }
 foreach ($requiredOption in @(
     "--reviewed-dependency-injection",

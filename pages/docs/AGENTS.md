@@ -108,10 +108,11 @@ See [rapp_brainstem/agents/hacker_news_agent.py](rapp_brainstem/agents/hacker_ne
 
 ## Critical Rules
 
-- **Never modify the immutable grail bytes:** `brainstem.py`,
-  `agents/basic_agent.py`, and `VERSION`, pinned to
-  `kody-w/rapp-installer@brainstem-v0.6.9`. New capabilities are agents behind
-  the exact RAPP/1 §8 `/chat` boundary.
+- **Never modify the immutable local grail evidence:** `brainstem.py`,
+  `agents/basic_agent.py`, and `VERSION`, recorded under
+  `RAPP1_AUTHORITY.json` at `kody-w/rapp-installer@brainstem-v0.6.9`.
+  `kernel.json` separately tracks the current grail commit. New capabilities
+  are agents behind the exact RAPP/1 §8 `/chat` boundary.
 - **Voice/Twin stay local.** Presentation is derived locally from the exact
   §8 success `response` string. It adds no response fields and does not change
   the refusal object. Historical delimiters are not protocol slots.

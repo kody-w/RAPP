@@ -6,9 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 > wire, eggs, registry, trust, and protocol evolution, follow
 > [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The
+> current grail commit is recorded by `kernel.json`; the local
 > `kody-w/rapp-installer@brainstem-v0.6.9` `brainstem.py`,
-> `agents/basic_agent.py`, and `VERSION` bytes are read-only; incompatible
-> behavior below is migration input, not current protocol.
+> `agents/basic_agent.py`, and `VERSION` evidence remains read-only under
+> `RAPP1_AUTHORITY.json`. Incompatible behavior below is migration input, not
+> current protocol.
 
 ## Current component instructions
 

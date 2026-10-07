@@ -14,7 +14,7 @@
 >
 > The prepared `cave/rapplications/rapp-installer/` bytes remain untouched and
 > non-installing. The only current immutable grail reference is
-> [`KERNEL_PIN.json`](../KERNEL_PIN.json), naming
+> [`kernel.json`](../kernel.json), naming
 > `kody-w/rapp-installer@brainstem-v0.6.9`.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->

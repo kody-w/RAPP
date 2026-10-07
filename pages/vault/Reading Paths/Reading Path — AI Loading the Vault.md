@@ -13,7 +13,7 @@ hook: For an AI that's been handed the exported vault and needs to understand th
 > RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Read the immutable authority
-> and [`KERNEL_PIN.json`](../../../KERNEL_PIN.json) before any linked history.
+> and [`kernel.json`](../../../kernel.json) before any linked history.
 
 <!-- RAPP1-HISTORICAL-SECTION-START -->
 
@@ -40,7 +40,7 @@ That claim is superseded by the external immutable RAPP/1 pin. *(~3 min)*
 
 Historical mirror rationale. For current verification, use the three exact
 hashes at `kody-w/rapp-installer@brainstem-v0.6.9` recorded in
-`KERNEL_PIN.json`, never a moving branch. *(~5 min)*
+`kernel.json`, never a moving branch. *(~5 min)*
 
 ### 3. [[One Kernel, Many Distros]]
 

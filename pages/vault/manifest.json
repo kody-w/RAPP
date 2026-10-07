@@ -192,8 +192,8 @@
       "title": "Reading Path — New Contributor",
       "section": "Reading Paths",
       "status": "historical",
-      "bytes": 6378,
-      "sha256": "b37356bc3a9025698862d1a8e084c04c2a1596f362d8852e81972908f154fd5d"
+      "bytes": 6370,
+      "sha256": "be953aaf39d60d4c5086aeae4d449cb468a4ca09a2aa6e77cf4b7b45615c1bcf"
     },
     {
       "path": "Founding Decisions/Engine, Not Experience.md",
@@ -376,8 +376,8 @@
       "title": "The Species DNA Archive — rapp_kernel",
       "section": "Architecture",
       "status": "historical",
-      "bytes": 6973,
-      "sha256": "0f8b72f339a8a047ab8cd85a220fd49975dd62774e9e5fd323ca23fd8c4a277b"
+      "bytes": 6949,
+      "sha256": "21eb559ef820d85daaacce1b9348d85ca929958316fb4ed5aa124b60c2de797a"
     },
     {
       "path": "Architecture/Signed Releases and Variant Attestation.md",
@@ -552,8 +552,8 @@
       "title": "Mirror Spec",
       "section": "Architecture",
       "status": "historical",
-      "bytes": 9674,
-      "sha256": "657428891966b36685925c017fb08ff8af2b2460bc1752327a3bd26a2631156b"
+      "bytes": 9662,
+      "sha256": "68a347519478ce6e65b16dfee41a8e25c1516a91c5a92f18af9778a64adb06ed"
     },
     {
       "path": "Architecture/Layered Mirrors and the Public-Private Body Stack.md",
@@ -608,8 +608,8 @@
       "title": "The Kernel-as-God-SPEC",
       "section": "Architecture",
       "status": "historical",
-      "bytes": 4987,
-      "sha256": "ad59757351bff98daced1fea5ffcbd1b6f492a4d807ac82491dedf43bbe2192c"
+      "bytes": 4979,
+      "sha256": "f9a3a61d4a1d69adbbe0661e8a2499dccd1106553920290fa009dfd7d14b9ea7"
     },
     {
       "path": "Architecture/Twin Lifecycle — Active, Archived, Purged.md",
@@ -832,16 +832,16 @@
       "title": "Verifying Mirror Compliance",
       "section": "Process",
       "status": "historical",
-      "bytes": 4803,
-      "sha256": "e10c35f0b8929de21d44fda6d9637ca376f486c166f1a4b021c3aa9cf8ec333c"
+      "bytes": 4795,
+      "sha256": "bd1ea74c50d40bf95f4bdd55fd36ea97003d4cd3c0ae67abf5595cf8886c32ad"
     },
     {
       "path": "Reading Paths/Reading Path — AI Loading the Vault.md",
       "title": "Reading Path — AI Loading the Vault",
       "section": "Reading Paths",
       "status": "historical",
-      "bytes": 5916,
-      "sha256": "d41a1165d4db860920f01baa1c812f84645a86e5db33bde20b4a66b41832ec9c"
+      "bytes": 5904,
+      "sha256": "2bc3d3669d90c52cc1a5e2adc8e0ed54c09fef82ed5d5bc7ac9817ac3947e7b7"
     },
     {
       "path": "Removals/The 426-line False Drift.md",
@@ -872,24 +872,24 @@
       "title": "Adapt, Don't Kill — preserve data exhaust",
       "section": "Decisions",
       "status": "living",
-      "bytes": 2806,
-      "sha256": "33c880a96fada65464af5b6e1cfce8c74da49a613c09a83da63ea80f8def800f"
+      "bytes": 2794,
+      "sha256": "f930f2895c03abbe9df6cabacd89d308a9203ee62e23798f8ac7233db5d15183"
     },
     {
       "path": "Plans & Ledgers/RAPP Restoration and Adaptation Ledger.md",
       "title": "RAPP Restoration and Adaptation Ledger",
       "section": "Plans & Ledgers",
       "status": "living",
-      "bytes": 5974,
-      "sha256": "cf7b0b9bf23f444f7d7900a6317b0a61d8a0a9a26297b395a0f3d67addbeadf2"
+      "bytes": 5966,
+      "sha256": "f41d133ec3c588269471ae42efc7761b6fd5c7154f2b1dfd2a4605954db14dc8"
     },
     {
       "path": "Plans & Ledgers/RAPP1 Adaptation Inventory.md",
       "title": "RAPP1 Adaptation Inventory",
       "section": "Plans & Ledgers",
       "status": "living",
-      "bytes": 11830,
-      "sha256": "d2f3f5fe63867594dbff0c7ed276952329a9c881acbca36565c73beb90777fd2"
+      "bytes": 11822,
+      "sha256": "b2060417bbdaa2808a65a72467e8d03f13fa3606dd646b0c8a10521da5357e2f"
     }
   ],
   "excluded_notes": [

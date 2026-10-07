@@ -39,7 +39,7 @@
         "stream": false,
         "publish": false
       },
-      "observation_note": "The historical what_im_cooking text is retained verbatim as data exhaust. It is not a current installer or pull instruction. Use KERNEL_PIN.json and kody-w/rapp-installer@brainstem-v0.6.9 only as the read-only immutable grail reference."
+      "observation_note": "The historical what_im_cooking text is retained verbatim as data exhaust. It is not a current installer or pull instruction. Use kernel.json and kody-w/rapp-installer@brainstem-v0.6.9 only as the read-only immutable grail reference."
     }
   ]
 }

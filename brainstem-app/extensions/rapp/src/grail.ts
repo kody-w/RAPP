@@ -1,4 +1,4 @@
-// The grail one-liner, pinned to the kernel release RAPP pins in KERNEL_PIN.json. Windows has none: the
+// The grail one-liner, pinned to the kernel release RAPP pins in kernel.json. Windows has none: the
 // installer's Windows script at that tag takes no version pin and follows the installer's main branch, the
 // newest channel, so it is not offered.
 export const GRAIL = {

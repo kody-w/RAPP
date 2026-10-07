@@ -158,17 +158,27 @@ class Rapp1AuthorityTests(unittest.TestCase):
         )
 
     def test_immutable_grail_pin_and_local_bytes_are_unchanged(self):
-        kernel_pin = load_json(ROOT / "KERNEL_PIN.json")
-        self.assertEqual(kernel_pin["spec"], "rapp-distro/1.0")
+        kernel_pin = load_json(ROOT / "kernel.json")
         self.assertEqual(
-            kernel_pin["kernel"]["grail"], "kody-w/rapp-installer"
+            set(kernel_pin),
+            {"kernel", "sha", "version", "path", "kernel_blob", "pinned", "rule"},
         )
-        self.assertEqual(kernel_pin["kernel"]["tag"], "brainstem-v0.6.9")
-        self.assertEqual(kernel_pin["kernel"]["frozen"], EXPECTED_GRAIL)
+        self.assertEqual(kernel_pin["kernel"], "kody-w/rapp-installer")
+        self.assertEqual(
+            kernel_pin["sha"], "0e43ee580e78c150b1c59002456822d2e779388e"
+        )
+        self.assertEqual(kernel_pin["version"], "0.6.16")
+        self.assertEqual(kernel_pin["path"], "rapp_brainstem/brainstem.py")
+        self.assertEqual(
+            kernel_pin["kernel_blob"],
+            "3f7102ff508c813bb6494511fc32a421a633e418",
+        )
+        self.assertIn("immutable historical evidence", kernel_pin["rule"])
 
         boundary = self.authority["immutable_grail_boundary"]
         self.assertEqual(boundary["repository"], "kody-w/rapp-installer")
         self.assertEqual(boundary["tag"], "brainstem-v0.6.9")
+        self.assertEqual(boundary["current_pin_record"], "kernel.json")
         self.assertEqual(boundary["policy"], "read-only")
         self.assertEqual(boundary["frozen"], EXPECTED_GRAIL)
 

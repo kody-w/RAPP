@@ -81,7 +81,7 @@ def test_restored_shell_entrypoints_preserve_source_and_default_safe():
         assert "RAPP_RESTORED_GATE_BEGIN" in source
         assert "RAPP_RESTORED_GATE_END" in source
         assert "RAPP_RESTORED_HISTORICAL_SOURCE_BEGIN" in source
-        assert "kody-w/rapp-installer@brainstem-v0.6.9" in source
+        gate = source.split("RAPP_RESTORED_GATE_END", 1)[0]
 
         result = subprocess.run(
             ("bash", relative),
@@ -95,12 +95,19 @@ def test_restored_shell_entrypoints_preserve_source_and_default_safe():
             assert '"mode":"inspect"' in result.stderr
             assert "410 Gone" in result.stderr
             continue
+        assert (
+            "kody-w/rapp-installer@"
+            "0e43ee580e78c150b1c59002456822d2e779388e"
+        ) in gate
         assert result.returncode == 0, (relative, result.stderr)
         plan = json.loads(result.stdout)
         assert plan["target"] == relative
         assert plan["mode"] == "plan"
         assert plan["apply_permitted"] is False
-        assert plan["kernel"] == "kody-w/rapp-installer@brainstem-v0.6.9"
+        assert plan["kernel"] == (
+            "kody-w/rapp-installer@"
+            "0e43ee580e78c150b1c59002456822d2e779388e"
+        )
 
 
 def test_installer_apply_refuses_before_external_tools():
@@ -160,7 +167,7 @@ def test_installer_apply_refuses_before_external_tools():
                 "--target",
                 "installer/install.sh",
                 "--kernel-pin",
-                "KERNEL_PIN.json",
+                "kernel.json",
                 "--reviewed-dependency-injection",
                 os.fspath(dependency),
                 "--owner-approval",
@@ -374,7 +381,7 @@ def test_owned_distribution_pages_publish_neither_tier2_nor_power_archive():
         assert "RAPP/installer/install.sh" not in source
         assert "rapp-current-status" in lowered
         assert "no active installer" in lowered
-        assert "kernel_pin.json" in lowered
+        assert "kernel.json" in lowered
         assert 'class="current-note"' not in lowered
 
 
@@ -384,7 +391,7 @@ def test_plant_browser_callers_preserve_source_with_safe_local_controls():
         assert "retired semantic tombstone" not in source
         assert "rapp-history-source" in source
         assert "rapp1_status.md" in source
-        assert "kernel_pin.json" in source
+        assert "kernel.json" in source
         assert "content-security-policy" in source
         assert "connect-src 'none'" in source
         assert "form-action 'none'" in source

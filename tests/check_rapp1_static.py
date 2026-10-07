@@ -248,8 +248,8 @@ def check_live_surface_inventory() -> dict[str, int]:
         for path in tracked
     ), "prepared snapshot boundary no longer matches tracked paths"
     assert set(boundary["immutable_grail_paths"]) == set(
-        json.loads((ROOT / "KERNEL_PIN.json").read_text(encoding="utf-8"))[
-            "kernel"
+        json.loads((ROOT / "RAPP1_AUTHORITY.json").read_text(encoding="utf-8"))[
+            "immutable_grail_boundary"
         ]["frozen"]
     )
     assert boundary["archive_manifest"] in tracked

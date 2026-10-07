@@ -71,9 +71,10 @@ class CaveCatalogRetentionTests(unittest.TestCase):
             missing_agent["purpose"],
         )
         self.assertEqual(
-            missing_agent["kernel_pin"]["tag"],
-            "brainstem-v0.6.9",
+            missing_agent["kernel_pin"]["sha"],
+            "0e43ee580e78c150b1c59002456822d2e779388e",
         )
+        self.assertEqual(missing_agent["kernel_pin"]["version"], "0.6.16")
         original_agent = missing_agent["historical_metadata"][0]
         self.assertEqual(original_agent["version"], "0.6.1-cubby")
         self.assertEqual(
@@ -188,15 +189,16 @@ class CaveCatalogRetentionTests(unittest.TestCase):
         )
 
         installer = rar["rapps"][0]
-        self.assertEqual(installer["kernel_pin"]["record"], "KERNEL_PIN.json")
+        self.assertEqual(installer["kernel_pin"]["record"], "kernel.json")
         self.assertEqual(
-            installer["kernel_pin"]["grail"],
+            installer["kernel_pin"]["kernel"],
             "kody-w/rapp-installer",
         )
         self.assertEqual(
-            installer["kernel_pin"]["tag"],
-            "brainstem-v0.6.9",
+            installer["kernel_pin"]["sha"],
+            "0e43ee580e78c150b1c59002456822d2e779388e",
         )
+        self.assertEqual(installer["kernel_pin"]["version"], "0.6.16")
         self.assertIs(installer["active_distribution"], False)
         original_rapp = installer["historical_metadata"][0]
         self.assertEqual(original_rapp["version"], "0.6.1")
@@ -450,7 +452,7 @@ class IntakePromptAndDiscoveryTests(unittest.TestCase):
             ROOT / ".github/prompts/test-agent.prompt.md"
         ).read_text(encoding="utf-8")
         for prompt in (write_prompt, test_prompt):
-            self.assertIn("KERNEL_PIN.json", prompt)
+            self.assertIn("kernel.json", prompt)
             self.assertIn(
                 "kody-w/rapp-installer@brainstem-v0.6.9",
                 prompt,
@@ -466,9 +468,10 @@ class IntakePromptAndDiscoveryTests(unittest.TestCase):
     def test_machine_discovery_restores_observations_without_acceptance(self) -> None:
         discovery = _read_json(ROOT / "rapp-ai.json")
         self.assertEqual(
-            discovery["kernel_pin"]["tag"],
-            "brainstem-v0.6.9",
+            discovery["kernel_pin"]["sha"],
+            "0e43ee580e78c150b1c59002456822d2e779388e",
         )
+        self.assertEqual(discovery["kernel_pin"]["version"], "0.6.16")
         relations = {entry["rel"] for entry in discovery["entrypoints"]}
         self.assertTrue(
             {

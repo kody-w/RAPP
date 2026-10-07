@@ -19,17 +19,17 @@ sys.modules[spec.name] = verifier
 spec.loader.exec_module(verifier)
 
 
-def test_repository_local_pin_matches_all_frozen_bytes():
+def test_repository_local_pin_has_canonical_shape():
     results, errors = verifier.verify_local_pin()
     assert errors == []
-    assert {relative for relative, _, _ in results} == {
-        "rapp_brainstem/brainstem.py",
-        "rapp_brainstem/agents/basic_agent.py",
-        "rapp_brainstem/VERSION",
-    }
+    assert results == []
+    pin = json.loads((ROOT / "kernel.json").read_text(encoding="utf-8"))
+    assert pin["sha"] == "0e43ee580e78c150b1c59002456822d2e779388e"
+    assert pin["version"] == "0.6.16"
+    assert pin["kernel_blob"] == "3f7102ff508c813bb6494511fc32a421a633e418"
 
 
-def test_local_pin_verifier_rejects_byte_drift():
+def test_local_pin_verifier_rejects_vendored_byte_drift():
     scratch = ROOT / "tests/.rapp1-local-pin-test"
     shutil.rmtree(scratch, ignore_errors=True)
     try:
@@ -38,16 +38,20 @@ def test_local_pin_verifier_rejects_byte_drift():
         frozen.write_bytes(b"changed")
         expected = hashlib.sha256(b"expected").hexdigest()
         pin = {
-            "spec": "rapp-distro/1.0",
-            "kernel": {"frozen": {"kernel.bin": expected}},
+            "kernel": "kody-w/rapp-installer",
+            "sha": "0" * 40,
+            "version": "0.0.0",
+            "path": "kernel.bin",
+            "kernel_blob": "1" * 40,
+            "vendored": {"kernel.bin": expected},
         }
-        pin_path = scratch / "KERNEL_PIN.json"
+        pin_path = scratch / "kernel.json"
         pin_path.write_text(json.dumps(pin), encoding="utf-8")
 
         _, errors = verifier.verify_local_pin(scratch, pin_path)
 
         assert len(errors) == 1
-        assert errors[0].startswith("frozen byte mismatch: kernel.bin:")
+        assert errors[0].startswith("vendored byte mismatch: kernel.bin:")
         assert frozen.read_bytes() == b"changed"
     finally:
         shutil.rmtree(scratch, ignore_errors=True)

@@ -2,7 +2,7 @@
 title: The Species DNA Archive — rapp_kernel
 status: historical
 section: Architecture
-hook: Historical rapp_kernel archive design, superseded by the immutable three-file KERNEL_PIN grail record.
+hook: Historical rapp_kernel archive design, superseded by the immutable three-file KERNEL grail record.
 ---
 
 # The Species DNA Archive — `rapp_kernel/`
@@ -12,7 +12,7 @@ hook: Historical rapp_kernel archive design, superseded by the immutable three-f
 > evolution, follow RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../../../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md). Current frozen kernel evidence
-> is exactly the three hashes in [`KERNEL_PIN.json`](../../../KERNEL_PIN.json)
+> is exactly the three hashes in [`kernel.json`](../../../kernel.json)
 > for `kody-w/rapp-installer@brainstem-v0.6.9`. The local `rapp_kernel/`
 > archive and its former moving alias are non-authoritative history.
 
@@ -53,7 +53,7 @@ rapp_kernel/
 The diagram originally included a moving alias. That alias is intentionally
 omitted here because it is not a current verification source. Versioned
 `v/<n>/` directories remain historical snapshots only; they do not supersede
-the immutable `KERNEL_PIN.json` grail tag and hashes.
+the immutable `kernel.json` grail tag and hashes.
 
 ## The four files
 
@@ -78,7 +78,7 @@ Per **Constitution Article V**, URLs under this directory are **public infrastru
 
 These URLs record the historical design. They are not current installer,
 authority, or acceptance URLs. Current frozen-byte verification uses the
-immutable grail tag and hashes in `KERNEL_PIN.json`.
+immutable grail tag and hashes in `kernel.json`.
 
 ## Variant inheritance
 
@@ -116,7 +116,7 @@ The fixture suite passes only when steps 1–4 are all done in the same change.
   acceptance guidance. It is a historical reference archive.
 - **Not exhaustive.** It contains four files. The wider rapp_brainstem ecosystem — body functions, senses, sense viewers, additional agents, the boot wrapper, the install scripts, the web UI — is not here. This directory is pure kernel DNA, not the whole organism.
 - **Not authority.** A versioned historical snapshot does not override
-  `KERNEL_PIN.json` or RAPP/1.
+  `kernel.json` or RAPP/1.
 
 ## See also
 

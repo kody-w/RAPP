@@ -2,42 +2,41 @@
 #
 # Read-only immutable-grail verification.
 #
-# KERNEL_PIN.json is the authority for the repository, tag, paths, and hashes.
-# This check compares local bytes and the exact pinned remote tag. It never
-# follows a moving branch and never recommends overwriting immutable files.
+# RAPP1_AUTHORITY.json preserves the immutable historical repository, tag,
+# paths, and hashes. kernel.json separately tracks the current grail commit.
+# This check never follows a moving branch or overwrites immutable files.
 #
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PIN_PATH="$REPO_ROOT/KERNEL_PIN.json"
+AUTHORITY_PATH="$REPO_ROOT/RAPP1_AUTHORITY.json"
 
 pin_meta="$(
-    python3 - "$PIN_PATH" <<'PY'
+    python3 - "$AUTHORITY_PATH" <<'PY'
 import json
 import sys
 
 with open(sys.argv[1], encoding="utf-8") as handle:
-    pin = json.load(handle)
-kernel = pin["kernel"]
-print(f"{kernel['grail']}\t{kernel['tag']}")
+    boundary = json.load(handle)["immutable_grail_boundary"]
+print(f"{boundary['repository']}\t{boundary['tag']}")
 PY
 )"
 IFS=$'\t' read -r GRAIL_REPO GRAIL_TAG <<<"$pin_meta"
 
 if [[ "$GRAIL_TAG" != "brainstem-v0.6.9" ]]; then
-    echo "ERROR KERNEL_PIN.json no longer names brainstem-v0.6.9" >&2
+    echo "ERROR RAPP1_AUTHORITY.json no longer names brainstem-v0.6.9" >&2
     exit 1
 fi
 
 pin_files="$(
-    python3 - "$PIN_PATH" <<'PY'
+    python3 - "$AUTHORITY_PATH" <<'PY'
 import json
 import sys
 
 with open(sys.argv[1], encoding="utf-8") as handle:
-    frozen = json.load(handle)["kernel"]["frozen"]
+    frozen = json.load(handle)["immutable_grail_boundary"]["frozen"]
 if not isinstance(frozen, dict) or not frozen:
-    raise SystemExit("kernel.frozen must be a non-empty object")
+    raise SystemExit("immutable_grail_boundary.frozen must be a non-empty object")
 for path, digest in frozen.items():
     print(f"{path}\t{digest}")
 PY
@@ -83,10 +82,10 @@ if [[ "$failed" -ne 0 ]]; then
     echo "Read-only grail verification failed."
     echo "Do not overwrite or remove immutable bytes."
     echo "Inspect the pinned Grail: $GRAIL_PAGE"
-    echo "Then investigate KERNEL_PIN authority or source availability."
+    echo "Then investigate KERNEL authority or source availability."
     exit 1
 fi
 
 echo
-echo "Pinned grail bytes match KERNEL_PIN.json and $GRAIL_REPO@$GRAIL_TAG."
+echo "Pinned historical grail bytes match RAPP1_AUTHORITY.json and $GRAIL_REPO@$GRAIL_TAG."
 echo "Grail: $GRAIL_PAGE"

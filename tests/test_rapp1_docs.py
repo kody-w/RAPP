@@ -407,11 +407,11 @@ class Rapp1DocumentationTests(unittest.TestCase):
             if path == "pages/metropolis/index.html":
                 self.assertIn("plant-from-discord", text)
                 self.assertIn("rapp-source-commit", text)
-                self.assertIn("KERNEL_PIN.json", text)
+                self.assertIn("kernel.json", text)
                 self.assertIn("Content-Security-Policy", text)
             elif path == "pages/index.html":
                 self.assertIn("rapp-current-status", text)
-                self.assertIn("KERNEL_PIN.json", text)
+                self.assertIn("kernel.json", text)
                 self.assertNotIn('class="current-note"', text)
             elif path == "pages/_site/partials/footer.html":
                 self.assertIn("source-available", text)
@@ -428,7 +428,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 self.assertIn("Current delivery boundary", active)
                 self.assertIn("local provenance", active)
                 self.assertIn("zero effects", active)
-                self.assertIn("KERNEL_PIN.json", active)
+                self.assertIn("kernel.json", active)
                 self.assertIn("reviewed dependency", active)
                 self.assertIn("authenticated fresh section-13", active)
                 self.assertIn("RAPP1_STATUS.md", active)
@@ -441,7 +441,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 self.assertIn("## Scale rule", historical)
             else:
                 self.assertIn("rapp-history-source", text)
-                self.assertIn("KERNEL_PIN.json", text)
+                self.assertIn("kernel.json", text)
                 self.assertIn("Content-Security-Policy", text)
                 self.assertNotIn("Retired semantic tombstone", text)
 
@@ -542,8 +542,12 @@ class Rapp1DocumentationTests(unittest.TestCase):
         self.assertFalse(rar_entry["accepted"])
         self.assertFalse(rar_entry["active_distribution"])
         self.assertFalse(rar_entry["streamable"])
-        self.assertEqual(rar_entry["kernel_pin"]["record"], "KERNEL_PIN.json")
-        self.assertEqual(rar_entry["kernel_pin"]["tag"], "brainstem-v0.6.9")
+        self.assertEqual(rar_entry["kernel_pin"]["record"], "kernel.json")
+        self.assertEqual(
+            rar_entry["kernel_pin"]["sha"],
+            "0e43ee580e78c150b1c59002456822d2e779388e",
+        )
+        self.assertEqual(rar_entry["kernel_pin"]["version"], "0.6.16")
         super_rar = json.loads(
             (ROOT / "cave/super-rar/index.json").read_text()
         )
@@ -649,7 +653,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
             errors,
         )
 
-    def test_immutable_generated_and_owned_boundaries_are_unmodified(self) -> None:
+    def test_immutable_generated_and_owned_boundaries_are_guarded(self) -> None:
         categories = self.fixture["audit"]["categories"]
         protected = set(self.fixture["ownership_exclusions"])
         for name in (
@@ -663,7 +667,16 @@ class Rapp1DocumentationTests(unittest.TestCase):
                 ("git", "diff", "--name-only", "HEAD", "--"), cwd=ROOT, text=True
             ).splitlines()
         )
-        self.assertFalse(changed & protected, sorted(changed & protected))
+        authorized = self.fixture["authorized_owned_migration_edits"]
+        self.assertFalse(
+            (changed & protected) - set(authorized),
+            sorted((changed & protected) - set(authorized)),
+        )
+        for path, record in authorized.items():
+            self.assertEqual(
+                hashlib.sha256((ROOT / path).read_bytes()).hexdigest(),
+                record["sha256"],
+            )
         self.assertEqual(
             set(categories["POST-OWNER-MIRROR"]["paths"]),
             {
@@ -678,7 +691,7 @@ class Rapp1DocumentationTests(unittest.TestCase):
         status = (ROOT / "RAPP1_STATUS.md").read_bytes()
         self.assertEqual(
             hashlib.sha256(status).hexdigest(),
-            "bce9a915822cad10a7fe80c4e8c4965c2ce0dd8e292a633c8d41d7ec33c3cfd3",
+            "5b0423943f60bf686e7ae25eb0d5545fd65aaef7714936df508e8b470a8d558a",
         )
         audit = self.fixture["audit"]
         self.assertEqual(audit["post_audit_tracked_paths"], 691)

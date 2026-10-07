@@ -15,9 +15,9 @@
   },
   "snapshot": {
     "basis": "tracked-path-set-after-restoration",
-    "generated_at": "2026-10-03",
+    "generated_at": "2026-10-07",
     "tracked_path_count": 855,
-    "tracked_path_set_sha256": "cd582840722da21de246e95f5f41810665b93108f37bd05f717a5d7dfcd317be",
+    "tracked_path_set_sha256": "4fb2e649e351a3e04b9f36473e4ce75f20595fb54f59d794a373baa5308ceaab",
     "path_digest_profile": "sorted UTF-8 repository paths, each terminated by LF"
   },
   "policies": {
@@ -29,9 +29,10 @@
       "disable_only_exact_unsafe_edges": true
     },
     "grail_resolution": {
-      "record": "KERNEL_PIN.json",
+      "record": "kernel.json",
       "repository": "kody-w/rapp-installer",
-      "tag": "brainstem-v0.6.9",
+      "sha": "0e43ee580e78c150b1c59002456822d2e779388e",
+      "version": "0.6.16",
       "policy": "read-only",
       "moving_installer_refs_accepted": false
     },
@@ -62,7 +63,7 @@
         "prefix": ""
       },
       "expected_count": 855,
-      "path_set_sha256": "cd582840722da21de246e95f5f41810665b93108f37bd05f717a5d7dfcd317be"
+      "path_set_sha256": "4fb2e649e351a3e04b9f36473e4ce75f20595fb54f59d794a373baa5308ceaab"
     },
     {
       "id": "PS-HISTORICAL-SOURCE-ARCHIVE",
@@ -219,7 +220,7 @@
         "selector": {
           "type": "explicit",
           "paths": [
-            "KERNEL_PIN.json",
+            "kernel.json",
             "check_kernel_pin.py",
             "rapp_brainstem/VERSION",
             "rapp_brainstem/agents/basic_agent.py",
@@ -797,7 +798,7 @@
         "frames": "No accepted frame is implied by an egg.",
         "eggs": "Actual JWS verification and acceptance receipts remain incomplete; the invalid placeholder Commons invite is retired (path, SHA-256, and git history only) and its signed reissue remains owner-only.",
         "registry_trust_freshness": "Variant registration, signer tenure, revocation, and freshness require the authenticated registry.",
-        "grail_installer_pin": "Historical installer eggs cannot override KERNEL_PIN.json.",
+        "grail_installer_pin": "Historical installer eggs cannot override kernel.json.",
         "side_effects": "Inspection is read-only; accepted extraction must stage bytes and never execute them."
       },
       "next_local_adaptation": "Add signer verification, tenure and variant resolution, acceptance receipts, atomic staging, and rollback-safe extraction while retaining every predecessor byte.",
@@ -941,7 +942,7 @@
         "PS-INSTALLER"
       ],
       "paths": [
-        "KERNEL_PIN.json",
+        "kernel.json",
         "check_kernel_pin.py",
         "install.sh",
         "install.ps1",
@@ -957,7 +958,7 @@
         "frames": "No frame acceptance is implied.",
         "eggs": "Historical installer archives and eggs remain unaccepted evidence.",
         "registry_trust_freshness": "The pin is structural, not a section 13 registry.",
-        "grail_installer_pin": "Canonical read-only source is KERNEL_PIN.json and kody-w/rapp-installer@brainstem-v0.6.9.",
+        "grail_installer_pin": "Canonical read-only source is kernel.json and kody-w/rapp-installer@brainstem-v0.6.9.",
         "side_effects": "Historical installer UI is preserved; install, deployment, download, and mutation require explicit reviewed bindings and owner approval."
       },
       "next_local_adaptation": "Keep the restored inspect/plan adapters and exact historical source synchronized; any future apply path must additionally validate authenticated fresh section-13 owner evidence.",
@@ -1059,7 +1060,7 @@
         "frames": "Displayed events and traces are not accepted frames.",
         "eggs": "Plant, hatch, and cartridge controls are previews or evidence only.",
         "registry_trust_freshness": "No page establishes identity, membership, trust, or freshness.",
-        "grail_installer_pin": "Installer context points to KERNEL_PIN.json and brainstem-v0.6.9.",
+        "grail_installer_pin": "Installer context points to kernel.json and brainstem-v0.6.9.",
         "side_effects": "Network, credentials, persistence, media, peer transport, redirects, downloads, and repository mutation are disabled or replaced with local deterministic shims."
       },
       "next_local_adaptation": "Keep every original section and interaction visible; add only reviewed dependency-injected adapters after exact identity, wire, egg, and registry validators exist.",
@@ -1224,7 +1225,7 @@
         "frames": "Catalog provenance is not a signed frame.",
         "eggs": "Legacy eggs are retained but not accepted.",
         "registry_trust_freshness": "No catalog, GitHub listing, URL, or hash establishes registry acceptance.",
-        "grail_installer_pin": "Installer context points to KERNEL_PIN.json; the prepared Cave snapshot remains immutable, apart from the one ZIP-framing exception proposal-0003-part-a recorded in installer/RETIRED_ARTIFACTS.json, and non-distributable.",
+        "grail_installer_pin": "Installer context points to kernel.json; the prepared Cave snapshot remains immutable, apart from the one ZIP-framing exception proposal-0003-part-a recorded in installer/RETIRED_ARTIFACTS.json, and non-distributable.",
         "side_effects": "Steward and builder default to local read-only analyze/check/plan/render. Moving refs, install, stream, execute, publish, and issue filing are disabled."
       },
       "next_local_adaptation": "Inject identity, frame, egg, and registry verifiers; read the Grail pin directly; preserve every rejected and absent historical record.",
@@ -1338,7 +1339,7 @@
         "frames": "Audit and discovery records are not authenticated frames.",
         "eggs": "Historical egg shapes remain product evidence only.",
         "registry_trust_freshness": "Online observations require independent pinning, freshness labels, and registry resolution.",
-        "grail_installer_pin": "Kernel comparisons must distinguish product history from KERNEL_PIN.json.",
+        "grail_installer_pin": "Kernel comparisons must distinguish product history from kernel.json.",
         "side_effects": "Offline/local input is the default; output writes, cache writes, and online transport require explicit requests and current authority refuses before mutation."
       },
       "next_local_adaptation": "Add an optional read-only authenticated acceptance pass while retaining raw, parsed, rejected, stale, and skipped observations separately.",
@@ -1670,7 +1671,7 @@
         "frames": "Produces and accepts no frames.",
         "eggs": "Produces, stages and accepts no eggs.",
         "registry_trust_freshness": "Reads Hive folders and shows the Hive agent's own checker verdict; accepts nothing into a registry and claims no trust.",
-        "grail_installer_pin": "Shows only the brainstem-v0.6.9 one-liner pinned by KERNEL_PIN.json (macOS and Linux; none for Windows yet) and never edits grail bytes; it ships no installer.",
+        "grail_installer_pin": "Shows only the brainstem-v0.6.9 one-liner pinned by kernel.json (macOS and Linux; none for Windows yet) and never edits grail bytes; it ships no installer.",
         "side_effects": "Writes only its own workspace files and small state in the app's own storage; runs the Hive agent's checker, its standard-library card reader, and, only on a click in a trusted window, the Brainstem folder's own start script in a visible terminal."
       },
       "next_local_adaptation": "Stay in the newest channel as a frontier canary until the owner graduates it into RAPP/1; keep its overlay, unit and cross-platform tests and its documents' channel labels synchronized.",

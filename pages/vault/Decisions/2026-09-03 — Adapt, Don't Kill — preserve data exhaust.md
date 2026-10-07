@@ -29,7 +29,7 @@ The order of operations is:
 4. **Update instead of erase.** Correct stale claims inline and carry the old
    framing as dated context where it remains useful.
 5. **Point installer context to the Grail.** When an artifact needs installer
-   provenance, reference `KERNEL_PIN.json` and
+   provenance, reference `kernel.json` and
    `kody-w/rapp-installer@brainstem-v0.6.9`; do not remove the installer
    story or substitute a moving source.
 6. **Inventory the remaining RAPP/1 gap.** Every adapted artifact records what
@@ -65,4 +65,4 @@ An adapted artifact passes only when:
 - [[Roots Are Public Surfaces]]
 - [[The Species DNA Archive — rapp_kernel]]
 - [`RAPP1_STATUS.md`](../../../RAPP1_STATUS.md)
-- [`KERNEL_PIN.json`](../../../KERNEL_PIN.json)
+- [`kernel.json`](../../../kernel.json)

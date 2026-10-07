@@ -325,7 +325,7 @@ defining document cannot register it; registration follows RAPP/1 §13.
 | `installer/azuredeploy.json` | ARM template (Tier 2 deploy) | CLAUDE.md Tier 2 |
 | `installer/MSFTAIBASMultiAgentCopilot_*.zip` | Tier 3 Copilot Studio bundle | CLAUDE.md Tier 3 |
 | `installer/shortcuts/protocol.md` | iOS Shortcuts URL/POST contract | ECOSYSTEM §4 (chat surfaces) |
-| `rapp_kernel/latest/` + `rapp_kernel/v/<version>/` | Historical archive; `latest` is moving/divergent and non-authoritative. Current immutable grail pin is `kody-w/rapp-installer@brainstem-v0.6.9`. | `KERNEL_PIN.json` |
+| `rapp_kernel/latest/` + `rapp_kernel/v/<version>/` | Historical archive; `latest` is moving/divergent and non-authoritative. Current immutable grail pin is `kody-w/rapp-installer@brainstem-v0.6.9`. | `kernel.json` |
 | `rapp_kernel/manifest.json` | Kernel version catalog | rapp-kernel/1.1 |
 | `pages/about/anatomy.html` | Visual organism diagram | CLAUDE.md visual anatomy |
 | `pages/onboarding.html` | Visitor-facing onboarder (trust-building) | CLAUDE.md hero use case section |

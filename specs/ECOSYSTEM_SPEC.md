@@ -6,9 +6,10 @@
 > evolution, follow RAPP/1 rev-5 through
 > [`RAPP1_AUTHORITY.json`](../RAPP1_AUTHORITY.json) and
 > [`RAPP1_STATUS.md`](../RAPP1_STATUS.md). The immutable standard pin is commit
-> `d2cd5abed48d3f52b86bbb975ac3558286d1db41`; the immutable grail pin is
-> `kody-w/rapp-installer@brainstem-v0.6.9` in
-> [`KERNEL_PIN.json`](../KERNEL_PIN.json).
+> `d2cd5abed48d3f52b86bbb975ac3558286d1db41`; the grail pin is
+> `kody-w/rapp-installer@0e43ee580e78c150b1c59002456822d2e779388e` (0.6.16) in
+> [`kernel.json`](../kernel.json). The local `rapp_brainstem/` files remain
+> historical evidence at `brainstem-v0.6.9`.
 >
 > **Mirror contract retired.** [`specs/ecosystem-spec.json`](ecosystem-spec.json)
 > is now a fail-closed status record with no active byte-identical mirrors.

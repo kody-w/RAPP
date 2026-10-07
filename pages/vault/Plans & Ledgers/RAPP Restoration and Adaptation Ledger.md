@@ -40,7 +40,7 @@ evolution follow RAPP/1 rev-5 through
 - [ ] Make mutation, repository creation, deployment, and publication
       explicit owner-approved modes; default to inspect, preview, or plan.
 - [ ] Preserve full schemas and algorithms even when acceptance is disabled.
-- [ ] Point installer context to `KERNEL_PIN.json` and
+- [ ] Point installer context to `kernel.json` and
       `kody-w/rapp-installer@brainstem-v0.6.9`.
 - [ ] Keep historical identifiers unchanged as evidence; never silently
       remint or rewrite them into apparent compliance.
@@ -94,7 +94,7 @@ the same machine-verifiable shape instead of inventing one-off flags.
 
 ### 3. Grail Resolver
 
-A read-only helper that resolves installer provenance from `KERNEL_PIN.json`
+A read-only helper that resolves installer provenance from `kernel.json`
 and emits the exact repository, tag, paths, and hashes for UI/docs/tooling.
 
 **Acceptance:** no restored artifact points at a moving installer branch or
