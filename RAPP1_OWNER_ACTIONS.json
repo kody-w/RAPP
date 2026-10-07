@@ -61,7 +61,7 @@
     "status_state": "Owner-action ledger links, dated and current path counts, restored target-owned launch boundaries, exact inert copies of removed runtimes, the direct immutable brainstem.py limitation, and the post-migration Active-path residual are present; the repository remains not fully conformant.",
     "current_path_hashes": {
       "rappid.json": "59dd3b53e2ed0c7594b3754425938b907600fdf5787b1cef912276aa9d3711b3",
-      "specs/ecosystem-spec.json": "147179baae2021272c5dce6f426eaf6d168df20f863027ca9e8ab51e64d87e5d",
+      "specs/ecosystem-spec.json": "a15b805962ac281568990ce11ea1567b4ed9a807f2f629b3de3f0c94eed53a98",
       "rapp_kernel/manifest.json": "a2826eb8820f4487948bfdb1bf3f80b4ca8ccdf902553d5d109cb8de3bb85889",
       "rapp_kernel/latest/brainstem.py": "f7fb359bbe8b6ba3db3665d81cb8e573a266c716278d8d21d8962ea40821e5aa",
       "kernel.json": "407041a1d9b5b0cbc59d27298d529effc7242e3f7b9b6a104d1157c84739945c",
