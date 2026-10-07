@@ -28,15 +28,13 @@ another atom to your AI.
 | An AI that remembers you | Tell it about yourself and your projects; it keeps that memory on your machine | Works today |
 | New abilities without coding | Add an agent from the [registry](https://github.com/kody-w/RAR): each one is a single file that does one job | Works today |
 | Your AI inside the AI apps you use | Connect your Brainstem to Claude, GitHub Copilot or ChatGPT with [brainstem-mcp](https://github.com/kody-w/brainstem-mcp); they share its memory and agents | Works today |
-| Several computers working as one | The strong computer does the heavy work, the others ask and help, through RAPP | Coming next |
-| AI in places it has never been | A Linux NAS, a game console, whatever is next. Each new place is proven on a real machine first | Being proven |
+| Your Brainstem in the cloud, always reachable | Deploy it to Azure as a Tier 2 Brainstem with [CommunityRAPP](https://github.com/kody-w/CommunityRAPP) | Works today |
 
 ## What RAPP does that other AI tools don't
 
 | RAPP + Brainstem | Claude Code, ChatGPT, Copilot | Why it matters |
 |---|---|---|
 | Runs on any computer you own and stays on | A session in a terminal, or an app on someone else's cloud | Your AI keeps working while you sleep, on the old laptop in the closet |
-| Several computers act as one AI (coming next) | One machine, one session at a time | Your strongest computer does the heavy work; the others just ask |
 | Abilities are files you own and run the same on every Brainstem | Custom agents live inside one product | You keep what you build, and you can share or trade it |
 | Any AI model, switched with one setting | Mostly one vendor's models | Use the best or the cheapest model for each job, free ones included |
 | A core that doesn't change, proven identical everywhere | Updates change behavior under you | What worked last month still works the same way |
@@ -57,11 +55,13 @@ Outsiders are welcome, people and AIs alike. Anything that passes the same check
 |---|---|---|
 | Agents or a repo of them | `python3 rapp_check.py <your repo>` reports COMPLIANT or CLEAN | Open now |
 | RAPP in another language | `python3 conformance.py`: every test vector passes | Open now |
-| A Brainstem of your own, or an AI app that talks to Brainstems | The Brainstem conformance tests: the same answers as the reference, field for field | Opening soon |
 
 To get listed, open an issue on [rapp-1](https://github.com/kody-w/rapp-1/issues) with your check output and a link to
 your work. Certified agents go in the [registry](https://github.com/kody-w/RAR), and a certified Brainstem joins your
 AI as another atom.
+
+Everything beyond the core Brainstem is an add-on from the [registry](https://github.com/kody-w/RAR). Remove an add-on
+and your Brainstem is exactly the original again.
 
 ## Your first agent
 
