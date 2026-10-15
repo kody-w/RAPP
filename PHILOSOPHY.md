@@ -15,6 +15,34 @@ organism reliably fulfills its bounded goal, it can graduate into the wild.
 Portable, self-documenting organisms may later produce distinctly identified
 offspring or crosses while preserving every ancestor and lineage address.
 
+## Why everything goes through /chat: the transcript is the window
+
+RAPP has one door. Every request a Brainstem answers, every agent it calls,
+and every reply it gives travels through `POST /chat` as plain text. That
+minimalism is deliberate, and the reason is people, not plumbing.
+
+- **One door means one readable record.** Because nothing happens through a
+  side route, the chat transcript is the complete account of what the AI was
+  asked, what it decided, and what it did. There is no second log to find.
+- **Anyone can audit it.** You do not need to be an engineer to know what an
+  AI did on your behalf. You read the conversation, the same way you would
+  read an email thread.
+- **It works with whatever AI is on the other end.** A Brainstem talking to a
+  person, to another Brainstem, or to any other AI tool uses the same shape:
+  text in, text out. Any system that can hold a conversation can join, and
+  every exchange stays legible to the humans watching. That is universal
+  accessibility into any AI tool.
+- **Capability grows behind the door, never beside it.** New abilities arrive
+  as agents a Brainstem can call from inside the conversation, never as new
+  endpoints. The wire stays the same size while what it can do keeps growing.
+- **Even actions stay legible.** When a Brainstem drives something outside
+  itself, such as a browser or another tool, it proposes the action as text in
+  the chat and a person approves it there. The record of what was done is the
+  same record as what was said.
+
+If you want to know what a RAPP system is doing, read its transcript. That is
+the whole design.
+
 ## Repository boundary
 
 - **`kody-w/RAPP`** — canonical foundation, product home, organism model,
