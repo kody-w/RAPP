@@ -107,6 +107,8 @@ The name that cannot be silently reassigned. RAPP/1 §6 defines exactly
 Every organism is split exactly once: **bones** (the public skeleton) and **vault**
 (the private flesh).
 
+> **Voice-first spelling (2026-10-20):** DOG = **DOGG** and GOD = **GODD**; the doubled letter is how the word is said aloud ("two g's", "two d's"), like RAPP's two p's. See the Constitution amendment of 2026-10-20.
+
 - The **DOG** is the bones walking — the public reflection anyone may hold.
 - The **GOD** is bones + vault — the sovereign whole, resident only on its owner's ground.
 - **The one law that crosses it:** *public flows down; private never flows on its own.*

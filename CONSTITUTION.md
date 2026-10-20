@@ -4355,3 +4355,26 @@ legal right.
 > folder to unload it. The notes of the same date in Articles XVII, XVIII
 > and XX apply this rule to their text, and they govern how those articles
 > are read.
+
+---
+
+## Amendment (2026-10-20) — Voice-first names: the doubled letter is the context lock
+
+> **Additive per Article XXVI.** The grail ships with voice mode, so RAPP's
+> words are made to be spoken, and a listener cannot hear capital letters.
+> A doubled letter is the spoken signal that switches a conversation into
+> RAPP's meaning, while the everyday word keeps its everyday meaning:
+>
+> | Say | Means | The everyday word stays free |
+> | --- | --- | --- |
+> | "RAPP, with two p's" | the platform | "rap" (music) |
+> | "DOGG, with two g's" | the public projection: Distributed Object, Global — the bones anyone may hold and pull again | "dog" |
+> | "GODD, with two d's" | the sovereign projection: Grail Object on Device — bones plus vault, living on its owner's ground | "god" |
+>
+> **DOG and DOGG are the same object; GOD and GODD are the same object.**
+> Article LVI and the Lexicon wrote DOG and GOD; read every such use as DOGG
+> and GODD. New text writes the doubled forms. Once a speaker says the doubled
+> name, the rest of the conversation keeps that meaning until they say
+> otherwise, and they can still talk about rap, dogs or god in plain words.
+> No doubled name may be added without the steward's ruling; this amendment
+> changes no schema id, file name, URL or byte that RAPP/1 pins.

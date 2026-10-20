@@ -50,6 +50,11 @@
    `python3 tests/run_rapp1_conformance.py`. Documentation-only work may first
    run `python3 tools/check_rapp1_docs.py`,
    `bash tests/e2e/08-html-pages.sh`, and `node tests/vault-check.mjs`.
+9. Voice-first names (2026-10-20 Constitution amendment): the doubled letter is
+   how a RAPP word is said aloud and locks its meaning — RAPP (two p's) is the
+   platform, DOGG (two g's) is the public projection, GODD (two d's) is the
+   on-device projection; "rap", "dog" and "god" stay everyday words. DOG means
+   DOGG and GOD means GODD; write the doubled forms in new work.
 
 ## Historical repository guide (superseded)
 
