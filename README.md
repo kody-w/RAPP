@@ -13,6 +13,8 @@ computers act as one AI instead of separate bots.
 A Brainstem is also a social butterfly: it connects the AIs already on your computer (Claude, ChatGPT, GitHub
 Copilot) so they share one memory and one set of abilities, instead of each starting from zero.
 
+**Why a Brainstem?** The AI you use will keep changing; your Brainstem is the part that doesn't. Read [WHY.md](WHY.md).
+
 ## Start: one line
 
 The one line that installs a Brainstem is on the installer's
